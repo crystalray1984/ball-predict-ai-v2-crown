@@ -1,6 +1,10 @@
 {
     "name": "ball-predict-ai-crown",
     "description": "皇冠爬取支持服务",
+    "scripts": {
+        "build": "rimraf dist && tsc",
+        "start": "yarn && yarn build && pm2-runtime start pm2.json"
+    },
     "dependencies": {
         "amqplib": "^0.10.8",
         "dayjs": "^1.11.13",
