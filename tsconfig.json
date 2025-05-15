@@ -7,6 +7,10 @@
         "resolveJsonModule": true,
         "types": ["./src/types.d.ts", "node"],
         "rootDir": "src",
-        "outDir": "dist"
+        "outDir": "dist",
+        "baseUrl": "./src",
+        "paths": {
+            "@/*": ["./*"]
+        }
     }
 }

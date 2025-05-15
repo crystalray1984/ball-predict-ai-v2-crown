@@ -1,8 +1,56 @@
+/**
+ * 比赛状态
+ */
+declare type MatchStatus = '' | 'final'
+
+/**
+ * 比赛异常状态
+ */
+declare type MatchErrorStatus = '' | 'delayed' | 'cancelled' | 'interrupted'
+
+/**
+ * 比赛时段
+ */
+declare type Period = 'regularTime' | 'period1'
+
+/**
+ * 投注目标
+ */
+declare type Variety = 'goal' | 'corner'
+
+/**
+ * 投注方向
+ */
+declare type OddType = 'ah1' | 'ah2' | 'over' | 'under' | 'draw'
+
+/**
+ * 盘口状态
+ */
+declare type OddStatus = '' | 'ready' | 'promoted' | 'skip' | 'ignored'
+
+/**
+ * 二次比对完成时的规则
+ */
+declare type PromotedFinalRule = '' | 'crown' | 'crown_special' | 'titan007'
+
+/**
+ * 盘口的基本信息
+ */
+declare interface OddInfo {
+    condition: string
+    variety: Variety
+    period: Period
+    type: OddType
+}
+
+/**
+ * 皇冠数据结构
+ */
 declare namespace Crown {
     /**
-     * 由皇冠返回的比赛数据
+     * 皇冠比赛数据
      */
-    interface MatchInfo {
+    declare interface MatchInfo {
         /**
          * 比赛时间
          */
@@ -130,14 +178,10 @@ declare namespace Crown {
     }
 
     interface OddInfo {
-        variety: 'goal' | 'corner'
-
+        variety: Variety
         type: 'r' | 'hr' | 'ou' | 'hou'
-
         condition: string
-
         value_h: string
-
         value_c: string
     }
 
@@ -147,20 +191,222 @@ declare namespace Crown {
     }
 }
 
-/**
- * 来自消息队列的数据
- */
-declare interface CrownQueueInputData {
+declare namespace Titan007 {
     /**
-     * 消息处理完之后应抛到的下一个队列
+     * 今日比赛数据
      */
-    next: string
+    interface TodayMatchInfo {
+        /**
+         * 比赛id
+         */
+        match_id: string
+        /**
+         * 比赛时间
+         */
+        match_time: number
+        /**
+         * 主队ID
+         */
+        team1_id: string
+        /**
+         * 客队ID
+         */
+        team2_id: string
+        /**
+         * 主队名称
+         */
+        team1: string
+        /**
+         * 客队名称
+         */
+        team2: string
+        /**
+         * 比赛状态
+         * -1 已完场
+         * >=2 上半场已结束
+         */
+        state: number
+    }
+
     /**
-     * 待获取的皇冠比赛id
+     * 赛果数据统计
      */
-    crown_match_id: string
+    interface TechData {
+        corner1: number | null
+        corner2: number | null
+        corner1_period1: number | null
+        corner2_period1: number | null
+    }
+
     /**
-     * 透传参数
+     * 球探网赛果数据
      */
-    extra?: any
+    interface MatchScore extends TechData {
+        score1: number
+        score2: number
+        score1_period1: number
+        score2_period1: number
+    }
+}
+
+declare namespace Surebet {
+    /**
+     * surebet响应数据
+     */
+    declare interface OddsResp {
+        /**
+         * 响应生成的时间
+         */
+        updated_at: number
+
+        /**
+         * 是否可以向前浏览列表
+         */
+        can_forward: boolean
+
+        /**
+         * 是否可以向后浏览列表
+         */
+        can_backward: boolean
+
+        /**
+         * 输出的记录数
+         */
+        limit: number
+
+        /**
+         * 推荐数据
+         */
+        records: OddsRecord[]
+    }
+
+    /**
+     * Surebet返回的盘口数据
+     */
+    declare interface OddsRecord {
+        /**
+         * 排序字段
+         */
+        sort_by: number
+        /**
+         * 记录id
+         */
+        id: string
+        /**
+         * 推荐的盘口
+         */
+        prongs: OddInfo[]
+    }
+
+    /**
+     * 盘口类型标识数据
+     */
+    interface OddInfoType {
+        /** 投注类型对应的条件；描述投注的额外变量参数 */
+        condition: string
+
+        /**
+         此参数指示事件发生时的游戏情况类型。
+        regular - 默认的游戏情况。 例如，投注比赛结果。
+        first - 比赛双方竞争打进第一个进球/第一个角球/第一张牌等的情况。
+        № 2 - 比赛双方竞争打进第二个进球/第二个角球/第二张牌等的情况。
+        last - 类似于“first”的情况，但用于最后一个进球/角球/牌等。
+         openingPartnership - 在板球中，最佳的开场搭档。
+        等等。
+        */
+        game: string
+
+        /**
+          此参数确定投注适用的球队，可以取以下值：
+        overall - 主场和/或客场球队（例如，比赛总分）。
+        home - 主场球队。
+        away - away - 客场球队。
+        both - 主客场球队均适用（例如，两队均得分）。
+        */
+        base: string
+
+        /**
+        一种可以计数的比赛结果类型，用于接受投注。
+        进球、角球、牌、局、盘、点等都属于 "variety"。
+        */
+        variety: Variety
+
+        /**
+        接受投注的时间段或比赛部分。
+        例如：加时赛、常规时间、第一节、第一盘等都属于 "periods"。
+        */
+        period: Period
+
+        /**
+        此参数描述投注的逻辑含义，可以取以下值：
+        win1 - 球队1获胜。
+        win1RetX - 球队1获胜，但如果打平，投注退款。
+        win2 - 球队2获胜。
+        win2RetX - 球队2获胜，但如果打平，投注退款。
+        draw - 平局。
+        over - 大。
+        under - 小。
+        yes - 发生。
+        no - 不发生。
+        odd - 单数。
+        even - 双数。
+        ah1 - 球队1的亚洲让分。
+        ah2 - 球队2的亚洲让分。
+        eh1 - 球队1的欧洲让分。
+        ehx - 平局的欧洲让分。
+        eh2 - 球队2的欧洲让分。
+
+        等等。
+        某些投注类型可能包含额外条件。 例如，对于大于和小于的投注，它是总数，
+        对于ah1/ah2/eh1/ehx/eh2的投注，它是让球值。 所有这些值将包含在单独的 condition 参数中。
+        */
+        type: OddType
+    }
+
+    interface OddInfo {
+        /**
+         * 赔率值
+         */
+        value: number
+        /**
+         * 博彩公司标识
+         */
+        bk: string
+        /**  博彩公司网站显示的比赛开始时间 */
+        time: number
+        /**
+         * 投注类型
+         */
+        type: OddInfoType
+        /**
+         * 导航信息
+         */
+        preferred_nav: {
+            markers: {
+                eventId: string
+            }
+        }
+    }
+
+    /**
+     * 初步筛选后的盘口数据
+     */
+    interface Output {
+        /**
+         * 皇冠比赛id
+         */
+        crown_match_id: string
+        /**
+         * 比赛时间
+         */
+        match_time: number
+        /**
+         * 盘口类型
+         */
+        type: Omit<OddInfoType, 'game' | 'base'>
+        /**
+         * surebet推荐赔率
+         */
+        surebet_value: string
+    }
 }

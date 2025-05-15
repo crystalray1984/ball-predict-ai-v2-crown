@@ -5,7 +5,8 @@
             "script": "./dist/start.js",
             "env": {
                 "NODE_ENV": "production",
-                "TZ": "Asia/Shanghai"
+                "TZ": "Asia/Shanghai",
+                "TS_NODE_BASEURL": "./dist"
             },
             "log_date_format": "YYYY-MM-DD HH:mm:ssZ",
             "merge_logs": true,

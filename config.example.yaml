@@ -1,6 +1,9 @@
 #皇冠网站地址
 crown_url: 'https://mos011.com'
 
+#surebet接口调用凭证
+surebet_token: '4d39fc6d-a1d6-4a78-a55e-a84137a2d99e'
+
 #数据库配置
 db:
   host: '156.230.62.108'
@@ -8,7 +11,10 @@ db:
   username: 'root'
   password: '3f0457856f71c6ec'
   database: 'ball-predict-ai'
-  timezone: '+08:00'
+  #连接池配置
+  pool:
+    min: 0
+    max: 5
 
 #Redis配置
 redis:

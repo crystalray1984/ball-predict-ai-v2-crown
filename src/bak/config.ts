@@ -4,8 +4,6 @@ import { merge } from 'lodash'
 import { existsSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { type Options as DbOptions } from 'sequelize'
-import { RedisOptions } from 'ioredis'
-import { Options as PoolOptions } from 'generic-pool'
 
 /**
  * 当前应用的根目录
@@ -44,20 +42,9 @@ export interface AppConfig {
      */
     db: DbOptions
     /**
-     * Redis配置
-     */
-    redis: {
-        connection: RedisOptions
-        pool: PoolOptions
-    }
-    /**
      * 消息队列配置
      */
     rabbitmq: RabbitmqOptions.Connect
-    /**
-     * surebet抓取token
-     */
-    surebet_token: string
 }
 
 /**
