@@ -1,0 +1,31 @@
+#皇冠网站地址
+crown_url: 'https://mos011.com'
+
+#数据库配置
+db:
+  host: '156.230.62.108'
+  port: 3306
+  username: 'root'
+  password: '3f0457856f71c6ec'
+  database: 'ball-predict-ai'
+  timezone: '+08:00'
+
+#Redis配置
+redis:
+  #连接配置
+  connection:
+    host: '156.230.62.108'
+    port: 6397
+    password: '5HUy0iofEXTTRUurMpDP'
+  #连接池配置
+  pool:
+    min: 0
+    max: 5
+
+#rabbitmq配置
+rabbitmq:
+  hostname: '156.230.62.108'
+  port: 5672
+  username: 'admin'
+  password: 'mxJMHCOCynYS14lGtqzZ'
+  heartbeat: 25
