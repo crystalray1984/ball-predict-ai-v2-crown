@@ -1,3 +1,5 @@
+import 'reflect-metadata'
+
 import type { CreationOptional, InferAttributes, InferCreationAttributes } from 'sequelize'
 import {
     AutoIncrement,
