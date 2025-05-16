@@ -3,6 +3,7 @@
         {
             "name": "surebet",
             "script": "./dist/start-surebet.js",
+            "interpreter_args": "-r tsconfig-paths/register",
             "env": {
                 "NODE_ENV": "production",
                 "TZ": "Asia/Shanghai",
@@ -17,6 +18,7 @@
         {
             "name": "titan007",
             "script": "./dist/start-titan007.js",
+            "interpreter_args": "-r tsconfig-paths/register",
             "env": {
                 "NODE_ENV": "production",
                 "TZ": "Asia/Shanghai",
@@ -31,6 +33,7 @@
         {
             "name": "crown",
             "script": "./dist/start-crown.js",
+            "interpreter_args": "-r tsconfig-paths/register",
             "env": {
                 "NODE_ENV": "production",
                 "TZ": "Asia/Shanghai",
