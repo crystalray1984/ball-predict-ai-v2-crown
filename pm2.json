@@ -1,8 +1,8 @@
 {
     "apps": [
         {
-            "name": "football-robot",
-            "script": "./dist/start.js",
+            "name": "surebet",
+            "script": "./dist/start-surebet.js",
             "env": {
                 "NODE_ENV": "production",
                 "TZ": "Asia/Shanghai",
@@ -10,9 +10,37 @@
             },
             "log_date_format": "YYYY-MM-DD HH:mm:ssZ",
             "merge_logs": true,
-            "error_file": "./runtime/logs/out.log",
-            "out_file": "./runtime/logs/out.log",
-            "pid_file": "./runtime/robot.pid"
+            "error_file": "./runtime/logs/surebet.log",
+            "out_file": "./runtime/logs/surebet.log",
+            "pid_file": "./runtime/surebet.pid"
+        },
+        {
+            "name": "titan007",
+            "script": "./dist/start-titan007.js",
+            "env": {
+                "NODE_ENV": "production",
+                "TZ": "Asia/Shanghai",
+                "TS_NODE_BASEURL": "./dist"
+            },
+            "log_date_format": "YYYY-MM-DD HH:mm:ssZ",
+            "merge_logs": true,
+            "error_file": "./runtime/logs/titan007.log",
+            "out_file": "./runtime/logs/titan007.log",
+            "pid_file": "./runtime/titan007.pid"
+        },
+        {
+            "name": "crown",
+            "script": "./dist/start-crown.js",
+            "env": {
+                "NODE_ENV": "production",
+                "TZ": "Asia/Shanghai",
+                "TS_NODE_BASEURL": "./dist"
+            },
+            "log_date_format": "YYYY-MM-DD HH:mm:ssZ",
+            "merge_logs": true,
+            "error_file": "./runtime/logs/crown.log",
+            "out_file": "./runtime/logs/crown.log",
+            "pid_file": "./runtime/crown.pid"
         }
     ]
 }
