@@ -55,6 +55,12 @@ export class PromotedOdd extends Model<
     declare is_valid: CreationOptional<number>
 
     /**
+     * 是否被系统规则忽略（忽略的推荐不影响筛选率）
+     */
+    @Column(DataType.TINYINT)
+    declare is_skip: CreationOptional<number>
+
+    /**
      * 投注目标
      */
 
