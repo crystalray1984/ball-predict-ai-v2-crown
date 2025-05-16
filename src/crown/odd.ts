@@ -363,13 +363,13 @@ export function findMatchedOdd(info: OddInfo, odds: Crown.OddInfo[]) {
         case 'under':
             //小球
             return odds.map((odd) => ({
-                value: odd.value_c,
+                value: odd.value_h,
                 condition: odd.condition,
             }))
         case 'over':
             //大球
             return odds.map((odd) => ({
-                value: odd.value_h,
+                value: odd.value_c,
                 condition: odd.condition,
             }))
         default:
