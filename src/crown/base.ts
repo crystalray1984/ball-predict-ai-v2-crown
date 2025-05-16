@@ -64,7 +64,7 @@ async function doInit() {
     const args: string[] = ['--no-sandbox', '--disable-images', '--lang=zh-cn']
 
     browser = await launch({
-        headless: false,
+        // headless: false,
         args,
     })
 
