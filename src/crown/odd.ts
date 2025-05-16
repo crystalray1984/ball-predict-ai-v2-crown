@@ -211,8 +211,7 @@ export async function getCrownData(
             return await _getCrownData(crown_match_id, show_type)
         } catch (err) {
             console.error(err)
-            console.log(err)
-            console.log('重试次数', tryCount)
+            console.error('重试次数', tryCount)
             tryCount--
             if (tryCount <= 0) {
                 throw err
