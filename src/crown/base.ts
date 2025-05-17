@@ -77,7 +77,7 @@ async function doInit() {
     console.log('login form ready')
     await page.locator('#usr').fill(account.username)
     await page.locator('#pwd').fill(account.password)
-    await page.locator('.check_remember.lab_radio').click()
+    // await page.locator('.check_remember.lab_radio').click()
     await page.locator('#btn_login').click()
     console.log('login form submitted')
 
