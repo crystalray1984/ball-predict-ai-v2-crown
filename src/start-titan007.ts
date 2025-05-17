@@ -268,9 +268,16 @@ async function processTodayMatches() {
     //从数据库中读取比赛列表
     const matches = await VMatch.findAll({
         where: {
-            match_time: {
-                [Op.between]: [new Date(minTime), new Date(maxTime)],
-            },
+            [Op.and]: [
+                {
+                    match_time: {
+                        [Op.between]: [new Date(minTime), new Date(maxTime)],
+                    },
+                },
+                {
+                    [Op.or]: [{ titan007_match_id: '' }, { has_score: 0 }],
+                },
+            ],
         },
     })
 
