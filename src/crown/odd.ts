@@ -42,7 +42,13 @@ async function _getCrownData(
 
     const resp = (await page.evaluate(func)) as string
     console.log('皇冠请求完成', crown_match_id, show_type)
-    return formatOddData(xmlParser.parse(resp).serverresponse)
+    const data = xmlParser.parse(resp).serverresponse
+    try {
+        return formatOddData(xmlParser.parse(resp).serverresponse)
+    } catch (err) {
+        console.error(resp)
+        throw err
+    }
 }
 
 /**
