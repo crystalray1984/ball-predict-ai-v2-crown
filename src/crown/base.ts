@@ -210,26 +210,11 @@ async function getCrownAccount() {
 }
 
 /**
- * 刷新主页
- */
-function refreshMainPage() {
-    return singleton('refresh_crown', async () => {
-        //等待主页加载完成
-        await mainPage.reload()
-        await waitForElement(mainPage, '#today_page')
-        console.log('home page refreshed')
-    })
-}
-
-/**
  * 等待浏览器环境准备完毕
  */
 export async function ready() {
-    if (!mainPage) {
+    if (!mainPage || Date.now() - lastActiveTime >= 900000) {
         await init()
-    } else if (Date.now() - lastActiveTime >= 900000) {
-        //每15分钟刷新一次主页
-        await refreshMainPage()
     }
     return mainPage
 }
