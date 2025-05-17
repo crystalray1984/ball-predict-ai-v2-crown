@@ -31,7 +31,7 @@ async function _getCrownData(
     var params = new URLSearchParams(par);
     params.set('langx', 'zh-cn');
 
-    var getHTML = new HttpRequest;
+    var getHTML = new HttpRequest();
     return new Promise((resolve, reject) => {
         getHTML.addEventListener("onError", reject);
         getHTML.addEventListener("LoadComplete", resolve);
@@ -46,7 +46,7 @@ async function _getCrownData(
     try {
         return formatOddData(data)
     } catch (err) {
-        console.error(resp)
+        console.error('解析响应体失败', resp)
         throw err
     }
 }
