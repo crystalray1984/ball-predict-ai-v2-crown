@@ -1,5 +1,5 @@
 import Decimal from 'decimal.js'
-import { ready, xmlParser } from './base'
+import { ready, reset, xmlParser } from './base'
 
 /**
  * 读取皇冠盘口数据
@@ -214,6 +214,8 @@ export async function getCrownData(
             console.error('重试次数', tryCount)
             tryCount--
             if (tryCount <= 0) {
+                //三次抓取均失败时，重置浏览器
+                await reset()
                 throw err
             }
         }
