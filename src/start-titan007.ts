@@ -490,7 +490,7 @@ async function processOdds() {
         //更新数据
         const exists = await Titan007Odd.findOne({
             where: {
-                id: match.id,
+                match_id: match.id,
             },
         })
         if (exists) {
