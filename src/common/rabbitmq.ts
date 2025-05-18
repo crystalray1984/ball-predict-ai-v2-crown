@@ -10,7 +10,13 @@ export interface Publisher {
  * 创建向消息队列发布信息的发布器
  */
 export async function createPublisher(): Promise<Publisher> {
-    const connection = await connect(CONFIG.rabbitmq)
+    const connection = await connect({
+        hostname: process.env.MQ_HOSTNAME,
+        port: process.env.MQ_PORT ? parseInt(process.env.MQ_PORT) : undefined,
+        username: process.env.MQ_USERNAME,
+        password: process.env.MQ_PASSWORD,
+        heartbeat: 25,
+    })
 
     const closeConnection = async () => {
         try {
@@ -34,15 +40,11 @@ export async function createPublisher(): Promise<Publisher> {
             try {
                 if (!assertedQueues.includes(queue)) {
                     await channel.assertQueue(queue)
+                    assertedQueues.push(queue)
                 }
                 await new Promise<void>((resolve, reject) => {
-                    channel.sendToQueue(queue, Buffer.from(content, 'utf-8'), {}, (err) => {
-                        if (err) {
-                            resolve()
-                        } else {
-                            reject(err)
-                        }
-                    })
+                    channel.sendToQueue(queue, Buffer.from(content, 'utf-8'))
+                    channel.waitForConfirms().then(resolve).catch(reject)
                 })
             } catch (err) {
                 await onError()
