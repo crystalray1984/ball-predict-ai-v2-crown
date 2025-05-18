@@ -399,12 +399,16 @@ async function processFinalMatch(match_id: number, crown_match_id: string, odds:
             if (special_odd) {
                 pass = true
                 odd.status = 'promoted'
+                odd.crown_condition2 = special_odd.condition
+                odd.crown_value2 = special_odd.value
             } else {
                 special_odd = matched_odds[matched_odds.length - 1]
                 odd.status = 'ignored'
+                if (special_odd) {
+                    odd.crown_condition2 = special_odd.condition
+                    odd.crown_value2 = special_odd.value
+                }
             }
-            odd.crown_condition2 = special_odd.condition
-            odd.crown_value2 = special_odd.value
         }
 
         if (pass) {
