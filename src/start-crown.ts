@@ -599,6 +599,7 @@ async function processNearlyMatches() {
         WHERE
             a.match_time >= ?
             AND a.match_time <= ?
+            AND a.status = ?
         ORDER BY
             a.match_time
         `,
@@ -606,6 +607,7 @@ async function processNearlyMatches() {
                 'ready',
                 new Date(Date.now()), //已经开赛的比赛不抓取
                 new Date(Date.now() + 300000), //只抓取5分内开赛的比赛
+                '', //只选择还未结算的比赛
             ],
         },
         {
