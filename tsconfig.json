@@ -6,6 +6,7 @@
         "forceConsistentCasingInFileNames": true,
         "resolveJsonModule": true,
         "types": ["./src/types.d.ts", "node"],
+        "lib": ["DOM"],
         "rootDir": "src",
         "outDir": "dist",
         "baseUrl": "./src",

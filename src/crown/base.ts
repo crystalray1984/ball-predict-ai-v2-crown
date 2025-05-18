@@ -1,10 +1,11 @@
 import { delay } from '@/common/helpers'
+import { sendNotification } from '@/common/luffa'
 import { Queue } from '@/common/queue'
 import { singleton } from '@/common/singleton'
 import { CrownAccount, db } from '@/db'
 import { XMLParser } from 'fast-xml-parser'
 import { machineIdSync } from 'node-machine-id'
-import { Browser, launch, Page } from 'puppeteer'
+import { Browser, ElementHandle, launch, Page } from 'puppeteer'
 import { literal, Op } from 'sequelize'
 
 /**
@@ -28,11 +29,30 @@ let lastActiveTime = 0
  * @param selector 元素选择器
  * @returns
  */
-export async function waitForElement(page: Page, selector: string) {
+export function waitForElement<ElementType extends Node = Element>(
+    page: Page,
+    selector: string,
+    returning: true,
+): Promise<ElementHandle<ElementType>>
+export function waitForElement(page: Page, selector: string, returning?: false): Promise<void>
+export async function waitForElement(
+    page: Page,
+    selector: string,
+    returning = false,
+): Promise<ElementHandle | void> {
     while (true) {
         try {
             const element = await page.$(selector)
-            return !!element
+            if (!element) {
+                await delay(300)
+                continue
+            }
+            if (returning) {
+                await element.dispose()
+                return
+            } else {
+                return element
+            }
         } catch (err) {
             if (
                 !(err instanceof Error) ||
@@ -57,47 +77,73 @@ export function init() {
  * 初始化浏览器环境
  */
 async function doInit() {
-    await reset()
+    while (true) {
+        await reset()
 
-    account = await getCrownAccount()
-    console.log('使用皇冠账号', account.username)
+        account = await getCrownAccount()
+        console.log('使用皇冠账号', account.username)
 
-    const args: string[] = ['--no-sandbox', '--disable-images', '--lang=zh-cn']
+        const args: string[] = ['--no-sandbox', '--disable-images', '--lang=zh-cn']
 
-    browser = await launch({
-        // headless: false,
-        args,
-    })
+        browser = await launch({
+            // headless: false,
+            args,
+        })
 
-    const page = await browser.newPage()
-    await page.goto(PAGE_URL)
-    console.log('page navigated')
+        const page = await browser.newPage()
+        await page.goto(PAGE_URL)
+        console.log('page navigated')
 
-    //等待登录脚本完成
-    await waitForElement(page, '#usr')
-    console.log('login form ready')
-    await page.locator('#usr').fill(account.username)
-    await page.locator('#pwd').fill(account.password)
-    // await page.locator('.check_remember.lab_radio').click()
-    await page.locator('#btn_login').click()
-    console.log('login form submitted')
+        //等待登录脚本完成
+        await waitForElement(page, '#usr')
+        console.log('login form ready')
+        await page.locator('#usr').fill(account.username)
+        await page.locator('#pwd').fill(account.password)
+        // await page.locator('.check_remember.lab_radio').click()
+        await page.locator('#btn_login').click()
+        console.log('login form submitted')
 
-    //等待数字密码的确认
-    await waitForElement(page, '#C_popup_checkbox .lab_radio')
-    await page.locator('#C_popup_checkbox .lab_radio').click()
-    console.log('checkbox clicked')
+        //等待数字密码的确认
+        await waitForElement(page, '#C_popup_checkbox .lab_radio')
+        await page.locator('#C_popup_checkbox .lab_radio').click()
+        console.log('checkbox clicked')
 
-    await page.locator('#C_no_btn').click()
-    console.log('no_password clicked')
+        await page.locator('#C_no_btn').click()
+        console.log('no_password clicked')
 
-    await page.waitForNavigation()
-    console.log(page.url())
+        await page.waitForNavigation()
+        console.log(page.url())
 
-    //等待主页加载完成
-    await waitForElement(page, '#today_page')
+        //等待主页加载完成
+        const todayBtn = await waitForElement(page, '#today_page', true)
+
+        //检测账号已被封禁
+        const className = await (await todayBtn.getProperty('className')).jsonValue()
+        if (className.includes('off')) {
+            //账号已被封禁，修改账号属性
+            await CrownAccount.update(
+                {
+                    status: 0,
+                },
+                {
+                    where: {
+                        id: account.id,
+                    },
+                    returning: false,
+                },
+            )
+            //发送通知
+            await sendNotification(
+                `**异常通知**\r\n皇冠账号 ${account.username} 已被封禁，请尽快处理。`,
+            )
+            continue
+        }
+
+        mainPage = page
+        break
+    }
+
     console.log('home page ready')
-
-    mainPage = page
     lastActiveTime = Date.now()
 }
 

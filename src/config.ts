@@ -58,6 +58,42 @@ export interface AppConfig {
      * surebet抓取token
      */
     surebet_token: string
+    /**
+     * Luffa机器人配置
+     */
+    luffa: LuffaConfig
+}
+
+export interface LuffaAtItem {
+    name: string
+    did: string
+}
+
+/**
+ * Luffa通知配置
+ */
+export interface LuffaNotificationConfig {
+    /**
+     * 发送的目标
+     */
+    uid: string
+    /**
+     * 目标类型 0-单聊 1-群聊
+     */
+    type: number
+    /**
+     * at列表
+     */
+    atList?: LuffaAtItem[]
+}
+
+/**
+ * Luffa配置
+ */
+export interface LuffaConfig {
+    uid: string
+    secret: string
+    notification: LuffaNotificationConfig[]
 }
 
 /**
