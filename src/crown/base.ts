@@ -31,7 +31,7 @@ let lastActiveTime = 0
 export async function waitForElement(page: Page, selector: string): Promise<void> {
     while (true) {
         try {
-            const element = await page.$(selector)
+            const element = await page.waitForSelector(selector)
             if (element) return
         } catch (err) {
             if (
