@@ -1,8 +1,9 @@
 import { getCrownData, getCrownMatches, init } from '@/crown'
-import { db, Match, Odd, PromotedOdd, Titan007Odd } from '@/db'
+import { Match, Odd, PromotedOdd, Titan007Odd } from '@/db'
+import dayjs from 'dayjs'
 import Decimal from 'decimal.js'
 import { groupBy } from 'lodash'
-import { CreationAttributes, Op, QueryTypes } from 'sequelize'
+import { CreationAttributes, Op } from 'sequelize'
 import { isNullOrUndefined, runLoop } from './common/helpers'
 import { startConsumer } from './common/rabbitmq'
 import { getSetting } from './common/settings'
@@ -262,10 +263,30 @@ function getFinalOddData(
     }
 }
 
+interface FinalCheckData {
+    id: number
+}
+
 /**
  * 处理开赛前的最终判断
  */
-async function processFinalMatch(match_id: number, crown_match_id: string, odds: Odd[]) {
+async function processFinalMatch({ id }: FinalCheckData) {
+    //先检查比赛数据，如果状态不为''就不结算了
+    const match = await Match.findOne({
+        where: {
+            id,
+        },
+    })
+    if (!match || match.status !== '') return
+
+    console.log('开始比赛二次比对', {
+        id: match.id,
+        crown_match_id: match.crown_match_id,
+        match_time: dayjs(match.match_time).format('YYYY-MM-DD HH:mm'),
+    })
+
+    const { id: match_id, crown_match_id } = match
+
     //首先把比赛标记为fianl，也就是已经结算
     await Match.update(
         {
@@ -277,6 +298,17 @@ async function processFinalMatch(match_id: number, crown_match_id: string, odds:
             },
         },
     )
+
+    //读取盘口列表
+    const odds = await Odd.findAll({
+        where: {
+            match_id,
+            status: 'ready',
+        },
+        order: [['id', 'asc']],
+    })
+
+    if (odds.length === 0) return
 
     //读取配置
     const settings = await getSetting(
@@ -582,71 +614,6 @@ async function processFinalMatch(match_id: number, crown_match_id: string, odds:
 }
 
 /**
- * 处理临近开场的比赛
- */
-async function processNearlyMatches() {
-    //先查询需要处理的比赛
-    const matches = await db.query<{
-        id: number
-        crown_match_id: string
-    }>(
-        {
-            query: `
-        SELECT
-            DISTINCT
-            a.id,
-            a.crown_match_id
-        FROM
-            \`match\` AS a
-        INNER JOIN
-            odd ON odd.match_id = a.id AND odd.status = ?
-        WHERE
-            a.match_time >= ?
-            AND a.match_time <= ?
-            AND a.status = ?
-        ORDER BY
-            a.match_time
-        `,
-            values: [
-                'ready',
-                new Date(Date.now()), //已经开赛的比赛不抓取
-                new Date(Date.now() + 300000), //只抓取5分内开赛的比赛
-                '', //只选择还未结算的比赛
-            ],
-        },
-        {
-            type: QueryTypes.SELECT,
-        },
-    )
-    console.log('需要二次比对的比赛', matches.length)
-    if (matches.length === 0) return
-
-    //读取需要抓取的盘口
-    const odds = await Odd.findAll({
-        where: {
-            match_id: {
-                [Op.in]: matches.map((t) => t.id),
-            },
-            status: 'ready',
-        },
-        order: [['id', 'asc']],
-    })
-
-    console.log('需要二次比对的盘口', odds.length)
-    if (odds.length === 0) return
-
-    for (const match of matches) {
-        const matchOdds = odds.filter((t) => t.match_id === match.id)
-        if (matchOdds.length === 0) continue
-        try {
-            await processFinalMatch(match.id, match.crown_match_id, matchOdds)
-        } catch (err) {
-            console.error(err)
-        }
-    }
-}
-
-/**
  * 开启皇冠数据抓取
  */
 export async function startCrown() {
@@ -656,13 +623,16 @@ export async function startCrown() {
     //开启比赛数据抓取
     runLoop(1800000, processCrownMatches)
 
-    //处理临近开场的比赛
-    runLoop(30000, processNearlyMatches)
-
     //开启消息队列做第一次数据比对
     startConsumer('ready_check', async (jsonStr) => {
         const data = JSON.parse(jsonStr)
         await processSurebet(data)
+    })
+
+    //开启消息队列做第二次数据对比
+    startConsumer('final_check', async (jsonStr) => {
+        const data = JSON.parse(jsonStr)
+        await processFinalMatch(data)
     })
 }
 
