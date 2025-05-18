@@ -10,13 +10,12 @@ export async function processNearlyMatches() {
     //先查询需要处理的比赛
     const matches = await db.query<{
         id: number
-        crown_match_id: string
     }>(
         {
             query: `
         SELECT
             DISTINCT
-            a.id,
+            a.id
         FROM
             \`match\` AS a
         INNER JOIN
