@@ -27,32 +27,12 @@ let lastActiveTime = 0
  * 等待页面的元素出现
  * @param page 页面对象
  * @param selector 元素选择器
- * @returns
  */
-export function waitForElement<ElementType extends Node = Element>(
-    page: Page,
-    selector: string,
-    returning: true,
-): Promise<ElementHandle<ElementType>>
-export function waitForElement(page: Page, selector: string, returning?: false): Promise<void>
-export async function waitForElement(
-    page: Page,
-    selector: string,
-    returning = false,
-): Promise<ElementHandle | void> {
+export async function waitForElement(page: Page, selector: string): Promise<void> {
     while (true) {
         try {
             const element = await page.$(selector)
-            if (!element) {
-                await delay(300)
-                continue
-            }
-            if (!returning) {
-                await element.dispose()
-                return
-            } else {
-                return element
-            }
+            if (element) return
         } catch (err) {
             if (
                 !(err instanceof Error) ||
@@ -115,10 +95,12 @@ async function doInit() {
         console.log(page.url())
 
         //等待主页加载完成
-        const todayBtn = await waitForElement(page, '#today_page', true)
+        await waitForElement(page, '#today_page')
 
         //检测账号已被封禁
-        const className = await (await todayBtn.getProperty('className')).jsonValue()
+        const className = (await page.evaluate(
+            `document.querySelector('#today_page').className`,
+        )) as string
         if (className.includes('off')) {
             //账号已被封禁，修改账号属性
             await CrownAccount.update(
