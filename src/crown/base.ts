@@ -1,4 +1,5 @@
 import { delay } from '@/common/helpers'
+import { Queue } from '@/common/queue'
 import { singleton } from '@/common/singleton'
 import { CrownAccount, db } from '@/db'
 import { XMLParser } from 'fast-xml-parser'
@@ -228,3 +229,8 @@ export const xmlParser = new XMLParser({
     ignoreDeclaration: true,
     ignoreAttributes: false,
 })
+
+/**
+ * 执行皇冠操作的队列
+ */
+export const crownQueue = new Queue(1)

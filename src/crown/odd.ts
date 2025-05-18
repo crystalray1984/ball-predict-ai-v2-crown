@@ -1,5 +1,5 @@
 import Decimal from 'decimal.js'
-import { ready, reset, xmlParser } from './base'
+import { crownQueue, ready, xmlParser } from './base'
 
 /**
  * 读取皇冠盘口数据
@@ -7,14 +7,15 @@ import { ready, reset, xmlParser } from './base'
  * @param show_type 数据类型
  * @returns
  */
-async function _getCrownData(
+export async function getCrownData(
     crown_match_id: string,
     show_type: 'today' | 'early' = 'today',
 ): Promise<Crown.OddData | undefined> {
-    console.log('发起皇冠请求', crown_match_id, show_type)
-    const page = await ready()
+    return crownQueue.add(async () => {
+        console.log('发起皇冠请求', crown_match_id, show_type)
+        const page = await ready()
 
-    const func = `
+        const func = `
 (function () {
     var par = top.param;
     par += "&p=get_game_more";
@@ -40,15 +41,16 @@ async function _getCrownData(
 })()
 `
 
-    const resp = (await page.evaluate(func)) as string
-    console.log('皇冠请求完成', crown_match_id, show_type)
-    const data = xmlParser.parse(resp).serverresponse
-    try {
-        return formatOddData(data)
-    } catch (err) {
-        console.error('解析响应体失败', resp)
-        throw err
-    }
+        const resp = (await page.evaluate(func)) as string
+        console.log('皇冠请求完成', crown_match_id, show_type)
+        const data = xmlParser.parse(resp).serverresponse
+        try {
+            return formatOddData(data)
+        } catch (err) {
+            console.error('解析响应体失败', resp)
+            throw err
+        }
+    })
 }
 
 /**
@@ -198,33 +200,6 @@ function formatOddData(input: Crown.Resp) {
     return {
         match,
         odds,
-    }
-}
-
-/**
- * 读取皇冠盘口数据
- * @param crown_match_id 皇冠比赛id
- * @param show_type 数据类型
- * @returns
- */
-export async function getCrownData(
-    crown_match_id: string,
-    show_type: 'today' | 'early' = 'today',
-): Promise<Crown.OddData | undefined> {
-    let tryCount = 3
-    while (true) {
-        try {
-            return await _getCrownData(crown_match_id, show_type)
-        } catch (err) {
-            console.error(err)
-            console.error('重试次数', tryCount)
-            tryCount--
-            if (tryCount <= 0) {
-                //三次抓取均失败时，重置浏览器
-                await reset()
-                throw err
-            }
-        }
     }
 }
 
