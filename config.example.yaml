@@ -35,3 +35,15 @@ rabbitmq:
   username: 'admin'
   password: 'mxJMHCOCynYS14lGtqzZ'
   heartbeat: 25
+
+#Luffa机器人配置
+luffa:
+  uid: 'Hm2dS3pncZS'
+  secret: '2335a0dba76b4db284fd413a85a67433'
+  #提醒消息的通知目标
+  notification:
+    - type: 1
+      uid: 'Z1tx6FP2fRA'
+      atList:
+        - name: 'Crystal'
+          did: 'L6v9MPyj8fX'

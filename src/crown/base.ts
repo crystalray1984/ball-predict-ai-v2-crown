@@ -47,7 +47,7 @@ export async function waitForElement(
                 await delay(300)
                 continue
             }
-            if (returning) {
+            if (!returning) {
                 await element.dispose()
                 return
             } else {
