@@ -4,3 +4,4 @@ dist/
 runtime/
 /config.yaml
 *.local
+pm2-local.config.js

@@ -3,14 +3,7 @@
     "description": "皇冠爬取支持服务",
     "scripts": {
         "build": "yarn && rimraf dist && tsc",
-        "dev:crown": "ts-node -r tsconfig-paths/register ./src/start-crown.ts",
-        "start:crown": "yarn build && pm2-runtime start --only crown pm2.json",
-        "dev:titan007": "ts-node -r tsconfig-paths/register ./src/start-titan007.ts",
-        "start:titan007": "yarn build && pm2-runtime start --only titan007 pm2.json",
-        "dev:surebet": "ts-node -r tsconfig-paths/register ./src/start-surebet.ts",
-        "start:surebet": "yarn build && pm2-runtime start --only surebet pm2.json",
-        "start:robot": "yarn build && pm2-runtime start --only surebet,titan007 pm2.json",
-        "start:final-check": "yarn build && pm2-runtime start --only final-check,titan007 pm2.json"
+        "start": "yarn build && pm2-runtime start pm2-local.config.js"
     },
     "dependencies": {
         "amqplib": "^0.10.8",
