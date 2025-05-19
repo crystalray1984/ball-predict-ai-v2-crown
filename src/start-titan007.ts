@@ -474,8 +474,6 @@ async function processOdds() {
             a.match_time >= ?
             AND a.match_time <= ?
             AND a.titan007_match_id != ?
-        ORDER BY
-            a.match_time
         `,
             values: [
                 'ready',
