@@ -2,15 +2,15 @@
 crown_url: 'https://mos011.com'
 
 #surebet接口调用凭证
-surebet_token: '4d39fc6d-a1d6-4a78-a55e-a84137a2d99e'
+surebet_token: ''
 
 #数据库配置
 db:
-  host: '156.230.62.108'
-  port: 3306
-  username: 'root'
-  password: '3f0457856f71c6ec'
-  database: 'ball-predict-ai'
+  host: ''
+  port: 5432
+  username: ''
+  password: ''
+  database: ''
   #连接池配置
   pool:
     min: 0
@@ -20,9 +20,9 @@ db:
 redis:
   #连接配置
   connection:
-    host: '156.230.62.108'
-    port: 6397
-    password: '5HUy0iofEXTTRUurMpDP'
+    host: ''
+    port: 6379
+    password: ''
   #连接池配置
   pool:
     min: 0
@@ -30,20 +30,20 @@ redis:
 
 #rabbitmq配置
 rabbitmq:
-  hostname: '156.230.62.108'
+  hostname: ''
   port: 5672
-  username: 'admin'
-  password: 'mxJMHCOCynYS14lGtqzZ'
+  username: ''
+  password: ''
   heartbeat: 25
 
 #Luffa机器人配置
 luffa:
-  uid: 'Hm2dS3pncZS'
-  secret: '2335a0dba76b4db284fd413a85a67433'
+  uid: ''
+  secret: ''
   #提醒消息的通知目标
   notification:
     - type: 1
-      uid: 'Z1tx6FP2fRA'
+      uid: ''
       atList:
-        - name: 'Crystal'
-          did: 'L6v9MPyj8fX'
+        - name: ''
+          did: ''
