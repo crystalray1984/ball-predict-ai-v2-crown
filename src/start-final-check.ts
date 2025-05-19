@@ -494,8 +494,6 @@ async function processNearlyMatches() {
             match_time BETWEEN ? AND ?
             AND status = ?
             AND id IN (SELECT match_id FROM odd WHERE status = ?)
-        ORDER BY
-            match_time
         `,
             values: [
                 new Date(Date.now() + 60000), //1分钟内开赛的比赛不抓取
