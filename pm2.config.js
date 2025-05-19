@@ -1,9 +1,3 @@
-const env = {
-    NODE_ENV: 'production',
-    TZ: 'Asia/Shanghai',
-    TS_NODE_BASEURL: './dist',
-}
-
 function createConfig(name, script) {
     return {
         name,
@@ -22,12 +16,10 @@ function createConfig(name, script) {
 }
 
 module.exports = {
-    apps: [
-        createConfig('crown-matches'),
-        createConfig('crown-robot'),
-        createConfig('final-check'),
-        createConfig('ready-check'),
-        createConfig('surebet'),
-        createConfig('titan007'),
-    ],
+    'crown-matches': createConfig('crown-matches'),
+    'crown-robot': createConfig('crown-robot'),
+    'final-check': createConfig('final-check'),
+    'ready-check': createConfig('ready-check'),
+    surebet: createConfig('surebet'),
+    titan007: createConfig('titan007'),
 }
