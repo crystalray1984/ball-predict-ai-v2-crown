@@ -193,11 +193,7 @@ async function getCrownAccount() {
                 [Op.and]: [
                     { status: 1 },
                     {
-                        [Op.or]: [
-                            { use_by: '' },
-                            { use_expires: null },
-                            { use_expires: { [Op.lt]: new Date() } },
-                        ],
+                        [Op.or]: [{ use_by: '' }, { use_expires: { [Op.lt]: new Date() } }],
                     },
                 ],
             },
