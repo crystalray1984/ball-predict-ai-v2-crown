@@ -1,5 +1,5 @@
 import { runLoop } from '@/common/helpers'
-import { createPublisher, Publisher } from '@/common/rabbitmq'
+import { publish } from '@/common/rabbitmq'
 import { Match, Odd } from '@/db'
 import { getSurebets } from '@/surebet'
 
@@ -12,7 +12,7 @@ export async function startSurebet() {
     console.log('满足条件的surebet数据', list.length)
     if (list.length === 0) return
 
-    let publisher = undefined as unknown as Publisher
+    const output: string[] = []
 
     for (const surebet of list) {
         //先确定盘口是否存在
@@ -42,16 +42,18 @@ export async function startSurebet() {
         }
 
         //把盘口抛到消息队列进行第一次比对
-        if (!publisher) {
-            publisher = await createPublisher()
-        }
-
+        output.push(
+            JSON.stringify({
+                crown_match_id: surebet.crown_match_id,
+                next: 'ready_check_after',
+                extra: surebet,
+            }),
+        )
         console.log('抛到消息队列进行第一次比对', surebet.crown_match_id)
-        await publisher.publish('ready_check', JSON.stringify(surebet))
     }
 
-    if (publisher) {
-        await publisher.close()
+    if (output.length > 0) {
+        await publish('crown_odd', output)
     }
 }
 

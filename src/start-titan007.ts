@@ -467,7 +467,7 @@ async function processOdds() {
             a.id,
             a.titan007_match_id
         FROM
-            \`match\` AS a
+            match AS a
         INNER JOIN
             odd ON odd.match_id = a.id AND odd.status = ?
         WHERE
@@ -475,7 +475,7 @@ async function processOdds() {
             AND a.match_time <= ?
             AND a.titan007_match_id != ?
         ORDER BY
-            a.match_time DESC
+            a.match_time
         `,
             values: [
                 'ready',
@@ -534,6 +534,7 @@ async function processOdds() {
             //写入新数据
             await Titan007Odd.create({
                 match_id: match.id,
+                titan007_match_id: match.titan007_match_id,
                 ah_start: odd.ah?.start ?? null,
                 ah_end: odd.ah?.end ?? null,
                 goal_start: odd.goal?.start ?? null,

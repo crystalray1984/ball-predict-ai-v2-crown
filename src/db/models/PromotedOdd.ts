@@ -13,7 +13,7 @@ import {
 /**
  * 最终推荐盘口表
  */
-@Table({ tableName: 'promoted_odd', timestamps: true })
+@Table({ tableName: 'promoted_odd' })
 export class PromotedOdd extends Model<
     InferAttributes<PromotedOdd>,
     InferCreationAttributes<PromotedOdd>
@@ -55,10 +55,10 @@ export class PromotedOdd extends Model<
     declare is_valid: CreationOptional<number>
 
     /**
-     * 是否被系统规则忽略（忽略的推荐不影响筛选率）
+     * 放弃该推荐的原因
      */
-    @Column(DataType.TINYINT)
-    declare is_skip: CreationOptional<number>
+    @Column(DataType.STRING)
+    declare skip: CreationOptional<string>
 
     /**
      * 投注目标
@@ -98,7 +98,7 @@ export class PromotedOdd extends Model<
      * 第二盘口条件
      */
     @Column(DataType.DECIMAL(5, 2))
-    declare condition2: CreationOptional<OddType | null>
+    declare condition2: CreationOptional<string | null>
 
     /**
      * 是否反推

@@ -1,10 +1,19 @@
 import type { CreationOptional, InferAttributes, InferCreationAttributes } from 'sequelize'
-import { AutoIncrement, Column, DataType, Model, PrimaryKey, Table } from 'sequelize-typescript'
+import {
+    AutoIncrement,
+    Column,
+    CreatedAt,
+    DataType,
+    Model,
+    PrimaryKey,
+    Table,
+    UpdatedAt,
+} from 'sequelize-typescript'
 
 /**
  * 联赛表
  */
-@Table({ tableName: 'tournament', timestamps: false })
+@Table({ tableName: 'tournament' })
 export class Tournament extends Model<
     InferAttributes<Tournament>,
     InferCreationAttributes<Tournament>
@@ -28,4 +37,12 @@ export class Tournament extends Model<
      */
     @Column(DataType.STRING)
     declare name: string
+
+    @CreatedAt
+    @Column(DataType.DATE)
+    declare created_at: CreationOptional<Date>
+
+    @UpdatedAt
+    @Column(DataType.DATE)
+    declare updated_at: CreationOptional<Date>
 }

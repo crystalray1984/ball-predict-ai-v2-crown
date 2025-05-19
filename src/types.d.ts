@@ -185,6 +185,9 @@ declare namespace Crown {
         value_c: string
     }
 
+    /**
+     * 从皇冠页面上爬取到盘口数据
+     */
     interface OddData {
         match: MatchInfo
         odds: OddInfo[]
@@ -408,5 +411,43 @@ declare namespace Surebet {
          * surebet推荐赔率
          */
         surebet_value: string
+    }
+}
+
+declare namespace CrownRobot {
+    /**
+     * 皇冠爬取队列的输入数据
+     */
+    interface Input<T = any> {
+        /**
+         * 皇冠比赛id
+         */
+        crown_match_id: string
+        /**
+         * 处理完成后抛到下一个处理队列的名称
+         */
+        next: string
+        /**
+         * 透传数据
+         */
+        extra?: T
+    }
+
+    /**
+     * 皇冠爬取队列处理后的输出数据
+     */
+    interface Output<T = any> {
+        /**
+         * 皇冠比赛id
+         */
+        crown_match_id: string
+        /**
+         * 透传数据
+         */
+        extra?: T
+        /**
+         * 盘口数据
+         */
+        data?: Crown.OddData
     }
 }

@@ -13,7 +13,7 @@ import {
 /**
  * 球探网盘口表
  */
-@Table({ tableName: 'titan007_odd', timestamps: true })
+@Table({ tableName: 'titan007_odd' })
 export class Titan007Odd extends Model<
     InferAttributes<Titan007Odd>,
     InferCreationAttributes<Titan007Odd>
@@ -31,6 +31,12 @@ export class Titan007Odd extends Model<
      */
     @Column(DataType.INTEGER)
     declare match_id: number
+
+    /**
+     * 球探网比赛id
+     */
+    @Column(DataType.STRING)
+    declare titan007_match_id: string
 
     /**
      * 全场比分最早盘口

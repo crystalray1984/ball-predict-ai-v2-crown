@@ -54,13 +54,13 @@ export class CrownAccount extends Model<
      * 账号持有有效期
      */
     @Column(DataType.DATE)
-    declare use_expires: CreationOptional<Date | null>
+    declare use_expires: CreationOptional<Date>
 
     @CreatedAt
     @Column(DataType.DATE)
-    declare created_at: CreationOptional<Date | null>
+    declare created_at: CreationOptional<Date>
 
     @UpdatedAt
     @Column(DataType.DATE)
-    declare updated_at: CreationOptional<Date | null>
+    declare updated_at: CreationOptional<Date>
 }

@@ -21,7 +21,7 @@ export const db = new Sequelize(
         },
         CONFIG.db,
         {
-            dialect: 'mysql',
+            dialect: 'postgres',
             timezone: '+08:00',
             models: [
                 Match,

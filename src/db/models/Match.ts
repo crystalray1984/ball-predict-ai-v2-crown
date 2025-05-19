@@ -1,4 +1,9 @@
-import type { CreationOptional, InferAttributes, InferCreationAttributes } from 'sequelize'
+import type {
+    CreationOptional,
+    InferAttributes,
+    InferCreationAttributes,
+    Transaction,
+} from 'sequelize'
 import {
     AutoIncrement,
     Column,
@@ -42,6 +47,12 @@ export class Match extends Model<InferAttributes<Match>, InferCreationAttributes
      */
     @Column(DataType.STRING)
     declare titan007_match_id: CreationOptional<string>
+
+    /**
+     * 球探网主客队交换
+     */
+    @Column(DataType.SMALLINT)
+    declare titan007_swap: CreationOptional<number>
 
     /**
      * 主队id

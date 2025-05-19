@@ -1,5 +1,6 @@
 import Decimal from 'decimal.js'
 import { RateLimiter } from './rate-limiter'
+import { PromotedOdd } from '@/db'
 
 /**
  * 返回一个等待指定时间的Promise
@@ -135,5 +136,114 @@ export function getOddResult(odd: OddInfo, match: Titan007.MatchScore) {
         score,
         score1,
         score2,
+    }
+}
+
+/**
+ * 根据原始盘口和是否反推，计算推荐盘口的数据
+ */
+export function getPromotedOddInfo(
+    odd: Pick<OddInfo, 'condition' | 'type'>,
+    back: boolean | number,
+): Pick<OddInfo, 'condition' | 'type'> {
+    if (!back) {
+        //正推直接返回数据
+        return odd
+    }
+    switch (odd.type) {
+        case 'ah1':
+            //让球盘的反推需要改变盘口方向和让球值
+            return {
+                type: 'ah2',
+                condition: Decimal(0).sub(odd.condition).toString(),
+            }
+        case 'ah2':
+            //让球盘的反推需要改变盘口方向和让球值
+            return {
+                type: 'ah1',
+                condition: Decimal(0).sub(odd.condition).toString(),
+            }
+        case 'over':
+            //大小球的反推只需要改变投注方向
+            return {
+                type: 'under',
+                condition: odd.condition,
+            }
+        case 'under':
+            return {
+                type: 'over',
+                condition: odd.condition,
+            }
+    }
+
+    return odd
+}
+
+/**
+ * 根据原始盘口和系统配置，计算推荐盘口的数据
+ * @param odd
+ * @param settings
+ */
+export function getPromotedOddInfoBySetting(
+    odd: OddInfo,
+    settings: Record<string, any>,
+): Pick<PromotedOdd, 'condition' | 'type' | 'back'> {
+    //先根据系统配置计算到底是正推还是反推
+    const back = (() => {
+        //特殊正反推规则
+        if (Array.isArray(settings.special_reverse)) {
+            const found = settings.special_reverse.find((rule) => {
+                if (rule.period !== odd.period) return false
+                if (rule.variety !== odd.variety) return false
+                if (rule.type !== odd.type) return false
+                switch (rule.condition_symbol) {
+                    case '>':
+                        return Decimal(odd.condition).gt(rule.condition)
+                    case '>=':
+                        return Decimal(odd.condition).gte(rule.condition)
+                    case '<':
+                        return Decimal(odd.condition).lt(rule.condition)
+                    case '<=':
+                        return Decimal(odd.condition).lte(rule.condition)
+                    default:
+                        return Decimal(odd.condition).eq(rule.condition)
+                }
+            })
+
+            if (found) return found.back ? 1 : 0
+        }
+
+        //角球正反推规则
+        if (odd.variety === 'corner') {
+            return (settings.corner_reverse ?? true) ? 1 : 0
+        }
+
+        //全局正反推规则
+        return (settings.promote_reverse ?? true) ? 1 : 0
+    })()
+
+    //再根据正反推返回实际推荐的方向
+    return {
+        ...getPromotedOddInfo(odd, back),
+        back,
+    }
+}
+
+/**
+ * 获取盘口标识（用于寻找相同类型的盘口）
+ * @param type
+ * @returns
+ */
+export function getOddIdentification(type: OddType) {
+    switch (type) {
+        case 'ah1':
+        case 'ah2':
+        case 'draw':
+            return 'ah'
+        case 'over':
+        case 'under':
+            return 'goal'
+        default:
+            return ''
     }
 }

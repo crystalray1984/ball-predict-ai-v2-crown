@@ -13,7 +13,7 @@ import {
 /**
  * 盘口表
  */
-@Table({ tableName: 'odd', timestamps: true })
+@Table({ tableName: 'odd' })
 export class Odd extends Model<InferAttributes<Odd>, InferCreationAttributes<Odd>> {
     /**
      * 盘口id
@@ -56,7 +56,7 @@ export class Odd extends Model<InferAttributes<Odd>, InferCreationAttributes<Odd
     /**
      * 盘口条件
      */
-    @Column(DataType.DECIMAL(5, 2))
+    @Column(DataType.DECIMAL)
     declare condition: string
 
     /**
@@ -68,32 +68,38 @@ export class Odd extends Model<InferAttributes<Odd>, InferCreationAttributes<Odd
     /**
      * surebet水位
      */
-    @Column(DataType.DECIMAL(10, 4))
+    @Column(DataType.DECIMAL)
     declare surebet_value: string
 
     /**
      * 第一次比对时的皇冠水位
      */
-    @Column(DataType.DECIMAL(10, 4))
-    declare crown_value: string
+    @Column(DataType.DECIMAL)
+    declare crown_value: string | null
 
     /**
      * 第二次比对时的皇冠水位
      */
-    @Column(DataType.DECIMAL(10, 4))
+    @Column(DataType.DECIMAL)
     declare crown_value2: CreationOptional<string | null>
 
     /**
      * 第二次比对时的皇冠盘口条件
      */
-    @Column(DataType.DECIMAL(5, 2))
+    @Column(DataType.DECIMAL)
     declare crown_condition2: CreationOptional<string | null>
 
     /**
-     * 第二次比对时的球探网盘口条件
+     * 首次对比完成时间
      */
-    @Column(DataType.DECIMAL(5, 2))
-    declare titan007_condition2: CreationOptional<string | null>
+    @Column(DataType.DATE)
+    declare ready_at: CreationOptional<Date | null>
+
+    /**
+     * 二次对比完成时间
+     */
+    @Column(DataType.DATE)
+    declare final_at: CreationOptional<Date | null>
 
     @CreatedAt
     @Column(DataType.DATE)
