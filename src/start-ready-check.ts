@@ -78,6 +78,7 @@ async function processReadyCheck(content: string) {
         const [match_id] = await Match.prepare({
             ...data.match,
             match_time: extra.match_time,
+            ecid: extra.crown_match_id,
         })
         //先尝试插入
         try {
