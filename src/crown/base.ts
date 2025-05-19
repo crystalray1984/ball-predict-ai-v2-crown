@@ -199,7 +199,7 @@ async function getCrownAccount() {
             },
             transaction,
             lock: transaction.LOCK.UPDATE,
-            order: [literal('RAND()')],
+            order: [literal('RANDOM()')],
         })
 
         if (account) {
