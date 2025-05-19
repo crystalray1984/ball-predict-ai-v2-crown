@@ -112,6 +112,8 @@ export function consume(
             if (controller.signal.aborted) return
             await channel.prefetch(1)
             if (controller.signal.aborted) return
+            await channel.assertQueue(queue)
+            if (controller.signal.aborted) return
             await new Promise<void>(async (resolve, reject) => {
                 const { consumerTag } = await channel.consume(
                     queue,

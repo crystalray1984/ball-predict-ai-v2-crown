@@ -524,7 +524,7 @@ async function processNearlyMatches() {
  * 开始二次数据检查
  */
 export async function startFinalCheck() {
-    return runLoop(30, processNearlyMatches)
+    return runLoop(30000, processNearlyMatches)
 }
 
 /**
