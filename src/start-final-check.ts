@@ -491,7 +491,7 @@ async function processNearlyMatches() {
         FROM
             match
         WHERE
-            match_time BETWEEN (? AND ?)
+            match_time BETWEEN ? AND ?
             AND status = ?
             AND id IN (SELECT match_id FROM odd WHERE status = ?)
         ORDER BY
