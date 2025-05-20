@@ -321,6 +321,7 @@ async function processFinalCheck(
 
         //没有完全相同的盘口，那么按照达成盘口的难易度做个排序，难以达到的盘口排前面
         let special: { condition: string; value: string } | undefined = undefined
+        let pass = false
         switch (odd.type) {
             case 'ah1':
             case 'ah2':
@@ -340,6 +341,7 @@ async function processFinalCheck(
                 break
         }
 
+        pass = !!special
         if (!special) {
             //如果没有找到满足条件的变盘，那么就取最接近的盘口，也就是数组中最后一个盘作为二次比对盘
             special = matched_crown_odds[matched_crown_odds.length - 1]
@@ -349,7 +351,7 @@ async function processFinalCheck(
         odd.crown_value2 = special.value
 
         //看看配置是否允许开启变盘
-        if (settings.allow_promote_1) {
+        if (settings.allow_promote_1 && pass) {
             //允许变盘，那么就推荐
             const { condition, type, back } = getPromotedOddInfoBySetting(odd, settings)
             promoted_odd_attrs.push({
