@@ -103,27 +103,27 @@ async function doInit() {
         await waitForElement(page, '#today_page')
 
         //检测账号已被封禁
-        const enable = (await page.evaluate(`top.userData.enable`)) as string
-        console.log('皇冠账号状态', account.username, enable)
-        if (enable !== 'Y') {
-            //账号已被封禁，修改账号属性
-            await CrownAccount.update(
-                {
-                    status: 0,
-                },
-                {
-                    where: {
-                        id: account.id,
-                    },
-                    returning: false,
-                },
-            )
-            //发送通知
-            await sendNotification(
-                `**异常通知**\r\n皇冠账号 ${account.username} 已被封禁，请尽快处理。`,
-            )
-            continue
-        }
+        const userData = (await page.evaluate(`return top.userData`)) as string
+        console.log('皇冠账号状态', account.username, userData)
+        // if (enable !== 'Y') {
+        //     //账号已被封禁，修改账号属性
+        //     await CrownAccount.update(
+        //         {
+        //             status: 0,
+        //         },
+        //         {
+        //             where: {
+        //                 id: account.id,
+        //             },
+        //             returning: false,
+        //         },
+        //     )
+        //     //发送通知
+        //     await sendNotification(
+        //         `**异常通知**\r\n皇冠账号 ${account.username} 已被封禁，请尽快处理。`,
+        //     )
+        //     continue
+        // }
 
         mainPage = page
         break
