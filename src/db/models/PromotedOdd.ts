@@ -106,13 +106,6 @@ export class PromotedOdd extends Model<
     @Column(DataType.INTEGER)
     declare back: number
 
-    /**
-     * 二次比对规则
-     */
-
-    @Column(DataType.STRING)
-    declare final_rule: PromotedFinalRule
-
     @Column(DataType.TINYINT)
     declare result: CreationOptional<number | null>
 

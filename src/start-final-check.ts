@@ -289,6 +289,7 @@ async function processFinalCheck(
         if (exact) {
             odd.crown_condition2 = odd.condition
             odd.crown_value2 = exact.value
+            odd.final_rule = 'crown'
 
             //对水位进行对比
             let pass = false
@@ -311,7 +312,6 @@ async function processFinalCheck(
                     condition,
                     type,
                     back,
-                    final_rule: 'crown',
                 })
             }
 
@@ -360,8 +360,8 @@ async function processFinalCheck(
                 condition,
                 type,
                 back,
-                final_rule: 'crown_special',
             })
+            odd.final_rule = 'crown_special'
         }
     }
 
@@ -447,8 +447,16 @@ async function processNearlyMatch(match_id: number, crown_match_id: string) {
                 condition,
                 type,
                 back,
-                final_rule: 'titan007',
             })
+            await Odd.update(
+                { final_at: literal('CURRENT_TIMESTAMP'), final_rule: 'titan007' },
+                {
+                    where: {
+                        id: odd.id,
+                    },
+                    returning: false,
+                },
+            )
         } else {
             //继续走后续的皇冠盘口判断
             left_odds.push(odd)
