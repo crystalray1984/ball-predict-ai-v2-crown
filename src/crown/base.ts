@@ -5,7 +5,7 @@ import { singleton } from '@/common/singleton'
 import { CrownAccount, db } from '@/db'
 import { XMLParser } from 'fast-xml-parser'
 import { machineIdSync } from 'node-machine-id'
-import { Browser, ElementHandle, launch, Page } from 'puppeteer'
+import { Browser, launch, Page } from 'puppeteer'
 import { literal, Op } from 'sequelize'
 
 /**
@@ -22,6 +22,11 @@ let mainPage = undefined as unknown as Page
 let accountTimer = undefined as unknown as NodeJS.Timeout
 let account = undefined as unknown as CrownAccount
 let lastActiveTime = 0
+
+let activeInterval = 900000
+export function setActiveInterval(interval: number) {
+    activeInterval = interval
+}
 
 /**
  * 等待页面的元素出现
@@ -238,7 +243,7 @@ async function getCrownAccount() {
  * 等待浏览器环境准备完毕
  */
 export async function ready() {
-    if (!mainPage || Date.now() - lastActiveTime >= 900000) {
+    if (!mainPage || Date.now() - lastActiveTime >= activeInterval) {
         await init()
     }
     return mainPage
