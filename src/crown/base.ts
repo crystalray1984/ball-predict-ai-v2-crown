@@ -103,10 +103,8 @@ async function doInit() {
         await waitForElement(page, '#today_page')
 
         //检测账号已被封禁
-        const className = (await page.evaluate(
-            `document.querySelector('#today_page').className`,
-        )) as string
-        if (className.includes('off')) {
+        const enable = (await page.evaluate(`top.userData.enable`)) as string
+        if (enable !== 'Y') {
             //账号已被封禁，修改账号属性
             await CrownAccount.update(
                 {
