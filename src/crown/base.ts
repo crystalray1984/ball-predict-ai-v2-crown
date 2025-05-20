@@ -104,6 +104,7 @@ async function doInit() {
 
         //检测账号已被封禁
         const enable = (await page.evaluate(`top.userData.enable`)) as string
+        console.log('皇冠账号状态', account.username, enable)
         if (enable !== 'Y') {
             //账号已被封禁，修改账号属性
             await CrownAccount.update(
