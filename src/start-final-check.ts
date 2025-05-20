@@ -230,6 +230,7 @@ async function generatePromotedOdds(attrs: CreationAttributes<PromotedOdd>[], od
                 crown_condition2: odd.crown_condition2,
                 crown_value2: odd.crown_value2,
                 final_at: literal('CURRENT_TIMESTAMP'),
+                final_rule: odd.final_rule,
             },
             {
                 where: {
