@@ -288,7 +288,7 @@ async function processFinalCheck(
         //在有完全相同的盘口的前提下，按照原盘口创建推荐数据
         if (exact) {
             odd.crown_condition2 = odd.condition
-            odd.crown_value2 = exact.condition
+            odd.crown_value2 = exact.value
 
             //对水位进行对比
             let pass = false
