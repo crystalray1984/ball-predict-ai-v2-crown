@@ -247,12 +247,16 @@ async function generatePromotedOdds(attrs: CreationAttributes<PromotedOdd>[], od
 async function processFinalCheck(
     data: CrownRobot.Output<{
         match_id: number
-        odds: Attributes<Odd>[]
         promoted_odd_attrs?: CreationAttributes<PromotedOdd>[]
     }>,
 ) {
     const { match_id, promoted_odd_attrs = [] } = data.extra!
-    const odds = Odd.bulkBuild(data.extra!.odds)
+    const odds = await Odd.findAll({
+        where: {
+            match_id,
+            status: 'ready',
+        },
+    })
 
     if (!data.data) {
         //没有抓到盘口数据，那么所有的推荐都不生效，只有通过了球探网的数据才有效
@@ -397,7 +401,6 @@ async function processNearlyMatch(match_id: number, crown_match_id: string) {
                 next: 'final_check',
                 extra: {
                     match_id,
-                    odds,
                 },
             }),
         )
@@ -420,7 +423,6 @@ async function processNearlyMatch(match_id: number, crown_match_id: string) {
                 next: 'final_check',
                 extra: {
                     match_id,
-                    odds,
                 },
             }),
         )
@@ -462,7 +464,6 @@ async function processNearlyMatch(match_id: number, crown_match_id: string) {
                 next: 'final_check',
                 extra: {
                     match_id,
-                    odds,
                     promoted_odd_attrs,
                 },
             }),
