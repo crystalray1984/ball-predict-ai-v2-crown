@@ -10,7 +10,7 @@ import { getSetting } from '@/common/settings'
 import { findMatchedOdd } from '@/crown'
 import { db, Match, Odd, PromotedOdd, Titan007Odd } from '@/db'
 import Decimal from 'decimal.js'
-import { Attributes, CreationAttributes, literal, Op, QueryTypes } from 'sequelize'
+import { CreationAttributes, literal, Op, QueryTypes } from 'sequelize'
 
 /**
  * 判断是否应该使用球探网的盘口趋势来推荐
@@ -153,7 +153,7 @@ async function generatePromotedOdds(attrs: CreationAttributes<PromotedOdd>[], od
     }
 
     //进行整理，没有变盘的数据最优先
-    for (let i = list.length; i >= 0; i--) {
+    for (let i = list.length - 1; i >= 0; i--) {
         const item = list[i]
         if (
             !isNullOrUndefined(item.odd.crown_condition2) &&
