@@ -24,6 +24,7 @@ export async function close() {
     await connection.close()
     assertedQueues.splice(0, assertedQueues.length)
     console.log('[rabbitmq]', '关闭客户端连接')
+    connection = null as unknown as ChannelModel
 }
 
 /**
