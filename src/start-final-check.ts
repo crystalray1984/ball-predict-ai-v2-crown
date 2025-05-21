@@ -451,15 +451,8 @@ async function processNearlyMatch(match_id: number, crown_match_id: string) {
                 type,
                 back,
             })
-            await Odd.update(
-                { final_at: literal('CURRENT_TIMESTAMP'), final_rule: 'titan007' },
-                {
-                    where: {
-                        id: odd.id,
-                    },
-                    returning: false,
-                },
-            )
+            odd.final_rule = 'titan007'
+            await odd.save()
         } else {
             //继续走后续的皇冠盘口判断
             left_odds.push(odd)
