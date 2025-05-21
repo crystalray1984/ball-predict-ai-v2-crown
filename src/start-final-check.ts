@@ -123,6 +123,11 @@ async function generatePromotedOdds(attrs: CreationAttributes<PromotedOdd>[], od
 
     //做第一步筛选，如果盘口条件不满足的就直接过滤掉
     for (const item of list) {
+        //特殊规则，角球大盘，可以推，而且是正推
+        if (item.attr.variety === 'corner' && item.odd.type === 'over') {
+            item.attr.type = 'over'
+        }
+
         if (item.attr.variety === 'corner' && item.attr.period === 'period1') {
             if (!settings.corner_period1_enable) {
                 item.attr.skip = 'setting'
