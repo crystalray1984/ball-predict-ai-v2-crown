@@ -40,6 +40,10 @@ function loadConfigFiles(): any {
  */
 export interface AppConfig {
     /**
+     * 皇冠地址
+     */
+    crown_url: string
+    /**
      * 数据库配置
      */
     db: DbOptions

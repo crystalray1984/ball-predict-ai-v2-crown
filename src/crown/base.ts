@@ -2,6 +2,7 @@ import { delay } from '@/common/helpers'
 import { sendNotification } from '@/common/luffa'
 import { Queue } from '@/common/queue'
 import { singleton } from '@/common/singleton'
+import { CONFIG } from '@/config'
 import { CrownAccount, db } from '@/db'
 import { XMLParser } from 'fast-xml-parser'
 import { machineIdSync } from 'node-machine-id'
@@ -11,7 +12,7 @@ import { literal, Op } from 'sequelize'
 /**
  * 皇冠首页地址
  */
-const PAGE_URL = 'https://mos011.com/'
+const PAGE_URL = CONFIG.crown_url ?? 'https://mos011.com'
 /**
  * 设备号
  */
