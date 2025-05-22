@@ -28,41 +28,37 @@ async function startCrownRobot() {
     //设置自动重启皇冠浏览器的时间为1天
     setActiveInterval(86400000)
 
-    while (true) {
-        try {
-            await init()
-            let isProcessing = false
-            let isRequestClose = false
-            const [promise, close] = rabbitmq.consume('crown_odd', async (content) => {
-                isProcessing = true
-                try {
-                    await processCrownRequest(content)
-                } finally {
-                    isProcessing = false
-                    if (isRequestClose) {
-                        close()
-                    }
-                }
-            })
-
-            //15分钟后自动重启
-            setTimeout(() => {
-                if (isProcessing) {
-                    isRequestClose = true
-                } else {
+    try {
+        await init()
+        let isProcessing = false
+        let isRequestClose = false
+        const [promise, close] = rabbitmq.consume('crown_odd', async (content) => {
+            isProcessing = true
+            try {
+                await processCrownRequest(content)
+            } finally {
+                isProcessing = false
+                if (isRequestClose) {
                     close()
                 }
-            }, 900000)
-            await promise
-        } catch (err) {
-            console.error(err)
-        } finally {
-            await reset()
-            await rabbitmq.close()
-        }
+            }
+        })
+
+        //15分钟后自动重启
+        setTimeout(() => {
+            if (isProcessing) {
+                isRequestClose = true
+            } else {
+                close()
+            }
+        }, 900000)
+        await promise
+    } finally {
+        await reset()
+        await rabbitmq.close()
     }
 }
 
 if (require.main === module) {
-    startCrownRobot()
+    startCrownRobot().then(() => process.exit())
 }
