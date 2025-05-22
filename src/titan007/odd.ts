@@ -287,14 +287,10 @@ async function getCornerOdd(titan007_match_id: string): Promise<{
 
 /**
  * 获取球探网盘口
+ * @param titan007_match_id 球探网比赛id
+ * @param swap 是否主客队交换
  */
-export async function getMatchOdd(titan007_match_id: string) {
-    //是否主客队交换
-    const swap = titan007_match_id.startsWith('-')
-    if (swap) {
-        titan007_match_id = titan007_match_id.substring(1)
-    }
-
+export async function getMatchOdd(titan007_match_id: string, swap: number | boolean) {
     const ah = await getOdd(titan007_match_id)
     const goal = await getGoalOdd(titan007_match_id)
     const ah_period1 = await getPeriod1Odd(titan007_match_id)

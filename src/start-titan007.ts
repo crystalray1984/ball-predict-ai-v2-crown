@@ -140,7 +140,7 @@ async function processTodayMatch(match: VMatch, todayMatches: Titan007.TodayMatc
         //比赛已完场
         if (!match.has_score) {
             //数据库中的比赛没有结果，那么就抓取赛果来更新
-            const score = await getMatchScore(match.titan007_match_id)
+            const score = await getMatchScore(match.titan007_match_id, match.titan007_swap)
             match.has_score = 1
             match.score1 = score.score1
             match.score2 = score.score2
@@ -159,7 +159,7 @@ async function processTodayMatch(match: VMatch, todayMatches: Titan007.TodayMatc
         //上半场已结束
         if (!match.has_period1_score) {
             //数据库中的比赛没有结果，那么就抓取赛果来更新
-            const score = await getMatchScore(match.titan007_match_id)
+            const score = await getMatchScore(match.titan007_match_id, match.titan007_swap)
             match.has_period1_score = 1
             match.score1_period1 = score.score1_period1
             match.score2_period1 = score.score2_period1
@@ -355,14 +355,8 @@ async function processYesterdayMatches() {
         let found: FindMatchResult | undefined = undefined
         if (match.titan007_match_id) {
             //比赛原本有球探网id
-            let titan007_match_id = match.titan007_match_id
-            let swap = false
-            if (titan007_match_id.startsWith('-')) {
-                swap = true
-                match.titan007_match_id = titan007_match_id = titan007_match_id.substring(1)
-            }
 
-            const exists = finalMatches.find((t) => t.match_id === titan007_match_id)
+            const exists = finalMatches.find((t) => t.match_id === match.titan007_match_id)
             if (exists) {
                 if (exists.state !== -1) {
                     //比赛有异常，跳过
@@ -381,7 +375,7 @@ async function processYesterdayMatches() {
 
             found = {
                 ...exists,
-                swap,
+                swap: match.titan007_swap === 1,
             }
         } else {
             //比赛没有球探网id
@@ -406,12 +400,8 @@ async function processYesterdayMatches() {
         }
 
         //抓取赛果
-        let id = found.match_id
-        if (found.swap) {
-            id = `-${id}`
-        }
         try {
-            const score = await getMatchScore(id)
+            const score = await getMatchScore(found.match_id, found.swap)
 
             //更新赛果
             await Match.update(
@@ -453,6 +443,7 @@ async function processOdds() {
     const matches = await db.query<{
         id: number
         titan007_match_id: string
+        titan007_swap: number
     }>(
         {
             query: `
@@ -460,6 +451,7 @@ async function processOdds() {
             DISTINCT
             a.id,
             a.titan007_match_id
+            a.titan007_swap
         FROM
             match AS a
         INNER JOIN
@@ -485,7 +477,7 @@ async function processOdds() {
 
     for (const match of matches) {
         //读取盘口
-        const odd = await getMatchOdd(match.titan007_match_id)
+        const odd = await getMatchOdd(match.titan007_match_id, match.titan007_swap)
         //更新数据
         const exists = await Titan007Odd.findOne({
             where: {

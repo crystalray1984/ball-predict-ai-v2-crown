@@ -6,12 +6,10 @@ import { titan007Limiter, USER_AGENT } from './base'
  * 获取单场比赛的赛果
  * @param match_id
  */
-export async function getMatchScore(match_id: string): Promise<Titan007.MatchScore> {
-    const swap = match_id.startsWith('-')
-    if (swap) {
-        match_id = match_id.substring(1)
-    }
-
+export async function getMatchScore(
+    match_id: string,
+    swap: boolean | number,
+): Promise<Titan007.MatchScore> {
     await titan007Limiter.next()
 
     //读取比分
