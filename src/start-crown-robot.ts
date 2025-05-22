@@ -54,6 +54,8 @@ async function startCrownRobot() {
                 }
             }, 900000)
             await promise
+        } catch (err) {
+            console.error(err)
         } finally {
             await reset()
             await rabbitmq.close()
