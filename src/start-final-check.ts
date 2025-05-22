@@ -277,6 +277,7 @@ async function processFinalCheck(
         'corner_reverse',
         'promote_reverse',
         'special_reverse',
+        'special_promote',
     )
 
     //继续进行皇冠盘口比对

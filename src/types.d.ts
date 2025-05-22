@@ -31,7 +31,7 @@ declare type OddStatus = '' | 'ready' | 'promoted' | 'skip' | 'ignored'
 /**
  * 二次比对完成时的规则
  */
-declare type PromotedFinalRule = '' | 'crown' | 'crown_special' | 'titan007'
+declare type PromotedFinalRule = '' | 'crown' | 'crown_special' | 'titan007' | 'special'
 
 /**
  * 盘口的基本信息
@@ -41,6 +41,20 @@ declare interface OddInfo {
     variety: Variety
     period: Period
     type: OddType
+}
+
+/**
+ * 特殊的二次比对通过规则
+ */
+declare interface SpecialPromoteRule extends Partial<OddInfo> {
+    condition_symbol?: '>=' | '>' | '<=' | '<' | '='
+}
+
+/**
+ * 特殊的正反推规则
+ */
+declare interface SpecialReverseRule extends SpecialPromoteRule {
+    back: number
 }
 
 /**

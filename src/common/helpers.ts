@@ -188,23 +188,30 @@ export function getPromotedOddInfoBySetting(
     //先根据系统配置计算到底是正推还是反推
     const back = (() => {
         //特殊正反推规则
-        if (Array.isArray(settings.special_reverse)) {
-            const found = settings.special_reverse.find((rule) => {
-                if (rule.period !== odd.period) return false
-                if (rule.variety !== odd.variety) return false
-                if (rule.type !== odd.type) return false
-                switch (rule.condition_symbol) {
-                    case '>':
-                        return Decimal(odd.condition).gt(rule.condition)
-                    case '>=':
-                        return Decimal(odd.condition).gte(rule.condition)
-                    case '<':
-                        return Decimal(odd.condition).lt(rule.condition)
-                    case '<=':
-                        return Decimal(odd.condition).lte(rule.condition)
-                    default:
-                        return Decimal(odd.condition).eq(rule.condition)
+        const special_reverse = settings.special_reverse as SpecialReverseRule[]
+        if (special_reverse && Array.isArray(special_reverse)) {
+            const found = special_reverse.find((rule) => {
+                if (!isNullOrUndefined(rule.period) && odd.period !== rule.period) return false
+                if (!isNullOrUndefined(rule.variety) && rule.variety !== odd.variety) return false
+                if (!isNullOrUndefined(rule.type) && rule.type !== odd.type) return false
+                if (
+                    !isNullOrUndefined(rule.condition) &&
+                    !isNullOrUndefined(rule.condition_symbol)
+                ) {
+                    switch (rule.condition_symbol) {
+                        case '>':
+                            return Decimal(odd.condition).gt(rule.condition)
+                        case '>=':
+                            return Decimal(odd.condition).gte(rule.condition)
+                        case '<':
+                            return Decimal(odd.condition).lt(rule.condition)
+                        case '<=':
+                            return Decimal(odd.condition).lte(rule.condition)
+                        case '=':
+                            return Decimal(odd.condition).eq(rule.condition)
+                    }
                 }
+                return true
             })
 
             if (found) return found.back ? 1 : 0
