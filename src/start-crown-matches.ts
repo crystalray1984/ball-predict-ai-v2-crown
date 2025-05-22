@@ -1,5 +1,5 @@
 import { runLoop } from '@/common/helpers'
-import { getCrownMatches } from '@/crown'
+import { getCrownMatches, reset } from '@/crown'
 import { Match } from '@/db'
 
 /**
@@ -9,6 +9,7 @@ export function startCrownMatches() {
     //每半个小时抓取一次
     return runLoop(1800000, async () => {
         //开始抓取皇冠比赛列表
+        await reset()
         const matches = await getCrownMatches()
 
         console.log('采集到比赛数据', matches.length)
@@ -22,6 +23,7 @@ export function startCrownMatches() {
             }
         }
         console.log(`新增比赛数据`, newCount)
+        await reset()
     })
 }
 

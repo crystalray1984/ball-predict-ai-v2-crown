@@ -29,8 +29,8 @@ async function startCrownRobot() {
     setActiveInterval(86400000)
 
     while (true) {
-        await init()
         try {
+            await init()
             let isProcessing = false
             let isRequestClose = false
             const [promise, close] = rabbitmq.consume('crown_odd', async (content) => {
