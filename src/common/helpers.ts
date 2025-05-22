@@ -97,9 +97,6 @@ export function getOddResult(odd: OddInfo, match: Titan007.MatchScore) {
             score1 = match.score1_period1
             score2 = match.score2_period1
         } else {
-            if (isNullOrUndefined(match.corner1) || isNullOrUndefined(match.corner2)) {
-                return
-            }
             score1 = match.score1
             score2 = match.score2
         }
@@ -118,11 +115,11 @@ export function getOddResult(odd: OddInfo, match: Titan007.MatchScore) {
         score = `${score1}:${score2}`
     } else if (odd.type === 'over') {
         //大球
-        result = calcResult(odd.condition, 0, score1 + score2)
+        result = calcResult(Decimal(0).sub(odd.condition).toString(), score1 + score2, 0)
         score = `${score1 + score2}`
     } else if (odd.type === 'under') {
         //小球
-        result = 0 - calcResult(odd.condition, 0, score1 + score2)
+        result = 0 - calcResult(Decimal(0).sub(odd.condition).toString(), score1 + score2, 0)
         score = `${score1 + score2}`
     } else if (odd.type === 'draw') {
         result = score1 === score2 ? 1 : -1
