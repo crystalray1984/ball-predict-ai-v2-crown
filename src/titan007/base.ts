@@ -1,3 +1,4 @@
+import { swapField } from '@/common/helpers'
 import { RateLimiter } from '@/common/rate-limiter'
 import { VMatch } from '@/db'
 import axios from 'axios'
@@ -165,9 +166,13 @@ export function findMatch(
     }
 
     if (found) {
-        return {
+        //返回反向的数据
+        const result = {
             ...found,
             swap: true,
         }
+        swapField(result, 'team1', 'team2')
+        swapField(result, 'team1_id', 'team2_id')
+        return result
     }
 }

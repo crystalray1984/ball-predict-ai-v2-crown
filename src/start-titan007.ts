@@ -23,12 +23,9 @@ async function processTodayMatch(match: VMatch, todayMatches: Titan007.TodayMatc
         const exists = findMatch(match, todayMatches)
         if (exists) {
             let titan007_match_id = exists.match_id
-            if (exists.swap) {
-                titan007_match_id = `-${titan007_match_id}`
-            }
-
             //更新比赛数据
             match.titan007_match_id = titan007_match_id
+            match.titan007_swap = exists.swap ? 1 : 0
 
             //更新球队数据
             if (!match.team1_titan007_id) {
@@ -52,13 +49,7 @@ async function processTodayMatch(match: VMatch, todayMatches: Titan007.TodayMatc
 
         found = exists
     } else {
-        let titan007_match_id = match.titan007_match_id
-        let swap = false
-        if (titan007_match_id.startsWith('-')) {
-            swap = true
-            titan007_match_id = titan007_match_id.substring(1)
-        }
-        const exists = todayMatches.find((t) => t.match_id === titan007_match_id)
+        const exists = todayMatches.find((t) => t.match_id === match.titan007_match_id)
         if (!exists) {
             //没有找到比赛
             return
@@ -66,7 +57,7 @@ async function processTodayMatch(match: VMatch, todayMatches: Titan007.TodayMatc
 
         found = {
             ...exists,
-            swap,
+            swap: match.titan007_swap === 1,
         }
     }
 
@@ -86,6 +77,7 @@ async function processTodayMatch(match: VMatch, todayMatches: Titan007.TodayMatc
                 {
                     where: {
                         id: match.team1_id,
+                        titan007_team_id: '',
                     },
                     returning: false,
                 },
@@ -99,6 +91,7 @@ async function processTodayMatch(match: VMatch, todayMatches: Titan007.TodayMatc
                 {
                     where: {
                         id: match.team2_id,
+                        titan007_team_id: '',
                     },
                     returning: false,
                 },
@@ -109,6 +102,7 @@ async function processTodayMatch(match: VMatch, todayMatches: Titan007.TodayMatc
         const matchKeys = intersection(
             [
                 'titan007_match_id',
+                'titan007_swap',
                 'has_score',
                 'score1',
                 'score2',

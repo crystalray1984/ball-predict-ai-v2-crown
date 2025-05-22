@@ -251,3 +251,15 @@ export function getOddIdentification(type: OddType) {
             return ''
     }
 }
+
+/**
+ * 交换对象里的2个字段的值
+ * @param object
+ * @param key1
+ * @param key2
+ */
+export function swapField<T extends object>(object: T, key1: keyof T, key2: keyof T): void {
+    const temp = object[key1]
+    object[key1] = object[key2]
+    object[key2] = temp
+}
