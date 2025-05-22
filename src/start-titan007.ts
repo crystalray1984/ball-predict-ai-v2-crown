@@ -450,7 +450,7 @@ async function processOdds() {
         SELECT
             DISTINCT
             a.id,
-            a.titan007_match_id
+            a.titan007_match_id,
             a.titan007_swap
         FROM
             match AS a
