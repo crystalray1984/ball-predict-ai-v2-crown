@@ -132,6 +132,7 @@ async function doInit() {
         } catch (err) {
             console.error('初始化皇冠环境异常')
             console.error(err)
+            await delay(5000)
         }
     }
 
