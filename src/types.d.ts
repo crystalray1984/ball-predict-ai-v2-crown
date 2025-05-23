@@ -58,6 +58,13 @@ declare interface SpecialReverseRule extends SpecialPromoteRule {
 }
 
 /**
+ * 特殊的变盘规则
+ */
+declare interface AdjustConditionRule extends SpecialPromoteRule {
+    adjust: string
+}
+
+/**
  * 皇冠数据结构
  */
 declare namespace Crown {

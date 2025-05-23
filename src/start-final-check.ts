@@ -24,6 +24,7 @@ async function generatePromotedOdds(attrs: CreationAttributes<PromotedOdd>[], od
         'filter_rate',
         'period1_enable',
         'special_enable',
+        'adjust_condition',
     )
 
     //先对盘口和推荐结果进行一下组合
@@ -91,15 +92,24 @@ async function generatePromotedOdds(attrs: CreationAttributes<PromotedOdd>[], od
 
     const hasSameOdd = (item: (typeof list)[number]) => {
         //看最终输出列表中有没有存在相同类型的盘
-        return output.some(
+        let exists1 = output.some(
             (t) =>
                 t.attr.variety === item.attr.variety &&
                 t.attr.period === item.attr.period &&
                 getOddIdentification(t.attr.type) === getOddIdentification(item.attr.type),
         )
-    }
+        if (exists1) return true
 
-    console.log(list)
+        //再判断有没有上下半场相反的数据
+        return output.some((t) => {
+            return (
+                t.attr.variety === item.attr.variety &&
+                t.attr.period !== item.attr.period &&
+                getOddIdentification(t.attr.type) === getOddIdentification(item.attr.type) &&
+                t.attr.type !== item.attr.type
+            )
+        })
+    }
 
     //进行整理，没有变盘的数据最优先
     for (let i = list.length - 1; i >= 0; i--) {
@@ -122,6 +132,43 @@ async function generatePromotedOdds(attrs: CreationAttributes<PromotedOdd>[], od
             item.attr.skip = hasSameOdd(item) ? 'same_type' : ''
         }
         output.push(item)
+    }
+
+    //变盘逻辑
+    if (settings.adjust_condition && Array.isArray(settings.adjust_condition)) {
+        const adjust_condition: AdjustConditionRule[] = settings.adjust_condition
+        for (const item of list) {
+            const found = adjust_condition.find((rule) => {
+                if (!isNullOrUndefined(rule.variety) && rule.variety !== item.attr.variety)
+                    return false
+                if (!isNullOrUndefined(rule.period) && rule.period !== item.attr.period)
+                    return false
+                if (!isNullOrUndefined(rule.type) && rule.type !== item.attr.type) return false
+                if (
+                    !isNullOrUndefined(rule.condition) &&
+                    !isNullOrUndefined(rule.condition_symbol)
+                ) {
+                    switch (rule.condition_symbol) {
+                        case '>':
+                            return Decimal(item.attr.condition).gt(rule.condition)
+                        case '>=':
+                            return Decimal(item.attr.condition).gte(rule.condition)
+                        case '<':
+                            return Decimal(item.attr.condition).lt(rule.condition)
+                        case '<=':
+                            return Decimal(item.attr.condition).lte(rule.condition)
+                        case '=':
+                            return Decimal(item.attr.condition).eq(rule.condition)
+                    }
+                }
+                return true
+            })
+
+            if (found) {
+                //有变盘规则
+                item.attr.condition = Decimal(item.attr.condition).add(found.adjust).toString()
+            }
+        }
     }
 
     //开始插入最终数据
