@@ -189,16 +189,14 @@ async function generatePromotedOdds(attrs: CreationAttributes<PromotedOdd>[], od
     //进行整理，没有变盘的数据最优先
     for (let i = list.length - 1; i >= 0; i--) {
         const item = list[i]
-        if (
-            !isNullOrUndefined(item.odd.crown_condition2) &&
-            Decimal(item.odd.crown_condition2).eq(item.attr.condition)
-        ) {
-            if (!item.attr.skip) {
-                item.attr.skip = hasSameOdd(item) ? 'same_type' : ''
+        if (!isNullOrUndefined(item.odd.crown_condition2)) {
+            if (Decimal(item.odd.crown_condition2).eq(item.attr.condition)) {
+                if (!item.attr.skip) {
+                    item.attr.skip = hasSameOdd(item) ? 'same_type' : ''
+                }
+                output.push(item)
+                list.splice(i, 1)
             }
-
-            output.push(item)
-            list.splice(i, 1)
         }
     }
 
