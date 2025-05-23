@@ -1,6 +1,5 @@
 import {
     getOddIdentification,
-    getPromotedOddInfo,
     getPromotedOddInfoBySetting,
     isNullOrUndefined,
     runLoop,
@@ -8,95 +7,9 @@ import {
 import { consume, publish } from '@/common/rabbitmq'
 import { getSetting } from '@/common/settings'
 import { findMatchedOdd } from '@/crown'
-import { db, Match, Odd, PromotedOdd, Titan007Odd } from '@/db'
+import { db, Match, Odd, PromotedOdd } from '@/db'
 import Decimal from 'decimal.js'
 import { CreationAttributes, literal, Op, QueryTypes } from 'sequelize'
-
-/**
- * 判断是否应该使用球探网的盘口趋势来推荐
- */
-function isUseTitan007Odd(odd: OddInfo, titan007_odd: Titan007Odd): number | undefined {
-    let start: string | undefined | null = null
-    let end: string | undefined | null = null
-
-    if (odd.variety === 'goal') {
-        //进球判断
-        if (odd.period === 'period1') {
-            //半场判断
-            switch (odd.type) {
-                case 'ah1':
-                case 'ah2':
-                    start = titan007_odd.ah_period1_start
-                    end = titan007_odd.ah_period1_end
-                    break
-                case 'over':
-                case 'under':
-                    start = titan007_odd.goal_period1_start
-                    end = titan007_odd.goal_period1_end
-                    break
-            }
-        } else {
-            //全场判断
-            switch (odd.type) {
-                case 'ah1':
-                case 'ah2':
-                    start = titan007_odd.ah_start
-                    end = titan007_odd.ah_end
-                    break
-                case 'over':
-                case 'under':
-                    start = titan007_odd.goal_start
-                    end = titan007_odd.goal_end
-                    break
-            }
-        }
-    } else if (odd.variety === 'corner') {
-        //角球判断
-        switch (odd.type) {
-            case 'ah1':
-            case 'ah2':
-                start = titan007_odd.corner_ah_start
-                end = titan007_odd.corner_ah_end
-                break
-            case 'over':
-            case 'under':
-                start = titan007_odd.corner_goal_start
-                end = titan007_odd.corner_goal_end
-                break
-        }
-    }
-
-    if (isNullOrUndefined(start) || isNullOrUndefined(end)) return
-    const delta = Decimal(end).comparedTo(start)
-    if (delta === 0) {
-        //盘口相同
-        return
-    } else if (delta > 0) {
-        //盘口变大
-        switch (odd.type) {
-            case 'ah1':
-            case 'ah2':
-                //让球盘，盘口变大表示倾向于客队
-                return odd.type !== 'ah2' ? 1 : 0
-            case 'over':
-            case 'under':
-                //大小盘，盘口变大表示倾向于大球
-                return odd.type !== 'over' ? 1 : 0
-        }
-    } else {
-        //盘口变小
-        switch (odd.type) {
-            case 'ah1':
-            case 'ah2':
-                //让球盘，盘口变小表示倾向于主队
-                return odd.type !== 'ah1' ? 1 : 0
-            case 'over':
-            case 'under':
-                //大小盘，盘口变大表示倾向于小球
-                return odd.type !== 'under' ? 1 : 0
-        }
-    }
-}
 
 /**
  * 生成最终推荐盘口数据
@@ -186,6 +99,8 @@ async function generatePromotedOdds(attrs: CreationAttributes<PromotedOdd>[], od
         )
     }
 
+    console.log(list)
+
     //进行整理，没有变盘的数据最优先
     for (let i = list.length - 1; i >= 0; i--) {
         const item = list[i]
@@ -200,7 +115,7 @@ async function generatePromotedOdds(attrs: CreationAttributes<PromotedOdd>[], od
         }
     }
 
-    //然后是已经变盘的数据或者通过球探网匹配的数据，那就按序插入，如果有相同的盘就pass掉
+    //然后是已经变盘的数据，按序插入，如果有相同的盘就pass掉
     list.reverse()
     for (const item of list) {
         if (!item.attr.skip) {
@@ -277,13 +192,13 @@ async function generatePromotedOdds(attrs: CreationAttributes<PromotedOdd>[], od
  * 把原始盘口数据和拿到的皇冠盘口数据进行最终数据判断
  * @param data
  */
-async function processFinalCheck(
+export async function processFinalCheck(
     data: CrownRobot.Output<{
         match_id: number
-        promoted_odd_attrs?: CreationAttributes<PromotedOdd>[]
     }>,
 ) {
-    const { match_id, promoted_odd_attrs = [] } = data.extra!
+    const promoted_odd_attrs: CreationAttributes<PromotedOdd>[] = []
+    const { match_id } = data.extra!
     const odds = await Odd.findAll({
         where: {
             match_id,
@@ -304,6 +219,7 @@ async function processFinalCheck(
         'corner_reverse',
         'promote_reverse',
         'special_reverse',
+        'titan007_reverse',
     )
 
     //继续进行皇冠盘口比对
@@ -333,7 +249,11 @@ async function processFinalCheck(
             }
 
             if (pass) {
-                const { condition, type, back } = getPromotedOddInfoBySetting(odd, settings)
+                const { condition, type, back, final_rule } = await getPromotedOddInfoBySetting(
+                    match_id,
+                    odd,
+                    settings,
+                )
 
                 //水位对比成功，添加推荐数据
                 promoted_odd_attrs.push({
@@ -345,6 +265,7 @@ async function processFinalCheck(
                     condition,
                     type,
                     back,
+                    final_rule,
                 })
             }
 
@@ -385,7 +306,11 @@ async function processFinalCheck(
         //看看配置是否允许开启变盘
         if (settings.allow_promote_1 && pass) {
             //允许变盘，那么就推荐
-            const { condition, type, back } = getPromotedOddInfoBySetting(odd, settings)
+            const { condition, type, back, final_rule } = await getPromotedOddInfoBySetting(
+                match_id,
+                odd,
+                settings,
+            )
             promoted_odd_attrs.push({
                 match_id,
                 odd_id: odd.id,
@@ -395,119 +320,13 @@ async function processFinalCheck(
                 condition,
                 type,
                 back,
+                final_rule,
             })
             odd.final_rule = 'crown_special'
         }
     }
 
     //盘口比对完了，现在生成推荐数据
-    await generatePromotedOdds(promoted_odd_attrs, odds)
-}
-
-/**
- * 处理临近开赛的单场比赛
- */
-async function processNearlyMatch(match_id: number, crown_match_id: string) {
-    //标记比赛为已处理
-    await Match.update({ status: 'final' }, { where: { id: match_id } })
-
-    //首先读取要处理的盘口
-    const odds = await Odd.findAll({
-        where: {
-            match_id,
-            status: 'ready',
-        },
-    })
-    if (odds.length === 0) return
-
-    console.log('二次比对', `match_id=${match_id}`, `盘口数=${odds.length}`)
-
-    /**
-     * 是否开启了球探网的盘口比对
-     */
-    const titan007_promote_enable = await getSetting('titan007_promote_enable')
-
-    if (!titan007_promote_enable) {
-        //如果没有开启球探网的盘口比对，那就是所有盘口都要走皇冠比对，直接抛进队列里
-        await publish(
-            'crown_odd',
-            JSON.stringify({
-                crown_match_id,
-                next: 'final_check',
-                extra: {
-                    match_id,
-                },
-            }),
-        )
-        return
-    }
-
-    //对盘口进行球探网盘口比对
-    const titan007_odd = await Titan007Odd.findOne({
-        where: {
-            match_id,
-        },
-    })
-
-    if (!titan007_odd) {
-        //如果没有采集到球探网的盘口，那也是所有盘口都要走皇冠比对，直接抛进队列里
-        await publish(
-            'crown_odd',
-            JSON.stringify({
-                crown_match_id,
-                next: 'final_check',
-                extra: {
-                    match_id,
-                },
-            }),
-        )
-        return
-    }
-
-    const promoted_odd_attrs: CreationAttributes<PromotedOdd>[] = []
-    const left_odds: Odd[] = []
-
-    for (const odd of odds) {
-        //与球探网的盘口进行比对
-        const back = isUseTitan007Odd(odd, titan007_odd)
-        if (typeof back !== 'undefined') {
-            //使用球探网的趋势
-            const { condition, type } = getPromotedOddInfo(odd, back)
-            promoted_odd_attrs.push({
-                match_id,
-                odd_id: odd.id,
-                manual_promote_odd_id: 0,
-                variety: odd.variety,
-                period: odd.period,
-                condition,
-                type,
-                back,
-            })
-            odd.final_rule = 'titan007'
-            await odd.save()
-        } else {
-            //继续走后续的皇冠盘口判断
-            left_odds.push(odd)
-        }
-    }
-
-    if (left_odds.length > 0) {
-        //有盘口需要走皇冠比对
-        await publish(
-            'crown_odd',
-            JSON.stringify({
-                crown_match_id,
-                next: 'final_check',
-                extra: {
-                    match_id,
-                    promoted_odd_attrs,
-                },
-            }),
-        )
-        return
-    }
-
-    //所有的盘口都不需要走皇冠比对，那就直接生成推荐数据
     await generatePromotedOdds(promoted_odd_attrs, odds)
 }
 
@@ -546,13 +365,33 @@ async function processNearlyMatches() {
     console.log('需要二次比对的比赛', matches.length)
     if (matches.length === 0) return
 
-    for (const match of matches) {
-        try {
-            await processNearlyMatch(match.id, match.crown_match_id)
-        } catch (err) {
-            console.error(err)
-        }
-    }
+    //把数据抛入队列
+    await publish(
+        'crown_odd',
+        matches.map((match) => {
+            return JSON.stringify({
+                next: 'final_check',
+                crown_match_id: match.crown_match_id,
+                extra: {
+                    match_id: match.id,
+                },
+            })
+        }),
+    )
+
+    //把比赛标记为已完成
+    await Match.update(
+        {
+            status: 'final',
+        },
+        {
+            where: {
+                id: {
+                    [Op.in]: matches.map((t) => t.id),
+                },
+            },
+        },
+    )
 }
 
 /**

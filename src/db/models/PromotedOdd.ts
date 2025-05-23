@@ -106,6 +106,12 @@ export class PromotedOdd extends Model<
     @Column(DataType.INTEGER)
     declare back: number
 
+    /**
+     * 正反推规则
+     */
+    @Column(DataType.STRING)
+    declare final_rule: CreationOptional<string>
+
     @Column(DataType.TINYINT)
     declare result: CreationOptional<number | null>
 

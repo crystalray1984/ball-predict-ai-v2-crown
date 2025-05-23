@@ -1,6 +1,6 @@
 import Decimal from 'decimal.js'
 import { RateLimiter } from './rate-limiter'
-import { PromotedOdd } from '@/db'
+import { PromotedOdd, Titan007Odd } from '@/db'
 
 /**
  * 返回一个等待指定时间的Promise
@@ -145,7 +145,10 @@ export function getPromotedOddInfo(
 ): Pick<OddInfo, 'condition' | 'type'> {
     if (!back) {
         //正推直接返回数据
-        return odd
+        return {
+            condition: odd.condition,
+            type: odd.type,
+        }
     }
     switch (odd.type) {
         case 'ah1':
@@ -173,7 +176,96 @@ export function getPromotedOddInfo(
             }
     }
 
-    return odd
+    return {
+        condition: odd.condition,
+        type: odd.type,
+    }
+}
+
+/**
+ * 判断是否应该使用球探网的盘口趋势来确定推荐方向
+ */
+function isUseTitan007Odd(odd: OddInfo, titan007_odd: Titan007Odd): number | undefined {
+    let start: string | undefined | null = null
+    let end: string | undefined | null = null
+
+    if (odd.variety === 'goal') {
+        //进球判断
+        if (odd.period === 'period1') {
+            //半场判断
+            switch (odd.type) {
+                case 'ah1':
+                case 'ah2':
+                    start = titan007_odd.ah_period1_start
+                    end = titan007_odd.ah_period1_end
+                    break
+                case 'over':
+                case 'under':
+                    start = titan007_odd.goal_period1_start
+                    end = titan007_odd.goal_period1_end
+                    break
+            }
+        } else {
+            //全场判断
+            switch (odd.type) {
+                case 'ah1':
+                case 'ah2':
+                    start = titan007_odd.ah_start
+                    end = titan007_odd.ah_end
+                    break
+                case 'over':
+                case 'under':
+                    start = titan007_odd.goal_start
+                    end = titan007_odd.goal_end
+                    break
+            }
+        }
+    } else if (odd.variety === 'corner') {
+        //角球判断
+        switch (odd.type) {
+            case 'ah1':
+            case 'ah2':
+                start = titan007_odd.corner_ah_start
+                end = titan007_odd.corner_ah_end
+                break
+            case 'over':
+            case 'under':
+                start = titan007_odd.corner_goal_start
+                end = titan007_odd.corner_goal_end
+                break
+        }
+    }
+
+    if (isNullOrUndefined(start) || isNullOrUndefined(end)) return
+    const delta = Decimal(end).comparedTo(start)
+    if (delta === 0) {
+        //盘口相同
+        return
+    } else if (delta > 0) {
+        //盘口变大
+        switch (odd.type) {
+            case 'ah1':
+            case 'ah2':
+                //让球盘，盘口变大表示倾向于客队
+                return odd.type !== 'ah2' ? 1 : 0
+            case 'over':
+            case 'under':
+                //大小盘，盘口变大表示倾向于大球
+                return odd.type !== 'over' ? 1 : 0
+        }
+    } else {
+        //盘口变小
+        switch (odd.type) {
+            case 'ah1':
+            case 'ah2':
+                //让球盘，盘口变小表示倾向于主队
+                return odd.type !== 'ah1' ? 1 : 0
+            case 'over':
+            case 'under':
+                //大小盘，盘口变大表示倾向于小球
+                return odd.type !== 'under' ? 1 : 0
+        }
+    }
 }
 
 /**
@@ -181,12 +273,13 @@ export function getPromotedOddInfo(
  * @param odd
  * @param settings
  */
-export function getPromotedOddInfoBySetting(
+export async function getPromotedOddInfoBySetting(
+    match_id: number,
     odd: OddInfo,
     settings: Record<string, any>,
-): Pick<PromotedOdd, 'condition' | 'type' | 'back'> {
-    //先根据系统配置计算到底是正推还是反推
-    const back = (() => {
+): Promise<Pick<PromotedOdd, 'condition' | 'type' | 'back' | 'final_rule'>> {
+    //先看看在不在推荐方向的特殊规则里
+    let result = (() => {
         //特殊正反推规则
         const special_reverse = settings.special_reverse as SpecialReverseRule[]
         if (special_reverse && Array.isArray(special_reverse)) {
@@ -214,22 +307,43 @@ export function getPromotedOddInfoBySetting(
                 return true
             })
 
-            if (found) return found.back ? 1 : 0
+            if (found)
+                return {
+                    back: found.back ? 1 : 0,
+                    final_rule: 'special',
+                }
         }
-
-        //角球正反推规则
-        if (odd.variety === 'corner') {
-            return (settings.corner_reverse ?? true) ? 1 : 0
-        }
-
-        //全局正反推规则
-        return (settings.promote_reverse ?? true) ? 1 : 0
     })()
+
+    //如果特殊规则不满足，再根据是否开启了球探网趋势，通过球探网趋势判断正反推
+    if (!result && settings.titan007_reverse) {
+        const titan007_odd = await Titan007Odd.findOne({
+            where: {
+                match_id,
+            },
+        })
+        if (titan007_odd) {
+            let back = isUseTitan007Odd(odd, titan007_odd)
+            if (typeof back === 'number') {
+                result = { back, final_rule: 'titan007' }
+            }
+        }
+    }
+
+    //如果还是没有结果，就根据常规配置来判断方向
+    if (!result) {
+        //角球正反推规则
+        if (odd.variety === 'corner' && !isNullOrUndefined(settings.corner_reverse)) {
+            result = { back: settings.corner_reverse ? 1 : 0, final_rule: '' }
+        } else {
+            result = { back: settings.promote_reverse ? 1 : 0, final_rule: '' }
+        }
+    }
 
     //再根据正反推返回实际推荐的方向
     return {
-        ...getPromotedOddInfo(odd, back),
-        back,
+        ...getPromotedOddInfo(odd, result.back),
+        ...result,
     }
 }
 
