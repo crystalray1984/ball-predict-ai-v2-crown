@@ -64,70 +64,75 @@ export function init() {
  */
 async function doInit() {
     while (true) {
-        await reset()
+        try {
+            await reset()
 
-        account = await getCrownAccount()
-        console.log('使用皇冠账号', account.username)
+            account = await getCrownAccount()
+            console.log('使用皇冠账号', account.username)
 
-        const args: string[] = ['--no-sandbox', '--disable-images', '--lang=zh-cn']
+            const args: string[] = ['--no-sandbox', '--disable-images', '--lang=zh-cn']
 
-        browser = await launch({
-            // headless: false,
-            args,
-        })
+            browser = await launch({
+                // headless: false,
+                args,
+            })
 
-        const page = await browser.newPage()
-        await page.goto(PAGE_URL)
-        console.log('page navigated')
+            const page = await browser.newPage()
+            await page.goto(PAGE_URL)
+            console.log('page navigated')
 
-        //等待登录脚本完成
-        await waitForElement(page, '#usr')
-        console.log('login form ready')
-        await page.locator('#usr').fill(account.username)
-        await page.locator('#pwd').fill(account.password)
-        // await page.locator('.check_remember.lab_radio').click()
-        await page.locator('#btn_login').click()
-        console.log('login form submitted')
+            //等待登录脚本完成
+            await waitForElement(page, '#usr')
+            console.log('login form ready')
+            await page.locator('#usr').fill(account.username)
+            await page.locator('#pwd').fill(account.password)
+            // await page.locator('.check_remember.lab_radio').click()
+            await page.locator('#btn_login').click()
+            console.log('login form submitted')
 
-        //等待数字密码的确认
-        await waitForElement(page, '#C_popup_checkbox .lab_radio')
-        await page.locator('#C_popup_checkbox .lab_radio').click()
-        console.log('checkbox clicked')
+            //等待数字密码的确认
+            await waitForElement(page, '#C_popup_checkbox .lab_radio')
+            await page.locator('#C_popup_checkbox .lab_radio').click()
+            console.log('checkbox clicked')
 
-        await page.locator('#C_no_btn').click()
-        console.log('no_password clicked')
+            await page.locator('#C_no_btn').click()
+            console.log('no_password clicked')
 
-        await page.waitForNavigation()
-        console.log(page.url())
+            await page.waitForNavigation()
+            console.log(page.url())
 
-        //等待主页加载完成
-        await waitForElement(page, '#today_page')
+            //等待主页加载完成
+            await waitForElement(page, '#today_page')
 
-        //检测账号已被封禁
-        const blackBoxStatus = (await page.evaluate(`top.userData.blackBoxStatus`)) as string
-        console.log('皇冠账号状态', account.username, blackBoxStatus)
-        if (blackBoxStatus === 'Y') {
-            //账号已被封禁，修改账号属性
-            await CrownAccount.update(
-                {
-                    status: 0,
-                },
-                {
-                    where: {
-                        id: account.id,
+            //检测账号已被封禁
+            const blackBoxStatus = (await page.evaluate(`top.userData.blackBoxStatus`)) as string
+            console.log('皇冠账号状态', account.username, blackBoxStatus)
+            if (blackBoxStatus === 'Y') {
+                //账号已被封禁，修改账号属性
+                await CrownAccount.update(
+                    {
+                        status: 0,
                     },
-                    returning: false,
-                },
-            )
-            //发送通知
-            await sendNotification(
-                `**异常通知**\r\n皇冠账号 ${account.username} 已被封禁，请尽快处理。`,
-            )
-            continue
-        }
+                    {
+                        where: {
+                            id: account.id,
+                        },
+                        returning: false,
+                    },
+                )
+                //发送通知
+                await sendNotification(
+                    `**异常通知**\r\n皇冠账号 ${account.username} 已被封禁，请尽快处理。`,
+                )
+                continue
+            }
 
-        mainPage = page
-        break
+            mainPage = page
+            break
+        } catch (err) {
+            console.error('初始化皇冠环境异常')
+            console.error(err)
+        }
     }
 
     console.log('home page ready')
@@ -221,7 +226,7 @@ async function getCrownAccount() {
     }
 
     //每2分钟维持一下皇冠账号的持有者
-    setInterval(async () => {
+    accountTimer = setInterval(async () => {
         if (!account) return
         await CrownAccount.update(
             {
