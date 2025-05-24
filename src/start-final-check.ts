@@ -327,7 +327,11 @@ export async function processFinalCheck(
  */
 async function processNearlyMatches() {
     //读取开赛时间配置
-    const final_check_time = (await getSetting<number>('final_check_time')) ?? 5
+    const final_check_time = await (async () => {
+        const final_check_time = await getSetting('final_check_time')
+        console.log('final_check_time', final_check_time)
+        return typeof final_check_time === 'number' ? final_check_time : 5
+    })()
 
     //先查询需要处理的比赛
     const matches = await db.query<{
