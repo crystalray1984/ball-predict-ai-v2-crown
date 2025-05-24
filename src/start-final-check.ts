@@ -213,8 +213,7 @@ export async function processFinalCheck(
         'promote_reverse',
         'special_reverse',
         'titan007_reverse',
-        'special_reverse_rule',
-        'special_auto_adjust',
+        'special_config',
     )
 
     //继续进行皇冠盘口比对
@@ -308,20 +307,41 @@ export async function processFinalCheck(
                 type: odd.type,
             }
 
-            //那么先看配置里，是否要跟随变盘改为新的盘口
-            if (settings.special_auto_adjust) {
-                //跟随新盘口自动变盘
-                oddInfo.condition = special.condition
-            }
-
-            //再看是否变盘后是否有特殊的正反推规则
             let info: Pick<PromotedOdd, 'type' | 'condition' | 'back' | 'final_rule'>
-            if (typeof settings.special_reverse_rule && settings.special_reverse_rule !== 2) {
-                //有变盘正反推规则
-                info = {
-                    ...getPromotedOddInfo(oddInfo, settings.special_reverse_rule),
-                    back: settings.special_reverse_rule ? 1 : 0,
-                    final_rule: 'special',
+
+            const config = settings.special_config as SpecialConfig[]
+            if (Array.isArray(config) && config.length > 0) {
+                //计算变了几个盘
+                const delta = Decimal(special.condition)
+                    .mul(100)
+                    .sub(Decimal(odd.condition).mul(100))
+                    .div(25)
+                    .abs()
+                    .toNumber()
+
+                //先看有没有对应的盘
+                let found = config.find((t) => t.delta === delta)
+                if (!found) {
+                    found = config[config.length - 1]
+                }
+
+                //确定是否改盘
+                if (found.auto_adjust) {
+                    oddInfo.condition = special.condition
+                }
+
+                //再看是否变盘后是否有特殊的正反推规则
+
+                if (found.back === 0 || found.back === 1) {
+                    //有变盘正反推规则
+                    info = {
+                        ...getPromotedOddInfo(oddInfo, found.back),
+                        back: found.back,
+                        final_rule: 'special',
+                    }
+                } else {
+                    //走其他的公共逻辑规则
+                    info = await getPromotedOddInfoBySetting(match_id, odd, settings)
                 }
             } else {
                 //走其他的公共逻辑规则

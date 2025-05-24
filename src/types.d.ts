@@ -44,6 +44,15 @@ declare interface OddInfo {
 }
 
 /**
+ * 变盘配置
+ */
+declare interface SpecialConfig {
+    delta: number
+    back: number
+    auto_adjust: boolean
+}
+
+/**
  * 特殊的二次比对通过规则
  */
 declare interface SpecialPromoteRule extends Partial<OddInfo> {
