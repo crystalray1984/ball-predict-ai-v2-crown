@@ -1,6 +1,7 @@
 import {
     findRule,
     getOddIdentification,
+    getPromotedOddInfo,
     getPromotedOddInfoBySetting,
     isNullOrUndefined,
     runLoop,
@@ -212,6 +213,8 @@ export async function processFinalCheck(
         'promote_reverse',
         'special_reverse',
         'titan007_reverse',
+        'special_reverse_rule',
+        'special_auto_adjust',
     )
 
     //继续进行皇冠盘口比对
@@ -297,22 +300,44 @@ export async function processFinalCheck(
 
         //看看配置是否允许开启变盘
         if (settings.allow_promote_1 && pass) {
-            //允许变盘，那么就推荐
-            const { condition, type, back, final_rule } = await getPromotedOddInfoBySetting(
-                match_id,
-                odd,
-                settings,
-            )
+            //允许变盘
+            const oddInfo: OddInfo = {
+                variety: odd.variety,
+                period: odd.period,
+                condition: odd.condition,
+                type: odd.type,
+            }
+
+            //那么先看配置里，是否要跟随变盘改为新的盘口
+            if (settings.special_auto_adjust) {
+                //跟随新盘口自动变盘
+                oddInfo.condition = special.condition
+            }
+
+            //再看是否变盘后是否有特殊的正反推规则
+            let info: Pick<PromotedOdd, 'type' | 'condition' | 'back' | 'final_rule'>
+            if (typeof settings.special_reverse_rule && settings.special_reverse_rule !== 2) {
+                //有变盘正反推规则
+                info = {
+                    ...getPromotedOddInfo(oddInfo, settings.special_reverse_rule),
+                    back: settings.special_reverse_rule ? 1 : 0,
+                    final_rule: 'special',
+                }
+            } else {
+                //走其他的公共逻辑规则
+                info = await getPromotedOddInfoBySetting(match_id, odd, settings)
+            }
+
             promoted_odd_attrs.push({
                 match_id,
                 odd_id: odd.id,
                 manual_promote_odd_id: 0,
                 variety: odd.variety,
                 period: odd.period,
-                condition,
-                type,
-                back,
-                final_rule,
+                condition: info.condition,
+                type: info.type,
+                back: info.back,
+                final_rule: info.final_rule,
             })
             odd.final_rule = 'crown_special'
         }

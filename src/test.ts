@@ -1,79 +1,134 @@
-import Decimal from 'decimal.js'
-import { isNullOrUndefined } from './common/helpers'
+import { QueryTypes } from 'sequelize'
+import { db, Match } from './db'
+import dayjs from 'dayjs'
+import { groupBy } from 'lodash'
+import { findMatch, FindMatchResult, getFinalMatches, getMatchScore } from './titan007'
 
-const special_enable: SpecialPromoteRule[] = [
-    {
-        id: '1',
-        period: null,
-        condition: null,
-        variety: 'corner',
-        type: 'over',
-        condition_symbol: null,
-        back: false,
-    },
-    { id: 'IZshclMf6ciyaZnIIprUG', condition: '0', variety: 'corner', type: 'under' },
-] as any
+//补充所有赛事的赛果
+async function main() {
+    //先查询数据库中所有没有赛果的比赛
+    const matches = await db.query<{
+        id: number
+        titan007_match_id: string
+        titan007_swap: number
+        match_time: Date
+        team1_name: string
+        team2_name: string
+    }>(
+        {
+            query: `
+            SELECT
+                id,
+                titan007_match_id,
+                titan007_swap,
+                match_time,
+                team1_name,
+                team2_name
+            FROM
+                v_match
+            WHERE
+                match_time < ?
+                AND
+                has_score = 0
+            `,
+            values: [dayjs().startOf('day').toDate()],
+        },
+        {
+            type: QueryTypes.SELECT,
+        },
+    )
 
-const item = {
-    attr: {
-        variety: 'corner',
-        period: 'period1',
-        type: 'over',
-        condition: '5',
-        skip: '',
-    },
-}
+    //将比赛按日分组
+    const grouped = groupBy(matches, (match) => dayjs(match.match_time).format('YYYYMMDD'))
 
-const settings = {
-    corner_period1_enable: false,
-    corner_enable: false,
-    period1_enable: true,
-}
-;(function () {
-    if (special_enable && Array.isArray(special_enable)) {
-        //如果盘口满足特殊规则，则不过滤
-        const found = special_enable.some((rule) => {
-            if (!isNullOrUndefined(rule.variety) && rule.variety !== item.attr.variety) return false
-            if (!isNullOrUndefined(rule.period) && rule.period !== item.attr.period) return false
-            if (!isNullOrUndefined(rule.type) && rule.type !== item.attr.type) return false
-            if (!isNullOrUndefined(rule.condition) && !isNullOrUndefined(rule.condition_symbol)) {
-                switch (rule.condition_symbol) {
-                    case '>':
-                        return Decimal(item.attr.condition).gt(rule.condition)
-                    case '>=':
-                        return Decimal(item.attr.condition).gte(rule.condition)
-                    case '<':
-                        return Decimal(item.attr.condition).lt(rule.condition)
-                    case '<=':
-                        return Decimal(item.attr.condition).lte(rule.condition)
-                    case '=':
-                        return Decimal(item.attr.condition).eq(rule.condition)
+    //爬取比赛
+    for (const [date, list] of Object.entries(grouped)) {
+        console.log('处理赛果', date, list.length)
+
+        const finalMatches = await getFinalMatches(dayjs(list[0].match_time))
+        //赛果匹配
+        for (const match of matches) {
+            let found: FindMatchResult | undefined = undefined
+            if (match.titan007_match_id) {
+                //比赛原本有球探网id
+
+                const exists = finalMatches.find((t) => t.match_id === match.titan007_match_id)
+                if (exists) {
+                    if (exists.state !== -1) {
+                        //比赛有异常，跳过
+                        continue
+                    }
+                } else {
+                    console.log(
+                        '未找到匹配的比赛1',
+                        match.id,
+                        match.match_time,
+                        match.team1_name,
+                        match.team2_name,
+                    )
+                    continue
                 }
+
+                found = {
+                    ...exists,
+                    swap: match.titan007_swap === 1,
+                }
+            } else {
+                //比赛没有球探网id
+                const exists = findMatch(match, finalMatches)
+                if (exists) {
+                    if (exists.state !== -1) {
+                        //比赛有异常，跳过
+                        continue
+                    }
+                } else {
+                    console.log(
+                        '未找到匹配的比赛2',
+                        match.id,
+                        match.match_time,
+                        match.team1_name,
+                        match.team2_name,
+                    )
+                    continue
+                }
+
+                found = exists
             }
-            return true
-        })
 
-        if (found) {
-            console.log('found')
-            return
-        }
-    }
+            //抓取赛果
+            try {
+                const score = await getMatchScore(found.match_id, found.swap)
 
-    if (item.attr.variety === 'corner' && item.attr.period === 'period1') {
-        if (!settings.corner_period1_enable) {
-            item.attr.skip = 'setting'
-        }
-    }
-    if (item.attr.variety === 'corner') {
-        if (!settings.corner_enable) {
-            item.attr.skip = 'setting'
-        }
-    }
-    if (item.attr.period === 'period1') {
-        if (!settings.period1_enable) {
-            item.attr.skip = 'setting'
-        }
-    }
-})()
+                //更新赛果
+                await Match.update(
+                    {
+                        has_score: 1,
+                        score1: score.score1,
+                        score2: score.score2,
+                        corner1: score.corner1,
+                        corner2: score.corner2,
+                        has_period1_score: 1,
+                        score1_period1: score.score1_period1,
+                        score2_period1: score.score2_period1,
+                        corner1_period1: score.corner1_period1,
+                        corner2_period1: score.corner2_period1,
+                    },
+                    {
+                        where: {
+                            id: match.id,
+                        },
+                        returning: false,
+                    },
+                )
 
-console.log(item)
+                //更新投注
+                Object.assign(match, score)
+                console.log('更新赛果', match.id, date, match.team1_name, match.team2_name)
+            } catch (err) {
+                console.error(err)
+            }
+        }
+    }
+}
+
+main().finally(() => process.exit())
