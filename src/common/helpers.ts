@@ -1,6 +1,6 @@
+import { PromotedOdd, Titan007Odd } from '@/db'
 import Decimal from 'decimal.js'
 import { RateLimiter } from './rate-limiter'
-import { PromotedOdd, Titan007Odd } from '@/db'
 
 /**
  * 返回一个等待指定时间的Promise
@@ -278,45 +278,26 @@ export async function getPromotedOddInfoBySetting(
     odd: OddInfo,
     settings: Record<string, any>,
 ): Promise<Pick<PromotedOdd, 'condition' | 'type' | 'back' | 'final_rule'>> {
-    //先看看在不在推荐方向的特殊规则里
-    let result = (() => {
-        //特殊正反推规则
-        const special_reverse = settings.special_reverse as SpecialReverseRule[]
-        if (special_reverse && Array.isArray(special_reverse)) {
-            const found = special_reverse.find((rule) => {
-                if (!isNullOrUndefined(rule.period) && odd.period !== rule.period) return false
-                if (!isNullOrUndefined(rule.variety) && rule.variety !== odd.variety) return false
-                if (!isNullOrUndefined(rule.type) && rule.type !== odd.type) return false
-                if (
-                    !isNullOrUndefined(rule.condition) &&
-                    !isNullOrUndefined(rule.condition_symbol)
-                ) {
-                    switch (rule.condition_symbol) {
-                        case '>':
-                            return Decimal(odd.condition).gt(rule.condition)
-                        case '>=':
-                            return Decimal(odd.condition).gte(rule.condition)
-                        case '<':
-                            return Decimal(odd.condition).lt(rule.condition)
-                        case '<=':
-                            return Decimal(odd.condition).lte(rule.condition)
-                        case '=':
-                            return Decimal(odd.condition).eq(rule.condition)
-                    }
-                }
-                return true
-            })
-
-            if (found)
-                return {
-                    back: found.back ? 1 : 0,
-                    final_rule: 'special',
-                }
+    //输出结果
+    const output = (
+        back: number | boolean,
+        final_rule: PromotedOdd['final_rule'],
+    ): Pick<PromotedOdd, 'condition' | 'type' | 'back' | 'final_rule'> => {
+        return {
+            ...getPromotedOddInfo(odd, back),
+            back: back ? 1 : 0,
+            final_rule,
         }
-    })()
+    }
 
-    //如果特殊规则不满足，再根据是否开启了球探网趋势，通过球探网趋势判断正反推
-    if (!result && settings.titan007_reverse) {
+    //先看有没有特殊的正反推规则
+    const specialRule = findRule<SpecialReverseRule>(settings.special_reverse, odd)
+    if (specialRule) {
+        return output(specialRule.back, 'special')
+    }
+
+    //再看能否通过球探网做趋势判断
+    if (settings.titan007_reverse) {
         const titan007_odd = await Titan007Odd.findOne({
             where: {
                 match_id,
@@ -325,26 +306,18 @@ export async function getPromotedOddInfoBySetting(
         if (titan007_odd) {
             let back = isUseTitan007Odd(odd, titan007_odd)
             if (typeof back === 'number') {
-                result = { back, final_rule: 'titan007' }
+                return output(back, 'titan007')
             }
         }
     }
 
-    //如果还是没有结果，就根据常规配置来判断方向
-    if (!result) {
-        //角球正反推规则
-        if (odd.variety === 'corner' && !isNullOrUndefined(settings.corner_reverse)) {
-            result = { back: settings.corner_reverse ? 1 : 0, final_rule: '' }
-        } else {
-            result = { back: settings.promote_reverse ? 1 : 0, final_rule: '' }
-        }
+    //看看是否为角球，走角球正反推判断
+    if (odd.variety === 'corner' && !isNullOrUndefined(settings.corner_reverse)) {
+        return output(!!settings.corner_reverse, 'corner')
     }
 
-    //再根据正反推返回实际推荐的方向
-    return {
-        ...getPromotedOddInfo(odd, result.back),
-        ...result,
-    }
+    //走全局的正反推判断
+    return output(!!settings.promote_reverse, '')
 }
 
 /**
@@ -376,4 +349,46 @@ export function swapField<T extends object>(object: T, key1: keyof T, key2: keyo
     const temp = object[key1]
     object[key1] = object[key2]
     object[key2] = temp
+}
+
+/**
+ * 寻找满足条件的盘口规则
+ * @param rules
+ * @param odd
+ * @returns
+ */
+export function findRule<T extends SpecialPromoteRule>(rules: T[], odd: OddInfo): T | undefined {
+    if (!rules || !Array.isArray(rules) || rules.length === 0) return
+    for (const rule of rules) {
+        if (!isNullOrUndefined(rule.variety) && rule.variety !== odd.variety) {
+            continue
+        }
+        if (!isNullOrUndefined(rule.period) && rule.period !== odd.period) {
+            continue
+        }
+        if (!isNullOrUndefined(rule.type) && rule.type !== odd.type) {
+            continue
+        }
+        if (!isNullOrUndefined(rule.condition) && !isNullOrUndefined(rule.condition_symbol)) {
+            let pass = false
+            switch (rule.condition_symbol) {
+                case '>':
+                    pass = Decimal(odd.condition).gt(rule.condition)
+                    break
+                case '>=':
+                    pass = Decimal(odd.condition).gte(rule.condition)
+                    break
+                case '<':
+                    pass = Decimal(odd.condition).lt(rule.condition)
+                    break
+                case '<=':
+                    pass = Decimal(odd.condition).lte(rule.condition)
+                    break
+                case '=':
+                    pass = Decimal(odd.condition).eq(rule.condition)
+                    break
+            }
+            return pass ? rule : undefined
+        }
+    }
 }

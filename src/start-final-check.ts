@@ -1,4 +1,5 @@
 import {
+    findRule,
     getOddIdentification,
     getPromotedOddInfoBySetting,
     isNullOrUndefined,
@@ -39,36 +40,8 @@ async function generatePromotedOdds(attrs: CreationAttributes<PromotedOdd>[], od
     //做第一步筛选，如果盘口条件不满足的就直接过滤掉
     for (const item of list) {
         //特殊规则判断
-        const special_enable: SpecialPromoteRule[] = settings.special_enable
-        if (special_enable && Array.isArray(special_enable)) {
-            //如果盘口满足特殊规则，则不过滤
-            const found = special_enable.some((rule) => {
-                if (!isNullOrUndefined(rule.variety) && rule.variety !== item.attr.variety)
-                    return false
-                if (!isNullOrUndefined(rule.period) && rule.period !== item.attr.period)
-                    return false
-                if (!isNullOrUndefined(rule.type) && rule.type !== item.attr.type) return false
-                if (
-                    !isNullOrUndefined(rule.condition) &&
-                    !isNullOrUndefined(rule.condition_symbol)
-                ) {
-                    switch (rule.condition_symbol) {
-                        case '>':
-                            return Decimal(item.attr.condition).gt(rule.condition)
-                        case '>=':
-                            return Decimal(item.attr.condition).gte(rule.condition)
-                        case '<':
-                            return Decimal(item.attr.condition).lt(rule.condition)
-                        case '<=':
-                            return Decimal(item.attr.condition).lte(rule.condition)
-                        case '=':
-                            return Decimal(item.attr.condition).eq(rule.condition)
-                    }
-                }
-                return true
-            })
-
-            if (found) continue
+        if (findRule(settings.special_enable, item.odd)) {
+            continue
         }
 
         if (item.attr.variety === 'corner' && item.attr.period === 'period1') {
@@ -135,39 +108,11 @@ async function generatePromotedOdds(attrs: CreationAttributes<PromotedOdd>[], od
     }
 
     //变盘逻辑
-    if (settings.adjust_condition && Array.isArray(settings.adjust_condition)) {
-        const adjust_condition: AdjustConditionRule[] = settings.adjust_condition
-        for (const item of list) {
-            const found = adjust_condition.find((rule) => {
-                if (!isNullOrUndefined(rule.variety) && rule.variety !== item.attr.variety)
-                    return false
-                if (!isNullOrUndefined(rule.period) && rule.period !== item.attr.period)
-                    return false
-                if (!isNullOrUndefined(rule.type) && rule.type !== item.attr.type) return false
-                if (
-                    !isNullOrUndefined(rule.condition) &&
-                    !isNullOrUndefined(rule.condition_symbol)
-                ) {
-                    switch (rule.condition_symbol) {
-                        case '>':
-                            return Decimal(item.attr.condition).gt(rule.condition)
-                        case '>=':
-                            return Decimal(item.attr.condition).gte(rule.condition)
-                        case '<':
-                            return Decimal(item.attr.condition).lt(rule.condition)
-                        case '<=':
-                            return Decimal(item.attr.condition).lte(rule.condition)
-                        case '=':
-                            return Decimal(item.attr.condition).eq(rule.condition)
-                    }
-                }
-                return true
-            })
-
-            if (found) {
-                //有变盘规则
-                item.attr.condition = Decimal(item.attr.condition).add(found.adjust).toString()
-            }
+    for (const item of list) {
+        const found = findRule<AdjustConditionRule>(settings.adjust_condition, item.attr)
+        if (found) {
+            //有变盘规则
+            item.attr.condition = Decimal(item.attr.condition).add(found.adjust).toString()
         }
     }
 
