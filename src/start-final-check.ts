@@ -40,6 +40,8 @@ async function generatePromotedOdds(attrs: CreationAttributes<PromotedOdd>[], od
 
     //做第一步筛选，如果盘口条件不满足的就直接过滤掉
     for (const item of list) {
+        if (item.attr.skip) continue
+
         //特殊规则判断
         if (findRule(settings.special_enable, item.odd)) {
             continue
@@ -307,7 +309,9 @@ export async function processFinalCheck(
                 type: odd.type,
             }
 
-            let info: Pick<PromotedOdd, 'type' | 'condition' | 'back' | 'final_rule'>
+            let info: Pick<PromotedOdd, 'type' | 'condition' | 'back' | 'final_rule'> & {
+                skip?: string
+            }
 
             const config = settings.special_config as SpecialConfig[]
             if (Array.isArray(config) && config.length > 0) {
@@ -343,6 +347,11 @@ export async function processFinalCheck(
                     //走其他的公共逻辑规则
                     info = await getPromotedOddInfoBySetting(match_id, odd, settings)
                 }
+
+                if (!found.enable) {
+                    //这个变盘是需要关闭的
+                    info.skip = 'setting'
+                }
             } else {
                 //走其他的公共逻辑规则
                 info = await getPromotedOddInfoBySetting(match_id, odd, settings)
@@ -358,6 +367,7 @@ export async function processFinalCheck(
                 type: info.type,
                 back: info.back,
                 final_rule: info.final_rule,
+                skip: info.skip ?? '',
             })
             odd.final_rule = 'crown_special'
         }

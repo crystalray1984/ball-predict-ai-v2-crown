@@ -50,6 +50,7 @@ declare interface SpecialConfig {
     delta: number
     back: number
     auto_adjust: boolean
+    enable: boolean
 }
 
 /**
