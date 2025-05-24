@@ -337,7 +337,7 @@ export async function processFinalCheck(
                     info = {
                         ...getPromotedOddInfo(oddInfo, found.back),
                         back: found.back,
-                        final_rule: 'special',
+                        final_rule: 'special_config',
                     }
                 } else {
                     //走其他的公共逻辑规则
