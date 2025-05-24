@@ -381,6 +381,9 @@ export async function processFinalCheck(
  * 寻找即将开赛的比赛，把数据抛入到皇冠的二次处理队列中
  */
 async function processNearlyMatches() {
+    //读取开赛时间配置
+    const final_check_time = (await getSetting<number>('final_check_time')) ?? 5
+
     //先查询需要处理的比赛
     const matches = await db.query<{
         id: number
@@ -399,8 +402,8 @@ async function processNearlyMatches() {
             AND id IN (SELECT match_id FROM odd WHERE status = ?)
         `,
             values: [
-                new Date(Date.now() + 60000), //1分钟内开赛的比赛不抓取
-                new Date(Date.now() + 300000), //只抓取5分内开赛的比赛
+                new Date(Date.now() + 15000), //15秒内
+                new Date(Date.now() + final_check_time * 60000), //只抓取5分内开赛的比赛
                 '', //只选择还未结算的比赛
                 'ready', //有准备中的盘口的比赛
             ],
