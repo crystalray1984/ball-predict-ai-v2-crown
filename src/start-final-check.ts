@@ -194,6 +194,7 @@ export async function processFinalCheck(
 ) {
     const promoted_odd_attrs: CreationAttributes<PromotedOdd>[] = []
     const { match_id } = data.extra!
+    console.log('处理二次判断', match_id)
     const odds = await Odd.findAll({
         where: {
             match_id,
