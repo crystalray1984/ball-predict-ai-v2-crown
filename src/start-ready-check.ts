@@ -50,7 +50,7 @@ async function processReadyCheck(content: string) {
 
     if (!isNullOrUndefined(ready_condition)) {
         //判断水位是否满足配置的要求
-        if (!Decimal(exists.value).gte(ready_condition)) {
+        if (!Decimal(exists.value).sub(extra.surebet_value).gte(ready_condition)) {
             status = ''
         }
     }

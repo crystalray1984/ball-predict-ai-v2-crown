@@ -9,6 +9,7 @@ import { titan007Limiter, USER_AGENT } from './base'
 export async function getMatchScore(
     match_id: string,
     swap: boolean | number,
+    history = false,
 ): Promise<Titan007.MatchScore> {
     await titan007Limiter.next()
 
@@ -28,13 +29,35 @@ export async function getMatchScore(
     })
 
     const scoreTexts = (respScore.data as string).split('^')
-    const score1 = parseInt(scoreTexts[6])
-    const score2 = parseInt(scoreTexts[7])
-    const score1_period1 = parseInt(scoreTexts[15])
-    const score2_period1 = parseInt(scoreTexts[16])
+    let score1 = parseInt(scoreTexts[6])
+    let score2 = parseInt(scoreTexts[7])
+    let score1_period1 = parseInt(scoreTexts[15])
+    let score2_period1 = parseInt(scoreTexts[16])
+
+    if (
+        history &&
+        (isNaN(score1) || isNaN(score2) || isNaN(score1_period1) || isNaN(score2_period1))
+    ) {
+        //尝试通过第二种方式获取
+        await titan007Limiter.next()
+        const respScore2 = await axios.request({
+            url: `https://livestatic.titan007.com/phone/txt/analysisheader/cn/${match_id.substring(0, 1)}/${match_id.substring(1, 3)}/${match_id}.txt?${Date.now()}`,
+            headers: {
+                Referer: `https://live.titan007.com/detail/${match_id}sb.htm`,
+                'User-Agent': USER_AGENT,
+            },
+            method: 'GET',
+            responseType: 'text',
+        })
+
+        const scoreTexts = (respScore2.data as string).split('^')
+        score1 = parseInt(scoreTexts[10])
+        score2 = parseInt(scoreTexts[11])
+        score1_period1 = parseInt(scoreTexts[26])
+        score2_period1 = parseInt(scoreTexts[27])
+    }
 
     //读取技术统计
-
     const { corner1, corner2, corner1_period1, corner2_period1 } = await getTechData(match_id)
 
     if (swap) {

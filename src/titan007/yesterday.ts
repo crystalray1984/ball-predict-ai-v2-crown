@@ -6,7 +6,6 @@ import { loadDoc, titan007Limiter } from './base'
  * @param date
  */
 export async function getFinalMatches(day: Dayjs): Promise<Titan007.TodayMatchInfo[]> {
-    const lastDate = day.clone().add(-1, 'day')
     await titan007Limiter.next()
 
     try {
