@@ -111,7 +111,7 @@ async function generatePromotedOdds(attrs: CreationAttributes<PromotedOdd>[], od
     }
 
     //变盘逻辑
-    for (const item of list) {
+    for (const item of output) {
         const found = findRule<AdjustConditionRule>(settings.adjust_condition, item.attr)
         if (found) {
             //有变盘规则

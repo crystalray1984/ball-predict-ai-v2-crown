@@ -390,5 +390,7 @@ export function findRule<T extends SpecialPromoteRule>(rules: T[], odd: OddInfo)
             }
             return pass ? rule : undefined
         }
+
+        return rule
     }
 }
