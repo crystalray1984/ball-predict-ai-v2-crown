@@ -34,10 +34,7 @@ export async function getMatchScore(
     let score1_period1 = parseInt(scoreTexts[15])
     let score2_period1 = parseInt(scoreTexts[16])
 
-    if (
-        history &&
-        (isNaN(score1) || isNaN(score2) || isNaN(score1_period1) || isNaN(score2_period1))
-    ) {
+    if (isNaN(score1) || isNaN(score2) || isNaN(score1_period1) || isNaN(score2_period1)) {
         //尝试通过第二种方式获取
         await titan007Limiter.next()
         const respScore2 = await axios.request({
