@@ -394,3 +394,12 @@ export function findRule<T extends SpecialPromoteRule>(rules: T[], odd: OddInfo)
         return rule
     }
 }
+
+export function isDecimal(value: string | number) {
+    try {
+        Decimal(value)
+        return true
+    } catch {
+        return false
+    }
+}
