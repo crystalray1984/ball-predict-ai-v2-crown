@@ -10,7 +10,7 @@ import {
 } from '@/titan007'
 import dayjs from 'dayjs'
 import { intersection } from 'lodash'
-import { InferAttributes, Op, QueryTypes, WhereOptions } from 'sequelize'
+import { InferAttributes, Op, QueryTypes, UniqueConstraintError, WhereOptions } from 'sequelize'
 
 /**
  * 处理今日抓到的单场比赛数据
@@ -124,12 +124,28 @@ async function processTodayMatch(match: VMatch, todayMatches: Titan007.TodayMatc
                 updated[objKey] = match[objKey]
             })
 
-            await Match.update(updated as Partial<Match>, {
-                where: {
-                    id: match.id,
-                },
-                returning: false,
-            })
+            try {
+                await Match.update(updated as Partial<Match>, {
+                    where: {
+                        id: match.id,
+                    },
+                    returning: false,
+                })
+            } catch (err) {
+                if (err instanceof UniqueConstraintError) {
+                    //主键冲突
+                    delete updated.titan007_match_id
+                    delete updated.titan007_swap
+                    if (Object.keys(updated).length > 0) {
+                        await Match.update(updated as Partial<Match>, {
+                            where: {
+                                id: match.id,
+                            },
+                            returning: false,
+                        })
+                    }
+                }
+            }
         }
     }
 
