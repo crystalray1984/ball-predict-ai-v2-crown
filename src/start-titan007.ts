@@ -98,28 +98,14 @@ async function processTodayMatch(match: VMatch, todayMatches: Titan007.TodayMatc
                 updated[objKey] = match[objKey]
             })
 
-            try {
-                await Match.update(updated as Partial<Match>, {
-                    where: {
-                        id: match.id,
-                    },
-                    returning: false,
-                })
-            } catch (err) {
-                if (err instanceof UniqueConstraintError) {
-                    //主键冲突
-                    delete updated.titan007_match_id
-                    delete updated.titan007_swap
-                    if (Object.keys(updated).length > 0) {
-                        await Match.update(updated as Partial<Match>, {
-                            where: {
-                                id: match.id,
-                            },
-                            returning: false,
-                        })
-                    }
-                }
-            }
+            console.log('更新比赛数据', `id=${match.id}`, updated)
+
+            await Match.update(updated as Partial<Match>, {
+                where: {
+                    id: match.id,
+                },
+                returning: false,
+            })
         }
     }
 

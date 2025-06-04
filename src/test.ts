@@ -109,32 +109,32 @@ async function main() {
     const matches = await VMatch.findAll({
         where: {
             id: {
-                [Op.in]: [7178],
+                [Op.in]: [7161],
             },
         },
     })
 
-    const match = matches[0]
-    match.has_score = 0
-    match.has_period1_score = 0
-    match.score1 = null
-    match.score2 = null
-    match.score1_period1 = null
-    match.score2_period1 = null
-    match.corner1 = null
-    match.corner2 = null
-    match.corner1_period1 = null
-    match.corner2_period1 = null
-    match.changed('has_score', false)
-    match.changed('has_period1_score', false)
-    match.changed('score1', false)
-    match.changed('score2', false)
-    match.changed('score1_period1', false)
-    match.changed('score2_period1', false)
-    match.changed('corner1', false)
-    match.changed('corner2', false)
-    match.changed('corner1_period1', false)
-    match.changed('corner2_period1', false)
+    // const match = matches[0]
+    // match.has_score = 0
+    // match.has_period1_score = 0
+    // match.score1 = null
+    // match.score2 = null
+    // match.score1_period1 = null
+    // match.score2_period1 = null
+    // match.corner1 = null
+    // match.corner2 = null
+    // match.corner1_period1 = null
+    // match.corner2_period1 = null
+    // match.changed('has_score', false)
+    // match.changed('has_period1_score', false)
+    // match.changed('score1', false)
+    // match.changed('score2', false)
+    // match.changed('score1_period1', false)
+    // match.changed('score2_period1', false)
+    // match.changed('corner1', false)
+    // match.changed('corner2', false)
+    // match.changed('corner1_period1', false)
+    // match.changed('corner2_period1', false)
 
     const todayMatches = await getTodayMatches()
 
