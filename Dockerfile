@@ -2,6 +2,8 @@ FROM node:22-bookworm
 
 COPY sources.list /etc/apt/
 
+RUN unlink /etc/apt/sources.list.d/debian.sources
+
 RUN apt-get update && \
     apt-get install -y \
     libasound2 \
