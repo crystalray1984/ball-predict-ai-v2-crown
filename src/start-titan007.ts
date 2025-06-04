@@ -31,6 +31,8 @@ async function processTodayMatch(match: VMatch, todayMatches: Titan007.TodayMatc
             match.team2_titan007_id = exists.swap ? exists.team1_id : exists.team2_id
         }
         found = exists
+    } else {
+        return
     }
 
     /**

@@ -92,12 +92,15 @@ async function getTechData(match_id: string): Promise<Titan007.TechData> {
     const htmlData = await getTechDataFromHtml(match_id)
     if (Object.values(htmlData).some((t) => t === null)) {
         //再尝试通过JS获取
-        const jsData = await getTechDataFromJs(match_id)
-        Object.entries(htmlData).forEach(([key, value]) => {
-            if (value === null && typeof jsData[key as keyof Titan007.TechData] === 'number') {
-                htmlData[key as keyof Titan007.TechData] = jsData[key as keyof Titan007.TechData]
-            }
-        })
+        try {
+            const jsData = await getTechDataFromJs(match_id)
+            Object.entries(htmlData).forEach(([key, value]) => {
+                if (value === null && typeof jsData[key as keyof Titan007.TechData] === 'number') {
+                    htmlData[key as keyof Titan007.TechData] =
+                        jsData[key as keyof Titan007.TechData]
+                }
+            })
+        } catch (err) {}
     }
     return htmlData
 }
