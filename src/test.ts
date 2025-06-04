@@ -1,9 +1,9 @@
+import { pick } from 'lodash'
+import { writeFile } from 'node:fs/promises'
+import { resolve } from 'node:path'
 import { Op } from 'sequelize'
 import { VMatch } from './db'
 import { findMatch, FindMatchResult, getMatchScore, getTodayMatches } from './titan007'
-import { intersection, pick } from 'lodash'
-import { writeFile } from 'node:fs/promises'
-import { resolve } from 'node:path'
 
 /**
  * 处理今日抓到的单场比赛数据
@@ -109,10 +109,32 @@ async function main() {
     const matches = await VMatch.findAll({
         where: {
             id: {
-                [Op.in]: [7115, 7138, 7061],
+                [Op.in]: [7178],
             },
         },
     })
+
+    const match = matches[0]
+    match.has_score = 0
+    match.has_period1_score = 0
+    match.score1 = null
+    match.score2 = null
+    match.score1_period1 = null
+    match.score2_period1 = null
+    match.corner1 = null
+    match.corner2 = null
+    match.corner1_period1 = null
+    match.corner2_period1 = null
+    match.changed('has_score', false)
+    match.changed('has_period1_score', false)
+    match.changed('score1', false)
+    match.changed('score2', false)
+    match.changed('score1_period1', false)
+    match.changed('score2_period1', false)
+    match.changed('corner1', false)
+    match.changed('corner2', false)
+    match.changed('corner1_period1', false)
+    match.changed('corner2_period1', false)
 
     const todayMatches = await getTodayMatches()
 
@@ -120,7 +142,11 @@ async function main() {
         console.log(match)
     })
 
-    await writeFile(resolve(__dirname, './titan007.json'), JSON.stringify(todayMatches), 'utf-8')
+    await writeFile(
+        resolve(__dirname, './titan007_today.json'),
+        JSON.stringify(todayMatches),
+        'utf-8',
+    )
 
     for (const match of matches) {
         const period = await processTodayMatch(match, todayMatches)

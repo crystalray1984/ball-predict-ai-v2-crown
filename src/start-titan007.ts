@@ -293,16 +293,32 @@ async function processTodayMatches() {
     //比分结算
     if (finalRegularTimeMatches.length > 0) {
         for (const match of finalRegularTimeMatches) {
+            console.log(
+                '结算比分',
+                `match_id=${match.id}`,
+                `titan007_match_id=${match.titan007_match_id}`,
+                'regularTime',
+            )
             try {
                 await processFinalMatch(match, 'regularTime')
-            } catch (err) {}
+            } catch (err) {
+                console.error(err)
+            }
         }
     }
     if (finalPeriod1Matches.length > 0) {
         for (const match of finalPeriod1Matches) {
+            console.log(
+                '结算比分',
+                `match_id=${match.id}`,
+                `titan007_match_id=${match.titan007_match_id}`,
+                'period1',
+            )
             try {
                 await processFinalMatch(match, 'period1')
-            } catch (err) {}
+            } catch (err) {
+                console.error(err)
+            }
         }
     }
 }
