@@ -18,47 +18,19 @@ import { InferAttributes, Op, QueryTypes, UniqueConstraintError, WhereOptions } 
 async function processTodayMatch(match: VMatch, todayMatches: Titan007.TodayMatchInfo[]) {
     let found = undefined as unknown as FindMatchResult
 
-    if (!match.titan007_match_id) {
-        //如果比赛还没有球探网数据id的，那么尝试根据数据去做匹配
-        const exists = findMatch(match, todayMatches)
-        if (exists) {
-            let titan007_match_id = exists.match_id
-            //更新比赛数据
-            match.titan007_match_id = titan007_match_id
-            match.titan007_swap = exists.swap ? 1 : 0
-
-            //更新球队数据
-            if (!match.team1_titan007_id) {
-                match.team1_titan007_id = exists.swap ? exists.team2_id : exists.team1_id
-            }
-            if (!match.team2_titan007_id) {
-                match.team2_titan007_id = exists.swap ? exists.team1_id : exists.team2_id
-            }
-
-            console.log(
-                '新增匹配的比赛',
-                match.id,
-                new Date(match.match_time),
-                match.team1_name,
-                match.team2_name,
-            )
-        } else {
-            //如果没有匹配的数据，那么后续肯定也没有匹配的了，直接跳过了
-            return
+    //从匹配的数据中寻找
+    const exists = findMatch(match, todayMatches)
+    if (exists) {
+        //有找到
+        match.titan007_match_id = exists.match_id
+        match.titan007_swap = exists.swap ? 1 : 0
+        if (!match.team1_titan007_id) {
+            match.team1_titan007_id = exists.swap ? exists.team2_id : exists.team1_id
         }
-
+        if (!match.team2_titan007_id) {
+            match.team2_titan007_id = exists.swap ? exists.team1_id : exists.team2_id
+        }
         found = exists
-    } else {
-        const exists = todayMatches.find((t) => t.match_id === match.titan007_match_id)
-        if (!exists) {
-            //没有找到比赛
-            return
-        }
-
-        found = {
-            ...exists,
-            swap: match.titan007_swap === 1,
-        }
     }
 
     /**
