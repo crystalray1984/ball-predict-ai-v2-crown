@@ -1,5 +1,7 @@
 FROM node:22-bookworm
 
+COPY sources.list /etc/apt/
+
 RUN apt-get update && \
     apt-get install -y \
     libasound2 \
