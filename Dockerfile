@@ -1,5 +1,14 @@
 FROM node:22-bookworm
 
+RUN deb https://mirrors.aliyun.com/debian/ bookworm main non-free non-free-firmware contrib && \
+    deb-src https://mirrors.aliyun.com/debian/ bookworm main non-free non-free-firmware contrib && \
+    deb https://mirrors.aliyun.com/debian-security/ bookworm-security main && \
+    deb-src https://mirrors.aliyun.com/debian-security/ bookworm-security main && \
+    deb https://mirrors.aliyun.com/debian/ bookworm-updates main non-free non-free-firmware contrib && \
+    deb-src https://mirrors.aliyun.com/debian/ bookworm-updates main non-free non-free-firmware contrib && \
+    deb https://mirrors.aliyun.com/debian/ bookworm-backports main non-free non-free-firmware contrib && \
+    deb-src https://mirrors.aliyun.com/debian/ bookworm-backports main non-free non-free-firmware contrib
+
 RUN apt-get update && \
     apt-get install -y \
     libasound2 \
