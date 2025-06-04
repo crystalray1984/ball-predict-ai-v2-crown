@@ -138,6 +138,12 @@ async function main() {
 
     const todayMatches = await getTodayMatches()
 
+    const times = todayMatches.map((t) => t.match_time)
+    const minTime = Math.min(...times)
+    const maxTime = Math.max(...times)
+    console.log('今日比赛时间范围', minTime, maxTime)
+    console.log('今日比赛时间范围', new Date(minTime), new Date(maxTime))
+
     todayMatches.forEach((match) => {
         console.log(match)
     })
