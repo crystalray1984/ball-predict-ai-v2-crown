@@ -17,8 +17,5 @@ function createConfig(name, script) {
 }
 
 module.exports = {
-    'final-check': createConfig('final-check'),
-    'ready-check': createConfig('ready-check'),
-    surebet: createConfig('surebet'),
     titan007: createConfig('titan007'),
 }
