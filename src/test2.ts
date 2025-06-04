@@ -1,4 +1,6 @@
 import axios from 'axios'
+import { writeFile } from 'node:fs/promises'
+import { resolve } from 'node:path'
 
 async function main() {
     const resp = await axios.request({
@@ -14,7 +16,7 @@ async function main() {
         responseType: 'text',
     })
 
-    console.log(resp.data)
+    await writeFile(resolve(__dirname, '../runtime/logs/titan007_test2.txt'), resp.data, 'utf-8')
 }
 
 main().finally(() => process.exit())
