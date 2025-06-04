@@ -3,6 +3,8 @@ import { titan007Limiter, USER_AGENT } from './base'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
+import { writeFile } from 'node:fs/promises'
+import { resolve } from 'node:path'
 
 dayjs.extend(utc)
 dayjs.extend(timezone)
@@ -25,6 +27,12 @@ export async function getTodayMatches() {
         },
         responseType: 'text',
     })
+
+    await writeFile(
+        resolve(__dirname, '../../runtime/logs/titan007_today_js.txt'),
+        resp.data,
+        'utf-8',
+    )
 
     const script = (resp.data as string).replace('ShowBf()', 'ShowBf(A)')
 
