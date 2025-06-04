@@ -83,6 +83,7 @@ export async function getTodayMatches() {
         const result = {
             match_id: row[0],
             match_time: time.valueOf(),
+            raw_time: `${row[43]}-${row[36]} ${row[11]}`,
             team1_id,
             team1:
                 alias[team1_id] ??

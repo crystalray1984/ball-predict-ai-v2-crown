@@ -10,6 +10,8 @@ import {
 } from '@/titan007'
 import dayjs from 'dayjs'
 import { intersection } from 'lodash'
+import { writeFile } from 'node:fs/promises'
+import { resolve } from 'node:path'
 import { InferAttributes, Op, QueryTypes, UniqueConstraintError, WhereOptions } from 'sequelize'
 
 /**
@@ -227,6 +229,11 @@ async function processTodayMatches() {
     if (todayMatches.length === 0) return
 
     console.log('抓取到今日比赛数据', todayMatches.length)
+    await writeFile(
+        resolve(__dirname, '../runtime/logs/titan007_today.json'),
+        JSON.stringify(todayMatches, null, 4),
+        'utf-8',
+    )
 
     //确定抓取到的比赛时间范围
     const times = todayMatches.map((t) => t.match_time)

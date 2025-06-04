@@ -5,3 +5,4 @@ runtime/
 /config.yaml
 *.local
 pm2-local.config.js
+titan007_today.json
