@@ -28,6 +28,8 @@ export async function getTodayMatches() {
         responseType: 'text',
     })
 
+    const now = dayjs()
+
     await writeFile(
         resolve(__dirname, '../../runtime/logs/titan007_today_js.txt'),
         resp.data,
@@ -48,6 +50,7 @@ export async function getTodayMatches() {
     })
 
     await titan007Limiter.next()
+
     //处理名称翻译
     const respAlias = await axios.request({
         url: `https://livestatic.titan007.com/vbsxml/alias3.txt`,
