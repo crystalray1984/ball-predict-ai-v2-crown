@@ -1,5 +1,11 @@
 import axios from 'axios'
 import { titan007Limiter, USER_AGENT } from './base'
+import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
+import timezone from 'dayjs/plugin/timezone'
+
+dayjs.extend(utc)
+dayjs.extend(timezone)
 
 /**
  * 获取皇冠网今日实时数据
@@ -56,17 +62,20 @@ export async function getTodayMatches() {
     )
 
     const formatMatch = (row: string[]): Titan007.TodayMatchInfo => {
-        const date_sl = row[11].split(':')
-        const date_sl2 = row[36].split('-')
-        const time = new Date(
-            parseInt(row[43]),
-            parseInt(date_sl2[0]) - 1,
-            parseInt(date_sl2[1]),
-            parseInt(date_sl[0]),
-            parseInt(date_sl[1]),
-            0,
-            0,
-        )
+        // const date_sl = row[11].split(':')
+        // const date_sl2 = row[36].split('-')
+        const time = dayjs
+            .tz(`${row[43]}-${row[36]} ${row[11]}`, 'YYYY-M-D H:m', 'Asia/Shanghai')
+            .toDate()
+        // const time = new Date(
+        //     parseInt(row[43]),
+        //     parseInt(date_sl2[0]) - 1,
+        //     parseInt(date_sl2[1]),
+        //     parseInt(date_sl[0]),
+        //     parseInt(date_sl[1]),
+        //     0,
+        //     0,
+        // )
 
         const team1_id = row[37]
         const team2_id = row[38]
