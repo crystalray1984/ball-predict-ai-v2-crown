@@ -19,11 +19,12 @@ export async function getTodayMatches() {
     const resp = await axios.request({
         url: 'https://livestatic.titan007.com/vbsxml/bfdata_ut.js',
         params: {
-            r: `007${Date.now()}`,
+            r: `007${dayjs().unix()}000`,
         },
         headers: {
-            Referer: 'https://live.titan007.com/oldIndexall.aspx',
+            Referer: 'https://live.titan007.com/',
             'User-Agent': USER_AGENT,
+            'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,zh-TW;q=0.7',
         },
         responseType: 'text',
     })
@@ -55,11 +56,12 @@ export async function getTodayMatches() {
     const respAlias = await axios.request({
         url: `https://livestatic.titan007.com/vbsxml/alias3.txt`,
         params: {
-            r: `007${Date.now()}`,
+            r: `007${dayjs().unix()}000`,
         },
         headers: {
-            Referer: 'https://live.titan007.com/oldIndexall.aspx',
+            Referer: 'https://live.titan007.com/',
             'User-Agent': USER_AGENT,
+            'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,zh-TW;q=0.7',
         },
         responseType: 'text',
     })
