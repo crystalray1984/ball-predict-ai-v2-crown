@@ -233,6 +233,7 @@ async function processTodayMatches() {
     const minTime = Math.min(...times)
     const maxTime = Math.max(...times)
 
+    console.log('当前时间', new Date())
     console.log('今日比赛时间范围', minTime, maxTime)
     console.log('今日比赛时间范围', new Date(minTime), new Date(maxTime))
 
