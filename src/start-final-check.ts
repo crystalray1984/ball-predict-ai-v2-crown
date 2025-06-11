@@ -203,6 +203,8 @@ export async function processFinalCheck(
     })
 
     if (!data.data) {
+        console.error('未找到比赛盘口数据', 'crown_match_id=' + data.crown_match_id)
+        console.error(data.data)
         //没有抓到盘口数据，那么所有的推荐都不生效，只有通过了球探网的数据才有效
         await generatePromotedOdds(promoted_odd_attrs, odds)
         return
@@ -225,6 +227,9 @@ export async function processFinalCheck(
         const matched_crown_odds = findMatchedOdd(odd, data.data!.odds)
         if (matched_crown_odds.length === 0) {
             //连盘口都没开，就视同于没有抓到盘口
+            console.error('未找到对应盘口数据', 'crown_match_id=' + data.crown_match_id)
+            console.error(odd)
+            console.error(data.data)
             continue
         }
 
