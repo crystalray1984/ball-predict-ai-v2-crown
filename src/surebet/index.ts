@@ -1,8 +1,9 @@
-import Decimal from 'decimal.js'
-import { omit } from 'lodash'
 import { isEmpty } from '@/common/helpers'
 import { getSetting } from '@/common/settings'
 import { CONFIG } from '@/config'
+import { SurebetRecord } from '@/db'
+import Decimal from 'decimal.js'
+import { omit } from 'lodash'
 import { getAllOdds, GetOddsOptions } from './api'
 
 /**
@@ -46,6 +47,30 @@ export async function getSurebets() {
         //只筛选188bet的数据
         const odd = record.prongs.find((t) => t.bk === '188bet')
         if (!odd) continue
+
+        //插入surebet抓取数据
+        try {
+            await SurebetRecord.create(
+                {
+                    crown_match_id: odd.preferred_nav.markers.eventId,
+                    match_time: new Date(odd.time),
+                    team1: odd.teams[0],
+                    team2: odd.teams[2],
+                    game: odd.type.game,
+                    base: odd.type.base,
+                    variety: odd.type.variety,
+                    period: odd.type.period,
+                    type: odd.type.type,
+                    condition: odd.type.condition ?? null,
+                    value: String(odd.value),
+                },
+                {
+                    returning: false,
+                },
+            )
+        } catch (err) {
+            console.error(err)
+        }
 
         if (odd.type.game !== 'regular' || odd.type.base !== 'overall') continue
 

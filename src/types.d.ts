@@ -420,6 +420,7 @@ declare namespace Surebet {
                 eventId: string
             }
         }
+        teams: string[]
     }
 
     /**

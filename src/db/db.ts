@@ -6,6 +6,7 @@ import { Match } from './models/Match'
 import { Odd } from './models/Odd'
 import { PromotedOdd } from './models/PromotedOdd'
 import { Setting } from './models/Setting'
+import { SurebetRecord } from './models/SurebetRecord'
 import { Team } from './models/Team'
 import { Titan007Odd } from './models/Titan007Odd'
 import { Tournament } from './models/Tournament'
@@ -33,6 +34,7 @@ export const db = new Sequelize(
                 Tournament,
                 CrownAccount,
                 VMatch,
+                SurebetRecord,
             ],
         },
     ),
@@ -43,6 +45,7 @@ export { Match } from './models/Match'
 export { Odd } from './models/Odd'
 export { PromotedOdd } from './models/PromotedOdd'
 export { Setting } from './models/Setting'
+export { SurebetRecord } from './models/SurebetRecord'
 export { Team } from './models/Team'
 export { Titan007Odd } from './models/Titan007Odd'
 export { Tournament } from './models/Tournament'
