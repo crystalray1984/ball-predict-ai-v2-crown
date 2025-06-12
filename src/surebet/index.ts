@@ -50,8 +50,16 @@ export async function getSurebets() {
 
         //插入surebet抓取数据
         try {
-            await SurebetRecord.create(
-                {
+            await SurebetRecord.findOrCreate({
+                where: {
+                    crown_match_id: odd.preferred_nav.markers.eventId,
+                    game: odd.type.game,
+                    base: odd.type.base,
+                    variety: odd.type.variety,
+                    period: odd.type.period,
+                    type: odd.type.type,
+                },
+                defaults: {
                     crown_match_id: odd.preferred_nav.markers.eventId,
                     match_time: new Date(odd.time),
                     game: odd.type.game,
@@ -62,10 +70,7 @@ export async function getSurebets() {
                     condition: odd.type.condition ?? null,
                     value: String(odd.value),
                 },
-                {
-                    returning: false,
-                },
-            )
+            })
         } catch (err) {
             console.error(err)
         }
