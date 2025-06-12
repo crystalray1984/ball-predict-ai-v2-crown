@@ -61,7 +61,7 @@ async function processReadyCheck(content: string) {
         await Odd.update(
             {
                 surebet_value: extra.surebet_value,
-                crown_value: exists.condition,
+                crown_value: exists.value,
                 status,
                 ready_at: status === 'ready' ? literal('CURRENT_TIMESTAMP') : null,
             },

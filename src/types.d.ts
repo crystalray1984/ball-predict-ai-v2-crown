@@ -75,6 +75,14 @@ declare interface AdjustConditionRule extends SpecialPromoteRule {
 }
 
 /**
+ * 推送直通规则
+ */
+declare interface DirectConfig extends SpecialReverseRule, AdjustConditionRule {
+    value_symbol?: '>=' | '>' | '<=' | '<' | '='
+    value: string
+}
+
+/**
  * 皇冠数据结构
  */
 declare namespace Crown {

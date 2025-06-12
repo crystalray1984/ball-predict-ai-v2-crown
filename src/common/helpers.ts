@@ -340,6 +340,24 @@ export function getOddIdentification(type: OddType) {
 }
 
 /**
+ * 获取同类盘口的标识列表
+ * @param type 当前盘口标识
+ */
+export function getSameOddTypes(type: OddType): OddType[] {
+    switch (type) {
+        case 'ah1':
+        case 'ah2':
+        case 'draw':
+            return ['ah1', 'ah2', 'draw']
+        case 'over':
+        case 'under':
+            return ['over', 'under']
+        default:
+            return []
+    }
+}
+
+/**
  * 交换对象里的2个字段的值
  * @param object
  * @param key1
@@ -370,28 +388,74 @@ export function findRule<T extends SpecialPromoteRule>(rules: T[], odd: OddInfo)
             continue
         }
         if (!isNullOrUndefined(rule.condition) && !isNullOrUndefined(rule.condition_symbol)) {
-            let pass = false
-            switch (rule.condition_symbol) {
-                case '>':
-                    pass = Decimal(odd.condition).gt(rule.condition)
-                    break
-                case '>=':
-                    pass = Decimal(odd.condition).gte(rule.condition)
-                    break
-                case '<':
-                    pass = Decimal(odd.condition).lt(rule.condition)
-                    break
-                case '<=':
-                    pass = Decimal(odd.condition).lte(rule.condition)
-                    break
-                case '=':
-                    pass = Decimal(odd.condition).eq(rule.condition)
-                    break
+            if (!compareValue(odd.condition, rule.condition, rule.condition_symbol)) {
+                continue
             }
-            return pass ? rule : undefined
         }
 
         return rule
+    }
+}
+
+/**
+ * 寻找满足条件的带水位判断的盘口规则
+ */
+export function findRuleWithValue<
+    T extends SpecialPromoteRule & {
+        value_symbol?: SpecialPromoteRule['condition_symbol']
+        value: string
+    },
+>(rules: T[], odd: OddInfo & { value: string }): T | undefined {
+    if (!rules || !Array.isArray(rules) || rules.length === 0) return
+    for (const rule of rules) {
+        if (!isNullOrUndefined(rule.variety) && rule.variety !== odd.variety) {
+            continue
+        }
+        if (!isNullOrUndefined(rule.period) && rule.period !== odd.period) {
+            continue
+        }
+        if (!isNullOrUndefined(rule.type) && rule.type !== odd.type) {
+            continue
+        }
+        if (!isNullOrUndefined(rule.condition) && !isNullOrUndefined(rule.condition_symbol)) {
+            if (!compareValue(odd.condition, rule.condition, rule.condition_symbol)) {
+                continue
+            }
+        }
+        if (!isNullOrUndefined(rule.value) && !isNullOrUndefined(rule.value_symbol)) {
+            if (!compareValue(odd.value, rule.value, rule.value_symbol)) {
+                continue
+            }
+        }
+
+        return rule
+    }
+}
+
+/**
+ * 根据判断符号比较两个值是否满足
+ * @param value1
+ * @param value2
+ * @param symbol
+ */
+export function compareValue(
+    value1: string | number,
+    value2: string | number,
+    symbol: '>=' | '>' | '<=' | '<' | '=',
+): boolean {
+    switch (symbol) {
+        case '>':
+            return Decimal(value1).gt(value2)
+        case '>=':
+            return Decimal(value1).gte(value2)
+        case '<':
+            return Decimal(value1).lt(value2)
+        case '<=':
+            return Decimal(value1).lte(value2)
+        case '=':
+            return Decimal(value1).eq(value2)
+        default:
+            return true
     }
 }
 

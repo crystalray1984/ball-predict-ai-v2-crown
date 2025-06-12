@@ -25,9 +25,15 @@ export async function startSurebet() {
                 type: surebet.type.type,
             },
         })
-        if (exists && exists.status !== '') {
-            //已经有盘口而且这个盘口的状态不为空那么跳过
-            continue
+
+        if (exists) {
+            //已经有这个盘口了，那么更新一下surebet的推送时间
+            exists.surebet_updated_at = new Date()
+            await exists.save()
+            if (exists.status !== '') {
+                //状态不为空表示已经经过处理了，那么跳过
+                continue
+            }
         }
 
         //判断比赛，如果比赛存在且状态为已结算那么也跳过

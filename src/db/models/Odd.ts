@@ -114,4 +114,7 @@ export class Odd extends Model<InferAttributes<Odd>, InferCreationAttributes<Odd
     @UpdatedAt
     @Column(DataType.DATE)
     declare updated_at: CreationOptional<Date>
+
+    @Column(DataType.DATE)
+    declare surebet_updated_at: CreationOptional<Date>
 }

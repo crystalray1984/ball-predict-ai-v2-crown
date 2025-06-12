@@ -2,6 +2,7 @@ import { CONFIG } from '@/config'
 import { merge } from 'lodash'
 import { Sequelize, SequelizeOptions } from 'sequelize-typescript'
 import { CrownAccount } from './models/CrownAccount'
+import { ManualPromoteOdd } from './models/ManualPromoteOdd'
 import { Match } from './models/Match'
 import { Odd } from './models/Odd'
 import { PromotedOdd } from './models/PromotedOdd'
@@ -35,12 +36,14 @@ export const db = new Sequelize(
                 CrownAccount,
                 VMatch,
                 SurebetRecord,
+                ManualPromoteOdd,
             ],
         },
     ),
 )
 
 export { CrownAccount } from './models/CrownAccount'
+export { ManualPromoteOdd } from './models/ManualPromoteOdd'
 export { Match } from './models/Match'
 export { Odd } from './models/Odd'
 export { PromotedOdd } from './models/PromotedOdd'

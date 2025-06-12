@@ -1,15 +1,17 @@
 import {
     findRule,
+    findRuleWithValue,
     getOddIdentification,
     getPromotedOddInfo,
     getPromotedOddInfoBySetting,
+    getSameOddTypes,
     isNullOrUndefined,
     runLoop,
 } from '@/common/helpers'
 import { consume, publish } from '@/common/rabbitmq'
 import { getSetting } from '@/common/settings'
 import { findMatchedOdd } from '@/crown'
-import { db, Match, Odd, PromotedOdd } from '@/db'
+import { db, ManualPromoteOdd, Match, Odd, PromotedOdd } from '@/db'
 import Decimal from 'decimal.js'
 import { CreationAttributes, literal, Op, QueryTypes } from 'sequelize'
 
@@ -29,14 +31,22 @@ async function generatePromotedOdds(attrs: CreationAttributes<PromotedOdd>[], od
         'adjust_condition',
     )
 
+    //读取当前比赛已经生成的盘口
+    const promoted_odds = await PromotedOdd.findAll({
+        where: {
+            match_id: odds[0].match_id,
+            is_valid: 1,
+        },
+    })
+
     //先对盘口和推荐结果进行一下组合
     let list = attrs.map((attr) => ({
         attr,
         odd: odds.find((t) => t.id === attr.odd_id!)!,
     }))
 
-    //然后对列表做一下排序，ready时间更大的盘排在前面
-    list.sort((t1, t2) => t1.odd.ready_at!.valueOf() - t2.odd.ready_at!.valueOf())
+    //然后对列表做一下排序，按surebet推送时间排序（这里用正序是因为后面会有reverse反向排列）
+    list.sort((t1, t2) => t1.odd.surebet_updated_at.valueOf() - t2.odd.surebet_updated_at.valueOf())
 
     //做第一步筛选，如果盘口条件不满足的就直接过滤掉
     for (const item of list) {
@@ -67,8 +77,27 @@ async function generatePromotedOdds(attrs: CreationAttributes<PromotedOdd>[], od
     const output: typeof list = []
 
     const hasSameOdd = (item: (typeof list)[number]) => {
+        //先看预先推荐列表中有没有已经出来的推荐（直推或者手动推荐）
+        const exists_promoted1 = promoted_odds.some(
+            (t) =>
+                t.variety === item.attr.variety &&
+                t.period === item.attr.period &&
+                getOddIdentification(t.type) === getOddIdentification(item.attr.type),
+        )
+        if (exists_promoted1) return
+
+        //再看预先推荐列表中有没有上下半场相反的数据
+        const exists_promoted2 = promoted_odds.some(
+            (t) =>
+                t.variety === item.attr.variety &&
+                t.period !== item.attr.period &&
+                getOddIdentification(t.type) === getOddIdentification(item.attr.type) &&
+                t.type !== item.attr.type,
+        )
+        if (exists_promoted2) return
+
         //看最终输出列表中有没有存在相同类型的盘
-        let exists1 = output.some(
+        const exists1 = output.some(
             (t) =>
                 t.attr.variety === item.attr.variety &&
                 t.attr.period === item.attr.period &&
@@ -390,7 +419,6 @@ async function processNearlyMatches() {
     //读取开赛时间配置
     const final_check_time = await (async () => {
         const final_check_time = await getSetting('final_check_time')
-        console.log('final_check_time', final_check_time)
         return typeof final_check_time === 'number' ? final_check_time : 5
     })()
 
@@ -455,10 +483,234 @@ async function processNearlyMatches() {
 }
 
 /**
+ * 处理手动推荐的盘口
+ */
+async function processManualPromote(final_check_time: number) {
+    //读取符合条件的手动推荐的盘口
+    const odds = await db.query<
+        {
+            id: number
+            match_id: number
+            condition2: string | null
+            type2: OddInfo['type'] | null
+        } & OddInfo
+    >(
+        {
+            query: `
+            SELECT
+                "manual_promote_odd".*
+            FROM
+                "manual_promote_odd"
+            INNER JOIN
+                "manual_promote_record" ON "manual_promote_odd"."record_id" = "manual_promote_record"."id"
+            INNER JOIN
+                "match" ON "match"."id" = "manual_promote_odd"."match_id"
+            WHERE
+                "manual_promote_odd"."deleted_at" IS NULL
+                AND "manual_promote_record"."deleted_at" IS NULL
+                AND "manual_promote_odd"."promoted_odd_id" = 0
+                AND "match"."match_time" BETWEEN (? AND ?)
+            `,
+            values: [
+                new Date(Date.now() + final_check_time * 60000),
+                new Date(Date.now() + (final_check_time + 2) * 60000),
+            ],
+        },
+        {
+            type: QueryTypes.SELECT,
+        },
+    )
+
+    if (odds.length === 0) {
+        return
+    }
+
+    //插入盘口
+    for (const odd of odds) {
+        await db.transaction(async (transaction) => {
+            const promoted = await PromotedOdd.create(
+                {
+                    match_id: odd.match_id,
+                    odd_id: 0,
+                    manual_promote_odd_id: odd.id,
+                    is_valid: 1,
+                    skip: '',
+                    variety: odd.variety,
+                    period: odd.period,
+                    condition: odd.condition,
+                    type: odd.type,
+                    back: 0,
+                    type2: odd.type2,
+                    condition2: odd.condition2,
+                },
+                {
+                    transaction,
+                    returning: ['id'],
+                },
+            )
+
+            await ManualPromoteOdd.update(
+                {
+                    promoted_odd_id: promoted.id,
+                },
+                {
+                    where: {
+                        id: odd.id,
+                    },
+                    transaction,
+                    returning: false,
+                },
+            )
+        })
+    }
+}
+
+/**
+ * 处理直接推荐的盘口
+ * @param final_check_time
+ */
+async function processDirectOdd(final_check_time: number) {
+    //读取直推配置
+    const direct_config = await getSetting<DirectConfig[]>('direct_config')
+    if (
+        isNullOrUndefined(direct_config) ||
+        !Array.isArray(direct_config) ||
+        direct_config.length === 0
+    ) {
+        return
+    }
+
+    //查询需要处理的盘口列表，按surebet推送时间倒序排列，先处理新的
+    const odds = await db.query(
+        {
+            query: `
+            SELECT
+                *
+            FROM
+                odds
+            WHERE
+                match_id IN (
+                SELECT
+                    id
+                FROM
+                    "match"
+                WHERE
+                    match_time BETWEEN ? AND ?
+                )
+            ORDER BY
+                surebet_updated_at DESC
+            `,
+            values: [
+                new Date(Date.now() + final_check_time * 60000),
+                new Date(Date.now() + (final_check_time + 2) * 60000),
+            ],
+        },
+        {
+            type: QueryTypes.SELECT,
+            model: Odd,
+        },
+    )
+
+    if (odds.length === 0) {
+        return
+    }
+
+    //盘口处理
+    for (const odd of odds) {
+        //先对盘口进行规则判断
+        const rule = findRuleWithValue(direct_config, {
+            ...odd,
+            value: odd.surebet_value,
+        })
+        if (!rule) {
+            //不满足规则
+            continue
+        }
+
+        //再看看是否已经存在同类的手动推荐
+        const promoted = await PromotedOdd.findOne({
+            where: {
+                match_id: odd.match_id,
+                variety: odd.variety,
+                period: odd.period,
+                type: {
+                    [Op.in]: getSameOddTypes(odd.type),
+                },
+            },
+            attributes: ['id'],
+        })
+
+        if (promoted) {
+            //已经有手动推荐了，那就不推了
+            continue
+        }
+
+        //确定推荐的方向和盘口
+        const { condition, type } = getPromotedOddInfo(odd, rule.back)
+
+        //生成推荐
+        try {
+            await db.transaction(async (transaction) => {
+                //创建推荐
+                await PromotedOdd.create(
+                    {
+                        match_id: odd.match_id,
+                        odd_id: odd.id,
+                        is_valid: 1,
+                        skip: '',
+                        variety: odd.variety,
+                        period: odd.period,
+                        condition,
+                        type,
+                        back: rule.back ? 1 : 0,
+                        final_rule: 'direct',
+                    },
+                    {
+                        transaction,
+                        returning: false,
+                    },
+                )
+
+                //修改盘口的状态
+                odd.status = 'promoted'
+                await odd.save({
+                    transaction,
+                })
+            })
+        } catch (err) {
+            console.error(err)
+        }
+    }
+}
+
+/**
+ * 处理赛前的二次数据检查
+ */
+async function processBeforeCheck() {
+    //读取开赛时间配置
+    const final_check_time = await (async () => {
+        const final_check_time = await getSetting('final_check_time')
+        return typeof final_check_time === 'number' ? final_check_time : 5
+    })()
+
+    //处理手动推荐的盘口
+    await processManualPromote(final_check_time)
+    //处理直接推荐的盘口
+    await processDirectOdd(final_check_time)
+}
+
+/**
  * 开始二次数据检查
  */
 export async function startFinalCheck() {
     return runLoop(30000, processNearlyMatches)
+}
+
+/**
+ * 开始赛前的二次数据检查
+ */
+export async function startBeforeFinalCheck() {
+    return runLoop(15000, processBeforeCheck)
 }
 
 /**
