@@ -32,10 +32,10 @@ export class SurebetRecord extends Model<
     declare match_time: Date
 
     @Column(DataType.STRING)
-    declare team1: string
+    declare team1: CreationOptional<string>
 
     @Column(DataType.STRING)
-    declare team2: string
+    declare team2: CreationOptional<string>
 
     @Column(DataType.STRING)
     declare game: string

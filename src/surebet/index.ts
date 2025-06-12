@@ -54,8 +54,6 @@ export async function getSurebets() {
                 {
                     crown_match_id: odd.preferred_nav.markers.eventId,
                     match_time: new Date(odd.time),
-                    team1: odd.teams[0],
-                    team2: odd.teams[1],
                     game: odd.type.game,
                     base: odd.type.base,
                     variety: odd.type.variety,
