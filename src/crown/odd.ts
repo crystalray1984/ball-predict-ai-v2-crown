@@ -1,6 +1,9 @@
 import Decimal from 'decimal.js'
 import { crownQueue, ready, xmlParser } from './base'
-import { isDecimal } from '@/common/helpers'
+import { isDecimal, prepareDir } from '@/common/helpers'
+import { join, resolve } from 'node:path'
+import { writeFile } from 'node:fs/promises'
+import dayjs from 'dayjs'
 
 /**
  * 读取皇冠盘口数据
@@ -45,6 +48,18 @@ export async function getCrownData(
         const resp = (await page.evaluate(func)) as string
         console.log('皇冠请求完成', crown_match_id, show_type)
         const data = xmlParser.parse(resp).serverresponse
+
+        //写入记录
+        try {
+            const now = dayjs()
+            const dirPath = resolve(__dirname, `../../runtime/crown/${now.format('YYYYMMDD')}`)
+            await prepareDir(dirPath)
+            const logFile = join(dirPath, `${crown_match_id}_${now.format('HHmmss')}.log`)
+            await writeFile(logFile, JSON.stringify(data, null, 4), 'utf-8')
+        } catch (err) {
+            console.error(err)
+        }
+
         try {
             return formatOddData(data)
         } catch (err) {

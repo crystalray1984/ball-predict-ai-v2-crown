@@ -1,6 +1,8 @@
 import { PromotedOdd, Titan007Odd } from '@/db'
 import Decimal from 'decimal.js'
 import { RateLimiter } from './rate-limiter'
+import { stat } from 'node:fs'
+import { mkdir } from 'node:fs/promises'
 
 /**
  * 返回一个等待指定时间的Promise
@@ -466,4 +468,26 @@ export function isDecimal(value: string | number) {
     } catch {
         return false
     }
+}
+
+/**
+ * 判断目录是否存在
+ * @param dirPath
+ * @returns
+ */
+export function isDirExists(dirPath: string): Promise<boolean> {
+    return new Promise((resolve) => {
+        stat(dirPath, (err, stats) => {
+            if (err) {
+                resolve(false)
+            } else {
+                resolve(stats.isDirectory())
+            }
+        })
+    })
+}
+
+export async function prepareDir(dirPath: string): Promise<void> {
+    if (await isDirExists(dirPath)) return
+    await mkdir(dirPath, { recursive: true })
 }
