@@ -104,6 +104,7 @@ async function startLuffaMessageQueue() {
  */
 async function processSendPromoted(content: string) {
     const { id } = JSON.parse(content) as { id: number }
+    console.log('推送推荐信息', id)
 
     //查询推荐盘口信息
     const promoted = await VPromotedOdd.findOne({
@@ -124,6 +125,8 @@ async function processSendPromoted(content: string) {
         },
         attributes: ['uid'],
     })
+
+    console.log('推送推荐信息', id, '目标数=', users.length)
 
     if (users.length === 0) return
 
@@ -172,6 +175,8 @@ ${oddParts.join(' ')}`
         }),
     )
 
+    console.log('推送推荐信息', id, text)
+
     await publish('send_luffa_message', queueData)
 }
 
@@ -180,7 +185,7 @@ ${oddParts.join(' ')}`
  */
 async function startPromotedQueue() {
     while (true) {
-        const [promise] = consume('send_promoted', processSendPromoted)
+        const [promise] = consume('send_promoted', processSendPromoted, { noLocal: false })
         await promise
         await close()
     }
