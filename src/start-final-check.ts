@@ -596,7 +596,7 @@ async function processDirectOdd(final_check_time: number) {
             SELECT
                 *
             FROM
-                odds
+                "odd"
             WHERE
                 match_id IN (
                 SELECT
