@@ -23,4 +23,5 @@ module.exports = {
     'ready-check': createConfig('ready-check'),
     surebet: createConfig('surebet'),
     titan007: createConfig('titan007'),
+    'luffa-robot': createConfig('luffa-robot'),
 }

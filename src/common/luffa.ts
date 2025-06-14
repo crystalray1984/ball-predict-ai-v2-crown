@@ -2,6 +2,21 @@ import { CONFIG } from '@/config'
 import axios from 'axios'
 
 /**
+ * 机器人接收到的Luffa消息
+ */
+export interface LuffaMessage {}
+
+/**
+ * 机器人接收到的单个Luffa消息组
+ */
+export interface LuffaMessageGroup {
+    uid: string
+    count: number
+    type: '0' | '1'
+    message: string[]
+}
+
+/**
  * 执行Luffa请求
  */
 async function request<T = void>(
@@ -104,6 +119,15 @@ export async function sendNotification(text: string) {
             await sendGroupMsg(target.uid, 1, msg)
         }
     }
+}
+
+/**
+ * 接收用户发送给Luffa机器人的消息
+ */
+export function receiveMsg() {
+    return request<LuffaMessageGroup[]>('/robot/receive', {
+        secret: CONFIG.luffa.secret,
+    })
 }
 
 // if (require.main === module) {

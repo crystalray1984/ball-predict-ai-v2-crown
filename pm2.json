@@ -59,6 +59,21 @@
             "error_file": "./runtime/logs/crown.log",
             "out_file": "./runtime/logs/crown.log",
             "pid_file": "./runtime/crown.pid"
+        },
+        {
+            "name": "luffa-robot",
+            "script": "./dist/start-luffa-robot.js",
+            "interpreter_args": "-r tsconfig-paths/register",
+            "env": {
+                "NODE_ENV": "production",
+                "TZ": "Asia/Shanghai",
+                "TS_NODE_BASEURL": "./dist"
+            },
+            "log_date_format": "YYYY-MM-DD HH:mm:ssZ",
+            "merge_logs": true,
+            "error_file": "./runtime/logs/luffa-robot.log",
+            "out_file": "./runtime/logs/luffa-robot.log",
+            "pid_file": "./runtime/luffa-robot.pid"
         }
     ]
 }
