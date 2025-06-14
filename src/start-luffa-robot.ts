@@ -1,5 +1,11 @@
 import { getNumberWithSymbol, runLoop } from '@/common/helpers'
-import { LuffaMessage, receiveMsg, sendGroupMsg, sendSingleMsg } from '@/common/luffa'
+import {
+    LuffaMessage,
+    LuffaMessageGroup,
+    receiveMsg,
+    sendGroupMsg,
+    sendSingleMsg,
+} from '@/common/luffa'
 import { close, consume, publish } from '@/common/rabbitmq'
 import { db, LuffaUser, VLuffaUser, VPromotedOdd } from '@/db'
 import dayjs from 'dayjs'
@@ -9,7 +15,12 @@ import { Op } from 'sequelize'
  * 接收来自Luffa的消息
  */
 async function receiveLuffaMsg() {
-    const groups = await receiveMsg()
+    let groups: LuffaMessageGroup[]
+    try {
+        groups = await receiveMsg()
+    } catch {
+        return
+    }
 
     if (!Array.isArray(groups) || groups.length === 0) {
         return
