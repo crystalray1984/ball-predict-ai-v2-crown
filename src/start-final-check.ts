@@ -628,7 +628,10 @@ async function processDirectOdd(final_check_time: number) {
     for (const odd of odds) {
         //先对盘口进行规则判断
         const rule = findRuleWithValue(direct_config, {
-            ...odd,
+            variety: odd.variety,
+            period: odd.period,
+            type: odd.type,
+            condition: odd.condition,
             value: odd.surebet_value,
         })
         if (!rule) {
