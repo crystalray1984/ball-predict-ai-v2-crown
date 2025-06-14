@@ -50,14 +50,14 @@ async function request<T = void>(
  * @param text 发送的内容
  */
 export function sendSingleMsg(uid: string, text: string, options?: AxiosRequestConfig) {
-    return request(
+    return request<string>(
         '/robot/send',
         {
             secret: CONFIG.luffa.secret,
             uid,
             msg: JSON.stringify({ text }),
         },
-        'json',
+        'text',
         options,
     )
 }
@@ -68,14 +68,14 @@ export function sendSingleMsg(uid: string, text: string, options?: AxiosRequestC
  * @param type 消息类型
  * @param msg 消息体
  */
-export function sendGroupMsg(uid: string, text: string): Promise<void>
+export function sendGroupMsg(uid: string, text: string): Promise<string>
 /**
  * 发送Luffa消息到群
  * @param uid 群id
  * @param type 消息类型
  * @param msg 消息体
  */
-export function sendGroupMsg(uid: string, type: number, msg: Object): Promise<void>
+export function sendGroupMsg(uid: string, type: number, msg: Object): Promise<string>
 export function sendGroupMsg(uid: string, arg2: number | string, msg?: Object) {
     let type: number, msgText: string
     if (typeof arg2 === 'string') {
@@ -85,7 +85,7 @@ export function sendGroupMsg(uid: string, arg2: number | string, msg?: Object) {
         type = arg2
         msgText = JSON.stringify(msg)
     }
-    return request(
+    return request<string>(
         '/robot/sendGroup',
         {
             secret: CONFIG.luffa.secret,

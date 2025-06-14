@@ -70,14 +70,19 @@ async function processLuffaSendMessage(content: string) {
             msg_type: number
         } = JSON.parse(content)
 
+        console.log('发送消息到Luffa', message)
+
         //发送消息
+        let resp: string
         if (message.is_group) {
             //发送群聊消息
-            await sendGroupMsg(message.uid, message.msg_type, message.msg)
+            resp = await sendGroupMsg(message.uid, message.msg_type, message.msg)
         } else {
             //发送单聊消息
-            await sendSingleMsg(message.uid, message.msg.text)
+            resp = await sendSingleMsg(message.uid, message.msg.text)
         }
+
+        console.log(resp)
     } catch (err) {
         console.error('发送Luffa消息异常', content)
         console.error(err)
