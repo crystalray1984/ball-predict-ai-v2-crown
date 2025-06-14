@@ -658,7 +658,10 @@ async function processDirectOdd(final_check_time: number) {
         }
 
         //确定推荐的方向和盘口
-        const { condition, type } = getPromotedOddInfo(odd, rule.back)
+        let { condition, type } = getPromotedOddInfo(odd, rule.back)
+
+        //确定变盘
+        condition = Decimal(condition).add(rule.adjust).toString()
 
         //生成推荐
         try {
