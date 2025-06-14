@@ -28,5 +28,5 @@ async function receiveLuffaMsg() {
 async function startLuffaSenderQueue() {}
 
 if (require.main === module) {
-    runLoop(60000, receiveLuffaMsg)
+    runLoop(1000, receiveLuffaMsg)
 }
