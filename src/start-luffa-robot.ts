@@ -1,25 +1,33 @@
 import { runLoop } from '@/common/helpers'
-import { receiveMsg } from '@/common/luffa'
+import { LuffaMessage, receiveMsg } from '@/common/luffa'
+import { LuffaUser } from './db'
 
 /**
  * 接收来自Luffa的消息
  */
 async function receiveLuffaMsg() {
     const groups = await receiveMsg()
-    console.log(groups)
 
     if (!Array.isArray(groups) || groups.length === 0) {
         return
     }
 
     for (const group of groups) {
-        //解析消息内容
-        const messages = group.message.map((str) => JSON.parse(str))
-        //打印消息内容
-        console.log({
-            ...group,
-            message: messages,
-        })
+        if (group.type === 0) {
+            //是普通用户
+            try {
+                await LuffaUser.create(
+                    {
+                        uid: group.uid,
+                        type: group.type,
+                        open_push: 1,
+                    },
+                    { ignoreDuplicates: true, returning: false },
+                )
+            } catch (err) {
+                console.error(err)
+            }
+        }
     }
 }
 

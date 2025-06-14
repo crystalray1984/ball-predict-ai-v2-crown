@@ -4,7 +4,10 @@ import axios from 'axios'
 /**
  * 机器人接收到的Luffa消息
  */
-export interface LuffaMessage {}
+export interface LuffaMessage {
+    uid: string
+    text: string
+}
 
 /**
  * 机器人接收到的单个Luffa消息组
@@ -12,7 +15,7 @@ export interface LuffaMessage {}
 export interface LuffaMessageGroup {
     uid: string
     count: number
-    type: '0' | '1'
+    type: number
     message: string[]
 }
 
@@ -31,6 +34,9 @@ async function request<T = void>(
         timeout: 10000,
         responseType,
         data,
+        headers: {
+            'Content-Type': 'application/json',
+        },
     })
     return resp.data
 }
@@ -125,9 +131,13 @@ export async function sendNotification(text: string) {
  * 接收用户发送给Luffa机器人的消息
  */
 export function receiveMsg() {
-    return request<LuffaMessageGroup[]>('/robot/receive', {
-        secret: CONFIG.luffa.secret,
-    })
+    return request<LuffaMessageGroup[]>(
+        '/robot/receive',
+        {
+            secret: CONFIG.luffa.secret,
+        },
+        'json',
+    )
 }
 
 // if (require.main === module) {

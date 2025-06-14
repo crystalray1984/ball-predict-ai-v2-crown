@@ -26,9 +26,9 @@ export class LuffaUser extends Model<
 
     @CreatedAt
     @Column(DataType.DATE)
-    declare created_at: Date
+    declare created_at: CreationOptional<Date>
 
     @UpdatedAt
     @Column(DataType.DATE)
-    declare updated_at: Date
+    declare updated_at: CreationOptional<Date>
 }
