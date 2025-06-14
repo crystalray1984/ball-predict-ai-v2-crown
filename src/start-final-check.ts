@@ -171,6 +171,7 @@ async function generatePromotedOdds(attrs: CreationAttributes<PromotedOdd>[], od
         }
         if (filter_rate === 4) {
             //全筛选率也不需要特殊处理
+            sendPromotedQueue(promoted.id)
             continue
         }
 
