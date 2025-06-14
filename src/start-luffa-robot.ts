@@ -37,6 +37,23 @@ async function receiveLuffaMsg() {
             const messages = group.message.map<LuffaMessage>((str) => JSON.parse(str))
 
             //判断有没有新关注的消息
+            if (messages.some((t) => t.text === '' && typeof t.name === 'string')) {
+                //新关注的用户
+                await publish(
+                    'send_luffa_message',
+                    JSON.stringify({
+                        uid: group.uid,
+                        is_group: false,
+                        msg: {
+                            text: `你好！我是BallPredictAI⚽️
+为你带来“AI精准分析”的足球赛事推荐！
+赛前3分钟推送关键预测消息。
+订阅会员，即刻接收赛事推荐！
+#BallPredictAI`,
+                        },
+                    }),
+                )
+            }
         }
     }
 }
