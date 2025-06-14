@@ -6,6 +6,7 @@ import { receiveMsg } from '@/common/luffa'
  */
 async function receiveLuffaMsg() {
     const groups = await receiveMsg()
+    console.log(groups)
 
     if (!Array.isArray(groups) || groups.length === 0) {
         return
