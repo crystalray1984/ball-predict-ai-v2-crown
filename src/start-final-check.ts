@@ -517,7 +517,7 @@ async function processManualPromote(final_check_time: number) {
                 "manual_promote_odd"."deleted_at" IS NULL
                 AND "manual_promote_record"."deleted_at" IS NULL
                 AND "manual_promote_odd"."promoted_odd_id" = 0
-                AND "match"."match_time" BETWEEN (? AND ?)`,
+                AND "match"."match_time" BETWEEN ? AND ?`,
             values: [
                 new Date(Date.now() + final_check_time * 60000),
                 new Date(Date.now() + (final_check_time + 2) * 60000),
