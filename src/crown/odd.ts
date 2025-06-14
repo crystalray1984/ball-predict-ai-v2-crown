@@ -1,6 +1,6 @@
 import Decimal from 'decimal.js'
 import { crownQueue, ready, xmlParser } from './base'
-import { isDecimal, prepareDir } from '@/common/helpers'
+import { isDecimal, isEmpty, prepareDir } from '@/common/helpers'
 import { join, resolve } from 'node:path'
 import { writeFile } from 'node:fs/promises'
 import dayjs from 'dayjs'
@@ -102,7 +102,7 @@ function formatOddData(input: Crown.Resp) {
             //全场让球
             if (
                 game.sw_R === 'Y' &&
-                isDecimal(game.ratio) &&
+                !isEmpty(game.ratio) &&
                 isDecimal(game.ior_RH) &&
                 isDecimal(game.ior_RC)
             ) {
@@ -123,7 +123,7 @@ function formatOddData(input: Crown.Resp) {
             //半场让球
             if (
                 game.sw_HR === 'Y' &&
-                isDecimal(game.hratio) &&
+                !isEmpty(game.hratio) &&
                 isDecimal(game.ior_HRH) &&
                 isDecimal(game.ior_HRC)
             ) {
@@ -144,7 +144,7 @@ function formatOddData(input: Crown.Resp) {
             //全场大小球
             if (
                 game.sw_OU === 'Y' &&
-                isDecimal(game.ratio_o) &&
+                !isEmpty(game.ratio_o) &&
                 isDecimal(game.ior_OUH) &&
                 isDecimal(game.ior_OUC)
             ) {
@@ -160,7 +160,7 @@ function formatOddData(input: Crown.Resp) {
             //半场大小球
             if (
                 game.sw_HOU === 'Y' &&
-                isDecimal(game.ratio_ho) &&
+                !isEmpty(game.ratio_ho) &&
                 isDecimal(game.ior_HOUH) &&
                 isDecimal(game.ior_HOUC)
             ) {
@@ -179,7 +179,7 @@ function formatOddData(input: Crown.Resp) {
             //全场让球
             if (
                 game.sw_R === 'Y' &&
-                isDecimal(game.ratio) &&
+                !isEmpty(game.ratio) &&
                 isDecimal(game.ior_RH) &&
                 isDecimal(game.ior_RC)
             ) {
@@ -200,7 +200,7 @@ function formatOddData(input: Crown.Resp) {
             //半场让球
             if (
                 game.sw_HR === 'Y' &&
-                isDecimal(game.hratio) &&
+                !isEmpty(game.hratio) &&
                 isDecimal(game.ior_HRH) &&
                 isDecimal(game.ior_HRC)
             ) {
@@ -221,7 +221,7 @@ function formatOddData(input: Crown.Resp) {
             //全场大小球
             if (
                 game.sw_OU === 'Y' &&
-                isDecimal(game.ratio_o) &&
+                !isEmpty(game.ratio_o) &&
                 isDecimal(game.ior_OUH) &&
                 isDecimal(game.ior_OUC)
             ) {
@@ -237,7 +237,7 @@ function formatOddData(input: Crown.Resp) {
             //半场大小球
             if (
                 game.sw_HOU === 'Y' &&
-                isDecimal(game.ratio_ho) &&
+                !isEmpty(game.ratio_ho) &&
                 isDecimal(game.ior_HOUH) &&
                 isDecimal(game.ior_HOUC)
             ) {

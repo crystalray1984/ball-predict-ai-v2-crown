@@ -12,7 +12,9 @@ import { SurebetRecord } from './models/SurebetRecord'
 import { Team } from './models/Team'
 import { Titan007Odd } from './models/Titan007Odd'
 import { Tournament } from './models/Tournament'
+import { VLuffaUser } from './models/VLuffaUser'
 import { VMatch } from './models/VMatch'
+import { VPromotedOdd } from './models/VPromotedOdd'
 
 /**
  * 数据库连接
@@ -39,6 +41,8 @@ export const db = new Sequelize(
                 SurebetRecord,
                 ManualPromoteOdd,
                 LuffaUser,
+                VLuffaUser,
+                VPromotedOdd,
             ],
         },
     ),
@@ -55,4 +59,6 @@ export { SurebetRecord } from './models/SurebetRecord'
 export { Team } from './models/Team'
 export { Titan007Odd } from './models/Titan007Odd'
 export { Tournament } from './models/Tournament'
+export { VLuffaUser } from './models/VLuffaUser'
 export { VMatch } from './models/VMatch'
+export { VPromotedOdd } from './models/VPromotedOdd'

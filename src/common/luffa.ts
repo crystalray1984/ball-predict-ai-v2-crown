@@ -34,7 +34,7 @@ async function request<T = void>(
         url,
         baseURL: 'https://apibot.luffa.im',
         method: 'POST',
-        timeout: 10000,
+        timeout: 3000,
         responseType,
         data,
         headers: {
@@ -85,12 +85,16 @@ export function sendGroupMsg(uid: string, arg2: number | string, msg?: Object) {
         type = arg2
         msgText = JSON.stringify(msg)
     }
-    return request('/robot/sendGroup', {
-        secret: CONFIG.luffa.secret,
-        uid,
-        type: type.toString(),
-        msg: msgText,
-    })
+    return request(
+        '/robot/sendGroup',
+        {
+            secret: CONFIG.luffa.secret,
+            uid,
+            type: type.toString(),
+            msg: msgText,
+        },
+        'text',
+    )
 }
 
 /**
@@ -149,5 +153,9 @@ export function receiveMsg() {
 }
 
 // if (require.main === module) {
-//     sendNotification('**测试消息**\n\n机器人账号已经失效，请立即处理')
+//     sendSingleMsg('fysgcHNkS5w', '**测试消息**\n\n机器人账号已经失效，请立即处理')
+//         .then((resp) => {
+//             console.log(resp)
+//         })
+//         .finally(() => process.exit())
 // }

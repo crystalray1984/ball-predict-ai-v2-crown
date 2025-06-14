@@ -16,6 +16,13 @@ import Decimal from 'decimal.js'
 import { CreationAttributes, literal, Op, QueryTypes } from 'sequelize'
 
 /**
+ * 将推荐数据发送到队列中推荐给用户
+ */
+function sendPromotedQueue(id: number) {
+    return publish('send_promoted', JSON.stringify({ id }))
+}
+
+/**
  * 生成最终推荐盘口数据
  * @param attrs 推荐数据集合
  * @param odds 原始盘口列表
@@ -190,6 +197,7 @@ async function generatePromotedOdds(attrs: CreationAttributes<PromotedOdd>[], od
         }
         if (item.attr.is_valid === 1) {
             await PromotedOdd.update({ is_valid: 1 }, { where: { id: promoted.id } })
+            sendPromotedQueue(promoted.id)
         }
     }
 
@@ -561,6 +569,8 @@ async function processManualPromote(final_check_time: number) {
                     returning: false,
                 },
             )
+
+            sendPromotedQueue(promoted.id)
         })
     }
 }
@@ -652,7 +662,7 @@ async function processDirectOdd(final_check_time: number) {
         try {
             await db.transaction(async (transaction) => {
                 //创建推荐
-                await PromotedOdd.create(
+                const promoted = await PromotedOdd.create(
                     {
                         match_id: odd.match_id,
                         odd_id: odd.id,
@@ -667,7 +677,7 @@ async function processDirectOdd(final_check_time: number) {
                     },
                     {
                         transaction,
-                        returning: false,
+                        returning: ['id'],
                     },
                 )
 
@@ -676,6 +686,8 @@ async function processDirectOdd(final_check_time: number) {
                 await odd.save({
                     transaction,
                 })
+
+                sendPromotedQueue(promoted.id)
             })
         } catch (err) {
             console.error(err)
@@ -726,4 +738,5 @@ export async function startFinalCrownCheck() {
 if (require.main === module) {
     startFinalCheck()
     startFinalCrownCheck()
+    startBeforeFinalCheck()
 }

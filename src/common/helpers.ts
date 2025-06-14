@@ -491,3 +491,12 @@ export async function prepareDir(dirPath: string): Promise<void> {
     if (await isDirExists(dirPath)) return
     await mkdir(dirPath, { recursive: true })
 }
+
+export function getNumberWithSymbol(input: Decimal.Value) {
+    const value = Decimal(input)
+    if (value.gt(0)) {
+        return '+' + value.toNumber()
+    } else {
+        return value.toNumber().toString()
+    }
+}
