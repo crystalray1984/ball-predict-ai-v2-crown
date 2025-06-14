@@ -91,6 +91,10 @@ export async function publish(
     }
 }
 
+export interface ConsumeOptions extends Options.Consume {
+    prefetchCount?: number
+}
+
 /**
  * 开启队列消费
  * @param queue
@@ -100,10 +104,11 @@ export async function publish(
 export function consume(
     queue: string,
     callback: (content: string) => any,
-    options?: Options.Consume,
+    options: ConsumeOptions = {},
 ): [Promise<void>, () => void] {
     const controller = new AbortController()
     const close = () => controller.abort()
+    const { prefetchCount = 1, ...rest } = options
 
     const promise = (async () => {
         await ready()
@@ -111,7 +116,7 @@ export function consume(
         const channel = await connection.createChannel()
         try {
             if (controller.signal.aborted) return
-            await channel.prefetch(1)
+            await channel.prefetch(prefetchCount)
             if (controller.signal.aborted) return
             await channel.assertQueue(queue)
             if (controller.signal.aborted) return
@@ -131,7 +136,7 @@ export function consume(
                             channel.nack(msg)
                         }
                     },
-                    options,
+                    rest,
                 )
                 console.log('[rabbitmq]', '开启队列监听', queue)
                 if (controller.signal.aborted) {

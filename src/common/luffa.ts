@@ -1,5 +1,5 @@
 import { CONFIG } from '@/config'
-import axios from 'axios'
+import axios, { AxiosRequestConfig } from 'axios'
 
 /**
  * 机器人接收到的Luffa消息
@@ -7,6 +7,7 @@ import axios from 'axios'
 export interface LuffaMessage {
     uid: string
     text: string
+    [name: string]: any
 }
 
 /**
@@ -26,8 +27,10 @@ async function request<T = void>(
     url: string,
     data: any = undefined,
     responseType: 'text' | 'json' = 'text',
+    options: AxiosRequestConfig = {},
 ) {
     const resp = await axios.request<T>({
+        ...options,
         url,
         baseURL: 'https://apibot.luffa.im',
         method: 'POST',
@@ -46,12 +49,17 @@ async function request<T = void>(
  * @param uid 发送到的目标uid
  * @param text 发送的内容
  */
-export function sendSingleMsg(uid: string, text: string) {
-    return request('/robot/send', {
-        secret: CONFIG.luffa.secret,
-        uid,
-        msg: JSON.stringify({ text }),
-    })
+export function sendSingleMsg(uid: string, text: string, options?: AxiosRequestConfig) {
+    return request(
+        '/robot/send',
+        {
+            secret: CONFIG.luffa.secret,
+            uid,
+            msg: JSON.stringify({ text }),
+        },
+        'json',
+        options,
+    )
 }
 
 /**
