@@ -48,7 +48,7 @@ async function receiveLuffaMsg() {
             const messages = group.message.map<LuffaMessage>((str) => JSON.parse(str))
 
             //判断有没有新关注的消息
-            if (messages.some((t) => t.text === '' && typeof t.name === 'string')) {
+            if (messages.some((t) => typeof t.name === 'string')) {
                 //新关注的用户
                 await publish(
                     'send_luffa_message',
