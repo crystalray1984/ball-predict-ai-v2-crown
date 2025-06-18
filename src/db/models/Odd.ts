@@ -117,4 +117,10 @@ export class Odd extends Model<InferAttributes<Odd>, InferCreationAttributes<Odd
 
     @Column(DataType.DATE)
     declare surebet_updated_at: CreationOptional<Date>
+
+    /**
+     * 此盘口是否开启
+     */
+    @Column(DataType.SMALLINT)
+    declare is_open: CreationOptional<number>
 }

@@ -9,6 +9,12 @@ export class VMatch extends Match {
     @Column(DataType.STRING)
     declare tournament_name: string
 
+    /**
+     * 此联赛是否开启推荐
+     */
+    @Column(DataType.SMALLINT)
+    declare tournament_is_open: number
+
     @Column(DataType.STRING)
     declare team1_titan007_id: string
 

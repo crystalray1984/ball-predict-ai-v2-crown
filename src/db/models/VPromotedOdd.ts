@@ -1,5 +1,5 @@
 import type { InferAttributes } from 'sequelize'
-import { AutoIncrement, Column, DataType, Model, PrimaryKey, Table } from 'sequelize-typescript'
+import { Column, DataType, Model, PrimaryKey, Table } from 'sequelize-typescript'
 
 /**
  * 最终推荐盘口视图
@@ -128,6 +128,12 @@ export class VPromotedOdd extends Model<InferAttributes<VPromotedOdd>> {
 
     @Column(DataType.STRING)
     declare tournament_name: string
+
+    /**
+     * 此联赛是否开启推荐
+     */
+    @Column(DataType.SMALLINT)
+    declare tournament_is_open: number
 
     @Column(DataType.STRING)
     declare team1_name: string

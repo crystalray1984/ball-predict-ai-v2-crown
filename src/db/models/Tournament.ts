@@ -45,4 +45,10 @@ export class Tournament extends Model<
     @UpdatedAt
     @Column(DataType.DATE)
     declare updated_at: CreationOptional<Date>
+
+    /**
+     * 此联赛是否开启推荐
+     */
+    @Column(DataType.SMALLINT)
+    declare is_open: CreationOptional<number>
 }

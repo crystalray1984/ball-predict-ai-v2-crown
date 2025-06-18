@@ -105,7 +105,8 @@ export async function sendNotification(text: string) {
     for (const target of CONFIG.luffa.notification) {
         if (target.type === 0) {
             //单聊通知
-            await sendSingleMsg(target.uid, text)
+            const resp = await sendSingleMsg(target.uid, text)
+            console.log(resp)
         } else if (target.type === 1) {
             //群聊通知
             const msg: Record<string, any> = {
@@ -134,7 +135,8 @@ export async function sendNotification(text: string) {
                 }
             }
 
-            await sendGroupMsg(target.uid, 1, msg)
+            const resp = await sendGroupMsg(target.uid, 1, msg)
+            console.log(resp)
         }
     }
 }

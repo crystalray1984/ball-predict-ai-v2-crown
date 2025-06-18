@@ -11,7 +11,7 @@ import {
 import { consume, publish } from '@/common/rabbitmq'
 import { getSetting } from '@/common/settings'
 import { findMatchedOdd } from '@/crown'
-import { db, ManualPromoteOdd, Match, Odd, PromotedOdd } from '@/db'
+import { db, ManualPromoteOdd, Match, Odd, PromotedOdd, VMatch } from '@/db'
 import Decimal from 'decimal.js'
 import { CreationAttributes, literal, Op, QueryTypes } from 'sequelize'
 
@@ -26,8 +26,13 @@ function sendPromotedQueue(id: number) {
  * 生成最终推荐盘口数据
  * @param attrs 推荐数据集合
  * @param odds 原始盘口列表
+ * @param tournament_is_open 联赛是否开启推荐
  */
-async function generatePromotedOdds(attrs: CreationAttributes<PromotedOdd>[], odds: Odd[]) {
+async function generatePromotedOdds(
+    attrs: CreationAttributes<PromotedOdd>[],
+    odds: Odd[],
+    tournament_is_open: number,
+) {
     //读取一下过滤配置
     const settings = await getSetting(
         'corner_enable',
@@ -58,6 +63,12 @@ async function generatePromotedOdds(attrs: CreationAttributes<PromotedOdd>[], od
     //做第一步筛选，如果盘口条件不满足的就直接过滤掉
     for (const item of list) {
         if (item.attr.skip) continue
+
+        //盘口的关闭状态判断
+        if (!item.odd.is_open || !tournament_is_open) {
+            item.attr.skip = 'closed'
+            continue
+        }
 
         //特殊规则判断
         if (findRule(settings.special_enable, item.odd)) {
@@ -106,6 +117,7 @@ async function generatePromotedOdds(attrs: CreationAttributes<PromotedOdd>[], od
         //看最终输出列表中有没有存在相同类型的盘
         const exists1 = output.some(
             (t) =>
+                !t.attr.skip &&
                 t.attr.variety === item.attr.variety &&
                 t.attr.period === item.attr.period &&
                 getOddIdentification(t.attr.type) === getOddIdentification(item.attr.type),
@@ -115,6 +127,7 @@ async function generatePromotedOdds(attrs: CreationAttributes<PromotedOdd>[], od
         //再判断有没有上下半场相反的数据
         return output.some((t) => {
             return (
+                !t.attr.skip &&
                 t.attr.variety === item.attr.variety &&
                 t.attr.period !== item.attr.period &&
                 getOddIdentification(t.attr.type) === getOddIdentification(item.attr.type) &&
@@ -240,11 +253,21 @@ export async function processFinalCheck(
         },
     })
 
+    //读取整个联赛是否被关闭
+    const match_row = await VMatch.findOne({
+        where: {
+            id: match_id,
+        },
+        attributes: ['tournament_is_open'],
+    })
+
+    const tournament_is_open = match_row?.tournament_is_open ?? 0
+
     if (!data.data) {
         console.error('未找到比赛盘口数据', 'crown_match_id=' + data.crown_match_id)
         console.error(data.data)
         //没有抓到盘口数据，那么所有的推荐都不生效，只有通过了球探网的数据才有效
-        await generatePromotedOdds(promoted_odd_attrs, odds)
+        await generatePromotedOdds(promoted_odd_attrs, odds, tournament_is_open)
         return
     }
 
@@ -418,7 +441,7 @@ export async function processFinalCheck(
     }
 
     //盘口比对完了，现在生成推荐数据
-    await generatePromotedOdds(promoted_odd_attrs, odds)
+    await generatePromotedOdds(promoted_odd_attrs, odds, tournament_is_open)
 }
 
 /**
@@ -603,16 +626,21 @@ async function processDirectOdd(final_check_time: number) {
                 SELECT
                     id
                 FROM
-                    "match"
+                    "v_match"
                 WHERE
                     match_time BETWEEN ? AND ?
+                    AND tournament_is_open = ?
                 )
+            WHERE
+                is_open = ?
             ORDER BY
                 surebet_updated_at DESC
             `,
             values: [
                 new Date(Date.now() + final_check_time * 60000),
                 new Date(Date.now() + (final_check_time + 2) * 60000),
+                1,
+                1,
             ],
         },
         {
