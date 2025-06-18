@@ -631,8 +631,7 @@ async function processDirectOdd(final_check_time: number) {
                     match_time BETWEEN ? AND ?
                     AND tournament_is_open = ?
                 )
-            WHERE
-                is_open = ?
+                AND is_open = ?
             ORDER BY
                 surebet_updated_at DESC
             `,
