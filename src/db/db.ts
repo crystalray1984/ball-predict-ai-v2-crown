@@ -5,6 +5,7 @@ import { CrownAccount } from './models/CrownAccount'
 import { LuffaUser } from './models/LuffaUser'
 import { ManualPromoteOdd } from './models/ManualPromoteOdd'
 import { Match } from './models/Match'
+import { NotificationLog } from './models/NotificationLog'
 import { Odd } from './models/Odd'
 import { PromotedOdd } from './models/PromotedOdd'
 import { Setting } from './models/Setting'
@@ -43,6 +44,7 @@ export const db = new Sequelize(
                 LuffaUser,
                 VLuffaUser,
                 VPromotedOdd,
+                NotificationLog,
             ],
         },
     ),
@@ -52,6 +54,7 @@ export { CrownAccount } from './models/CrownAccount'
 export { LuffaUser } from './models/LuffaUser'
 export { ManualPromoteOdd } from './models/ManualPromoteOdd'
 export { Match } from './models/Match'
+export { NotificationLog } from './models/NotificationLog'
 export { Odd } from './models/Odd'
 export { PromotedOdd } from './models/PromotedOdd'
 export { Setting } from './models/Setting'
