@@ -65,6 +65,10 @@ async function receiveLuffaMsg() {
                     }),
                 )
             }
+        } else {
+            //群消息，记录日志
+            const messages = group.message.map<LuffaMessage>((str) => JSON.parse(str))
+            console.log('收到群消息', messages)
         }
     }
 }
