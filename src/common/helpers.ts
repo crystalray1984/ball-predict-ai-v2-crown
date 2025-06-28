@@ -299,7 +299,7 @@ export async function getPromotedOddInfoBySetting(
     }
 
     //再看能否通过球探网做趋势判断
-    if (settings.titan007_reverse) {
+    if (settings.titan007_promote_enable === 1 || settings.titan007_promote_enable === -1) {
         const titan007_odd = await Titan007Odd.findOne({
             where: {
                 match_id,
@@ -308,6 +308,12 @@ export async function getPromotedOddInfoBySetting(
         if (titan007_odd) {
             let back = isUseTitan007Odd(odd, titan007_odd)
             if (typeof back === 'number') {
+                //球探网有趋势，根据配置确定是跟随还是反向
+                if (settings.titan007_promote_enable === -1) {
+                    //反向
+                    back = 1 - back
+                }
+
                 return output(back, 'titan007')
             }
         }

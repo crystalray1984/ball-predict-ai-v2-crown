@@ -278,7 +278,7 @@ export async function processFinalCheck(
         'corner_reverse',
         'promote_reverse',
         'special_reverse',
-        'titan007_reverse',
+        'titan007_promote_enable',
         'special_config',
     )
 
