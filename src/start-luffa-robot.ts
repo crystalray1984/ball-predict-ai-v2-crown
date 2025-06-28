@@ -60,7 +60,7 @@ async function receiveLuffaMsg() {
 为你带来“AI精准分析”的足球赛事推荐！
 赛前3分钟推送关键预测消息。
 订阅会员，即刻接收赛事推荐！
-#BallPredictAI`,
+https://callup.luffa.im/superbox/mpy0grtc2k7x68fx`,
                         },
                     }),
                 )
