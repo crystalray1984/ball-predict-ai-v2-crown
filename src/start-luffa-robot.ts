@@ -280,7 +280,11 @@ async function processSendPromoted(content: string) {
     if (!promoted) return
 
     await sendVipPromotionMessage(promoted)
-    await sendGroupPromotionMessage(promoted)
+    try {
+        await sendGroupPromotionMessage(promoted)
+    } catch (err) {
+        console.error(err)
+    }
 }
 
 /**
