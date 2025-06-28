@@ -253,6 +253,7 @@ async function sendGroupPromotionMessage(promoted: VPromotedOdd) {
         JSON.stringify({
             uid,
             is_group: type === 1,
+            msg_type: 1,
             msg: { text },
         }),
     )
