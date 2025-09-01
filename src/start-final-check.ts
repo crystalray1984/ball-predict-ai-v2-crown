@@ -660,8 +660,14 @@ async function processDirectOdd(final_check_time: number) {
 
     //盘口处理
     for (const odd of odds) {
+        //在寻找规则之前，对盘口是否已经通过一次判断进行筛选
+        const filtered_config =
+            odd.status === ''
+                ? direct_config.filter((config) => !config.first_check)
+                : direct_config
+
         //先对盘口进行规则判断
-        const rule = findRuleWithValue(direct_config, {
+        const rule = findRuleWithValue(filtered_config, {
             variety: odd.variety,
             period: odd.period,
             type: odd.type,
