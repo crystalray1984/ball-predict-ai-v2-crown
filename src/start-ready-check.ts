@@ -1,4 +1,4 @@
-import { isNullOrUndefined } from '@/common/helpers'
+import { checkChannel2Publish, isNullOrUndefined } from '@/common/helpers'
 import { close, consume } from '@/common/rabbitmq'
 import { getSetting } from '@/common/settings'
 import { findMatchedOdd } from '@/crown'
@@ -27,9 +27,10 @@ async function processReadyCheck(content: string) {
     //没有对应的皇冠盘口也出去了
     if (!exists) return
 
+    //读取配置
     const ready_condition = await getSetting<string>('ready_condition')
 
-    const odd = await Odd.findOne({
+    let odd = await Odd.findOne({
         where: {
             crown_match_id: extra.crown_match_id,
             variety: extra.type.variety,
@@ -82,23 +83,18 @@ async function processReadyCheck(content: string) {
         })
         //先尝试插入
         try {
-            await Odd.create(
-                {
-                    match_id,
-                    crown_match_id: extra.crown_match_id,
-                    variety: extra.type.variety,
-                    period: extra.type.period,
-                    condition: extra.type.condition,
-                    type: extra.type.type,
-                    surebet_value: extra.surebet_value,
-                    crown_value: exists.value,
-                    status,
-                    ready_at: status === 'ready' ? (literal('CURRENT_TIMESTAMP') as any) : null,
-                },
-                {
-                    returning: false,
-                },
-            )
+            odd = await Odd.create({
+                match_id,
+                crown_match_id: extra.crown_match_id,
+                variety: extra.type.variety,
+                period: extra.type.period,
+                condition: extra.type.condition,
+                type: extra.type.type,
+                surebet_value: extra.surebet_value,
+                crown_value: exists.value,
+                status,
+                ready_at: status === 'ready' ? (literal('CURRENT_TIMESTAMP') as any) : null,
+            })
         } catch (err) {
             if (err instanceof UniqueConstraintError) {
                 //唯一索引冲突错误，再尝试修改
@@ -121,12 +117,29 @@ async function processReadyCheck(content: string) {
                         returning: false,
                     },
                 )
+
+                odd = await Odd.findOne({
+                    where: {
+                        crown_match_id: extra.crown_match_id,
+                        variety: extra.type.variety,
+                        period: extra.type.period,
+                        condition: extra.type.condition,
+                        type: extra.type.type,
+                    },
+                })
+
+                if (!odd) {
+                    return
+                }
             } else {
                 //抛出异常
                 throw err
             }
         }
     }
+
+    //特殊的通道2判断
+    await checkChannel2Publish(odd)
 }
 
 /**

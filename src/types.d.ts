@@ -80,6 +80,8 @@ declare interface AdjustConditionRule extends SpecialPromoteRule {
 declare interface DirectConfig extends SpecialReverseRule, AdjustConditionRule {
     value_symbol?: '>=' | '>' | '<=' | '<' | '='
     value: string
+    publish_channels: string[]
+    first_check: boolean
 }
 
 /**

@@ -604,12 +604,18 @@ async function processManualPromote(final_check_time: number) {
  */
 async function processDirectOdd(final_check_time: number) {
     //读取直推配置
-    const direct_config = await getSetting<DirectConfig[]>('direct_config')
+    let direct_config = await getSetting<DirectConfig[]>('direct_config')
     if (
         isNullOrUndefined(direct_config) ||
         !Array.isArray(direct_config) ||
         direct_config.length === 0
     ) {
+        return
+    }
+
+    //直通配置只处理勾选了通道1的
+    direct_config = direct_config.filter((config) => config.publish_channels.includes('channel1'))
+    if (direct_config.length === 0) {
         return
     }
 

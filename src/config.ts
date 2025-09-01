@@ -98,6 +98,7 @@ export interface LuffaConfig {
     uid: string
     secret: string
     notification: LuffaNotificationConfig[]
+    notification_channel2: LuffaNotificationConfig[]
 }
 
 /**
