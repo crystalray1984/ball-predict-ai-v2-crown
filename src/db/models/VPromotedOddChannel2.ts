@@ -4,7 +4,7 @@ import { Column, DataType, Model, PrimaryKey, Table } from 'sequelize-typescript
 /**
  * 最终推荐盘口视图
  */
-@Table({ tableName: 'v_promoted_odd_promoted2', timestamps: false })
+@Table({ tableName: 'v_promoted_odd_channel2', timestamps: false })
 export class VPromotedOddChannel2 extends Model<InferAttributes<VPromotedOddChannel2>> {
     /**
      * 盘口id
