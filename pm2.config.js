@@ -8,7 +8,7 @@ function createConfig(name, script) {
             TZ: 'Asia/Shanghai',
             TS_NODE_BASEURL: './dist',
         },
-        log_date_format: 'YYYY-MM-DD HH:mm:ssZ',
+        log_date_format: 'YYYY-MM-DDTHH:mm:ss',
         merge_logs: true,
         error_file: `./runtime/logs/${name}.log`,
         out_file: `./runtime/logs/${name}.log`,
