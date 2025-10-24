@@ -9,7 +9,7 @@
                 "TZ": "Asia/Shanghai",
                 "TS_NODE_BASEURL": "./dist"
             },
-            "log_date_format": "YYYY-MM-DD HH:mm:ssZ",
+            "log_date_format": "YYYY-MM-DDTHH:mm:ss",
             "merge_logs": true,
             "error_file": "./runtime/logs/surebet.log",
             "out_file": "./runtime/logs/surebet.log",
@@ -24,7 +24,7 @@
                 "TZ": "Asia/Shanghai",
                 "TS_NODE_BASEURL": "./dist"
             },
-            "log_date_format": "YYYY-MM-DD HH:mm:ssZ",
+            "log_date_format": "YYYY-MM-DDTHH:mm:ss",
             "merge_logs": true,
             "error_file": "./runtime/logs/final-check.log",
             "out_file": "./runtime/logs/final-check.log",
@@ -39,7 +39,7 @@
                 "TZ": "Asia/Shanghai",
                 "TS_NODE_BASEURL": "./dist"
             },
-            "log_date_format": "YYYY-MM-DD HH:mm:ssZ",
+            "log_date_format": "YYYY-MM-DDTHH:mm:ss",
             "merge_logs": true,
             "error_file": "./runtime/logs/titan007.log",
             "out_file": "./runtime/logs/titan007.log",
@@ -54,7 +54,7 @@
                 "TZ": "Asia/Shanghai",
                 "TS_NODE_BASEURL": "./dist"
             },
-            "log_date_format": "YYYY-MM-DD HH:mm:ssZ",
+            "log_date_format": "YYYY-MM-DDTHH:mm:ss",
             "merge_logs": true,
             "error_file": "./runtime/logs/crown.log",
             "out_file": "./runtime/logs/crown.log",
@@ -69,7 +69,7 @@
                 "TZ": "Asia/Shanghai",
                 "TS_NODE_BASEURL": "./dist"
             },
-            "log_date_format": "YYYY-MM-DD HH:mm:ssZ",
+            "log_date_format": "YYYY-MM-DDTHH:mm:ss",
             "merge_logs": true,
             "error_file": "./runtime/logs/luffa-robot.log",
             "out_file": "./runtime/logs/luffa-robot.log",
