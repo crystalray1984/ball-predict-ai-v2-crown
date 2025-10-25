@@ -2,6 +2,7 @@ import { delay } from '@/common/helpers'
 import dayjs from 'dayjs'
 import timezone from 'dayjs/plugin/timezone'
 import utc from 'dayjs/plugin/utc'
+import { Page } from 'puppeteer'
 import { crownQueue, ready, xmlParser } from './base'
 
 dayjs.extend(utc)
@@ -39,39 +40,59 @@ export async function getCrownMatches(): Promise<Crown.MatchInfo[]> {
 `
         const resp = (await page.evaluate(func)) as string
         console.log('抓取皇冠联赛列表完成')
+        // debugFileLog('matches', resp)
         const leagueList = xmlParser.parse(resp).serverresponse
 
-        if (
-            !leagueList.coupons ||
-            leagueList.coupons.coupon_sw !== 'Y' ||
-            !Array.isArray(leagueList.coupons.coupon) ||
-            leagueList.coupons.coupon.length === 0
-        ) {
-            console.log('没有找到皇冠比赛数据')
+        if (!leagueList.coupons || leagueList.coupons.coupon_sw !== 'Y') {
+            console.log('没有找到皇冠联赛数据1')
             return []
         }
 
         //联赛id列表
-        const lid = leagueList.coupons.coupon[0].lid
+        let lid: string
+        if (Array.isArray(leagueList.coupons.coupon) && leagueList.coupons.coupon.length > 0) {
+            lid = leagueList.coupons.coupon[0].lid
+        } else if (
+            typeof leagueList.coupons.coupon === 'object' &&
+            leagueList.coupons.coupon &&
+            typeof leagueList.coupons.coupon.lid === 'string'
+        ) {
+            lid = leagueList.coupons.coupon.lid
+        } else {
+            console.log('没有找到皇冠联赛数据2')
+            return []
+        }
+
+        const lids = lid.split(',')
+        let result: Crown.MatchInfo[] = []
+        for (let start = 0; start < lids.length; start += 5) {
+            const subList = lids.slice(start, start + 5)
+            await delay(1000)
+            result = result.concat(await getCrownMatchesWithLeagues(page, subList))
+        }
 
         //读取联赛列表
-        await delay(1000)
 
-        const func2 = `
+        return result
+    })
+}
+
+async function getCrownMatchesWithLeagues(page: Page, lids: string[]): Promise<Crown.MatchInfo[]> {
+    const func2 = `
 (function () {
     var par = top.param;
     par += "&p=get_game_list";
     par += "&p3type=";
-    par += "&date=1";
+    par += "&date=all";
     par += "&gtype=ft";
     par += "&showtype=early";
     par += "&rtype=r";
     par += "&ltype=" + top["userData"].ltype;
     par += "&filter=";
     par += "&cupFantasy=N";
-    par += "&lid=" + ${JSON.stringify(lid)};
-    par += "&field=cp1";
-    par += "&action=clickCoupon";
+    par += "&lid=" + ${JSON.stringify(lids.join(','))};
+    // par += "&field=cp1";
+    par += "&action=click_league";
     par += "&sorttype=L";
     par += "&specialClick=";
     par += "&isFantasy=N";
@@ -88,34 +109,33 @@ export async function getCrownMatches(): Promise<Crown.MatchInfo[]> {
     })
 })()
 `
-        const respList = (await page.evaluate(func2)) as string
-        console.log('抓取皇冠比赛列表完成')
-        const gameList = xmlParser.parse(respList).serverresponse
+    const respList = (await page.evaluate(func2)) as string
+    console.log('抓取皇冠比赛列表完成')
+    const gameList = xmlParser.parse(respList).serverresponse
 
-        if (!Array.isArray(gameList.ec) || gameList.ec.length === 0) {
-            console.log('未读取到皇冠比赛列表')
-            return []
-        }
+    if (!Array.isArray(gameList.ec) || gameList.ec.length === 0) {
+        console.log('未读取到皇冠比赛列表', lids)
+        return []
+    }
 
-        const result: Crown.MatchInfo[] = []
+    const result: Crown.MatchInfo[] = []
 
-        gameList.ec.forEach((ec: Record<string, any>) => {
-            if (ec['@_hasEC'] !== 'Y' || !ec.game || ec.game.ISFANTASY === 'Y') return
-            const game = ec.game as Record<string, string>
-            result.push({
-                lid: game.LID,
-                league: game.LEAGUE,
-                team_id_h: game.TEAM_H_ID,
-                team_id_c: game.TEAM_C_ID,
-                team_h: game.TEAM_H,
-                team_c: game.TEAM_C,
-                ecid: game.ECID,
-                match_time: parseMatchTime(game.SYSTIME, game.DATETIME),
-            })
+    gameList.ec.forEach((ec: Record<string, any>) => {
+        if (ec['@_hasEC'] !== 'Y' || !ec.game || ec.game.ISFANTASY === 'Y') return
+        const game = ec.game as Record<string, string>
+        result.push({
+            lid: game.LID,
+            league: game.LEAGUE,
+            team_id_h: game.TEAM_H_ID,
+            team_id_c: game.TEAM_C_ID,
+            team_h: game.TEAM_H,
+            team_c: game.TEAM_C,
+            ecid: game.ECID,
+            match_time: parseMatchTime(game.SYSTIME, game.DATETIME),
         })
-
-        return result
     })
+
+    return result
 }
 
 /**

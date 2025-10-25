@@ -30,6 +30,7 @@ export async function getCrownData(
     par += "&specialClick=";
     par += "&mode=NORMAL";
     par += "&filter=All";
+    par += "&from=game_more";
     par += "&ts=" + Date.now();
     par += "&ecid=" + ${JSON.stringify(crown_match_id)};
 

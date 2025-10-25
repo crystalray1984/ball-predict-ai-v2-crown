@@ -1,7 +1,9 @@
 import { db, Odd, PromotedOdd, PromotedOddChannel2, Titan007Odd } from '@/db'
+import dayjs from 'dayjs'
 import Decimal from 'decimal.js'
 import { stat } from 'node:fs'
-import { mkdir } from 'node:fs/promises'
+import { mkdir, writeFile } from 'node:fs/promises'
+import { resolve } from 'node:path'
 import { Op } from 'sequelize'
 import { publish } from './rabbitmq'
 import { RateLimiter } from './rate-limiter'
@@ -596,4 +598,24 @@ export async function checkChannel2Publish(odd: Odd) {
     } catch (err) {
         console.error(err)
     }
+}
+
+/**
+ * @param name
+ * @param data
+ */
+export async function debugFileLog(name: string, data: any) {
+    const time = dayjs().format('YYYYMMDDHHmmssSSS')
+    const logFile = resolve(__dirname, `../../runtime/${name}_${time}.log`)
+    const content = (() => {
+        if (typeof data === 'string') {
+            return data
+        }
+        if (data instanceof Error) {
+            return [data.name, data.message, data.stack].join('\n')
+        }
+        return JSON.stringify(data)
+    })()
+
+    await writeFile(logFile, content)
 }

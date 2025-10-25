@@ -3,7 +3,9 @@
     "description": "皇冠爬取支持服务",
     "scripts": {
         "build": "yarn && rimraf dist && tsc",
-        "start": "yarn build && pm2-runtime start pm2-local.config.js"
+        "start": "yarn build && pm2-runtime start pm2-local.config.js",
+        "dev:crown-matches": "ts-node -r tsconfig-paths/register ./src/start-crown-matches.ts",
+        "test:crown": "ts-node -r tsconfig-paths/register ./src/test-crown.ts"
     },
     "dependencies": {
         "amqplib": "^0.10.8",
