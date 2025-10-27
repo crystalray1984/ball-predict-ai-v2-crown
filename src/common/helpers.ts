@@ -522,6 +522,10 @@ export async function checkChannel2Publish(odd: Odd) {
 
     //对推送配置进行筛选，只筛选选定了通道2的规则
     direct_config = direct_config.filter((config) => {
+        if (!Array.isArray(config.publish_channels)) {
+            return false
+        }
+
         if (!config.publish_channels.includes('channel2')) {
             return false
         }
