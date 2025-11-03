@@ -8,6 +8,11 @@ import { XMLParser } from 'fast-xml-parser'
 import { machineIdSync } from 'node-machine-id'
 import { Browser, launch, Page } from 'puppeteer-core'
 import { literal, Op } from 'sequelize'
+// @ts-ignore
+import { PUPPETEER_REVISIONS } from 'puppeteer-core'
+import { computeExecutablePath, Browser as ChromeBrowser } from '@puppeteer/browsers'
+import { join } from 'node:path'
+import { homedir } from 'node:os'
 
 /**
  * 皇冠首页地址
@@ -60,6 +65,17 @@ export function init() {
 }
 
 /**
+ * 计算浏览器的可执行文件路径
+ */
+function getBrowserExecutePath() {
+    return computeExecutablePath({
+        cacheDir: join(homedir(), '.cache', 'puppeteer'),
+        browser: ChromeBrowser.CHROME,
+        buildId: PUPPETEER_REVISIONS.chrome,
+    })
+}
+
+/**
  * 初始化浏览器环境
  */
 async function doInit() {
@@ -75,6 +91,7 @@ async function doInit() {
             browser = await launch({
                 // headless: false,
                 args,
+                executablePath: getBrowserExecutePath(),
             })
 
             const page = await browser.newPage()
