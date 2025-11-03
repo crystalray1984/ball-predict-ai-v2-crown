@@ -324,7 +324,7 @@ async function processV3Check(
  * 拿到皇冠数据之后的v3检查进程
  */
 async function startV3CheckProcessor() {
-    const [promise] = consume(CONFIG.queues['final_check'], async (content) => {
+    const [promise] = consume(CONFIG.queues['v3_check'], async (content) => {
         await processV3Check(JSON.parse(content))
     })
     await promise
