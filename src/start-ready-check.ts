@@ -2,7 +2,7 @@ import { checkChannel2Publish, isNullOrUndefined } from '@/common/helpers'
 import { close, consume } from '@/common/rabbitmq'
 import { getSetting } from '@/common/settings'
 import { findMatchedOdd } from '@/crown'
-import { Match, Odd } from '@/db'
+import { Match, Odd, VMatch } from '@/db'
 import Decimal from 'decimal.js'
 import { literal, UniqueConstraintError } from 'sequelize'
 import { CONFIG } from './config'
@@ -82,6 +82,22 @@ async function processReadyCheck(content: string) {
             match_time: extra.match_time,
             ecid: extra.crown_match_id,
         })
+
+        //读取一下比赛数据，如果比赛状态不对那么也不要了
+        const match = await VMatch.findOne({
+            where: {
+                id: match_id,
+            },
+            attributes: ['id', 'status', 'tournament_is_open'],
+        })
+
+        if (match) {
+            //比赛状态不对的去掉
+            if (match.status !== '') return
+            //联赛被过滤掉的也去掉
+            if (!match.tournament_is_open) return
+        }
+
         //先尝试插入
         try {
             odd = await Odd.create({

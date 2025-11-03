@@ -1,6 +1,6 @@
 import { isEmpty } from '@/common/helpers'
 import { close, consume, publish } from '@/common/rabbitmq'
-import { Match, Odd, SurebetRecord } from '@/db'
+import { Match, Odd, SurebetRecord, VMatch } from '@/db'
 import Decimal from 'decimal.js'
 import { omit } from 'lodash'
 import { getSetting } from './common/settings'
@@ -235,14 +235,18 @@ async function processSurebetCheck(content: string) {
         }
 
         //判断比赛，如果比赛存在且状态为已结算那么也跳过
-        const match = await Match.findOne({
+        const match = await VMatch.findOne({
             where: {
                 crown_match_id: output.crown_match_id,
             },
-            attributes: ['id', 'status'],
+            attributes: ['id', 'status', 'tournament_is_open'],
         })
-        if (match && match.status !== '') {
-            continue
+
+        if (match) {
+            //比赛状态不对的去掉
+            if (match.status !== '') continue
+            //联赛被过滤掉的也去掉
+            if (!match.tournament_is_open) continue
         }
 
         //把盘口抛到消息队列进行第一次比对

@@ -1,5 +1,5 @@
 import { getOddResult, isNullOrUndefined, runLoop } from '@/common/helpers'
-import { db, Match, PromotedOdd, Team, Titan007Odd, VMatch } from '@/db'
+import { db, Match, PromotedOdd, PromotedOddChannel2, Team, Titan007Odd, VMatch } from '@/db'
 import {
     findMatch,
     FindMatchResult,
@@ -160,18 +160,6 @@ async function processTodayMatch(match: VMatch, todayMatches: Titan007.TodayMatc
  * @param period
  */
 async function processFinalMatch(match: VMatch, period: Period): Promise<void> {
-    const where: WhereOptions<InferAttributes<PromotedOdd>> = {
-        match_id: match.id,
-        result: null,
-    }
-    if (period === 'period1') {
-        where.period = 'period1'
-    }
-    const odds = await PromotedOdd.findAll({
-        where,
-    })
-    if (odds.length === 0) return
-
     const matchScore = {
         score1: match.score1!,
         score2: match.score2!,
@@ -183,7 +171,58 @@ async function processFinalMatch(match: VMatch, period: Period): Promise<void> {
         corner2_period1: match.corner2_period1!,
     }
 
+    const where: WhereOptions<InferAttributes<PromotedOdd>> = {
+        match_id: match.id,
+        result: null,
+    }
+    if (period === 'period1') {
+        where.period = 'period1'
+    }
+    const odds = await PromotedOdd.findAll({
+        where,
+    })
+
     for (const odd of odds) {
+        const result1 = getOddResult(odd, matchScore)
+        if (!result1) continue
+        odd.result1 = result1.result
+        odd.score = result1.score
+        odd.score1 = result1.score1
+        odd.score2 = result1.score2
+
+        //有第二盘口
+        if (!isNullOrUndefined(odd.type2) && !isNullOrUndefined(odd.condition2)) {
+            const result2 = getOddResult(
+                {
+                    variety: odd.variety,
+                    period: odd.period,
+                    type: odd.type2,
+                    condition: odd.condition2,
+                },
+                matchScore,
+            )
+            if (result2) {
+                odd.result2 = result2.result
+            }
+        }
+
+        if (isNullOrUndefined(odd.result2)) {
+            odd.result = odd.result1
+        } else if (odd.result1 === 1 || odd.result2 === 1) {
+            odd.result = 1
+        } else if (odd.result1 === 0 && odd.result2 === 0) {
+            odd.result = 0
+        } else {
+            odd.result = -1
+        }
+        await odd.save()
+    }
+
+    const odds2 = await PromotedOddChannel2.findAll({
+        where,
+    })
+
+    for (const odd of odds2) {
         const result1 = getOddResult(odd, matchScore)
         if (!result1) continue
         odd.result1 = result1.result

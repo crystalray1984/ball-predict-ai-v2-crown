@@ -4,7 +4,7 @@ import { runLoop } from './common/helpers'
 import { consume, publish } from './common/rabbitmq'
 import { getSetting } from './common/settings'
 import { CONFIG } from './config'
-import { CrownOdd, db, Match, Odd, PromotedOddChannel2 } from './db'
+import { CrownOdd, db, Match, Odd, PromotedOddChannel2, Tournament, VMatch } from './db'
 
 /**
  * v3检查进程
@@ -75,13 +75,19 @@ async function processV3Check(
     if (!data.data || !data.extra) return
 
     //读取配置
-    const { v3_check_max_duration, v3_check_max_value, v3_check_min_duration, v3_check_min_value } =
-        await getSetting(
-            'v3_check_max_duration',
-            'v3_check_max_value',
-            'v3_check_min_duration',
-            'v3_check_min_value',
-        )
+    const {
+        v3_check_max_duration,
+        v3_check_max_value,
+        v3_check_min_duration,
+        v3_check_min_value,
+        v3_check_min_promote_value,
+    } = await getSetting(
+        'v3_check_max_duration',
+        'v3_check_max_value',
+        'v3_check_min_duration',
+        'v3_check_min_value',
+        'v3_check_min_promote_value',
+    )
 
     const match_id = data.extra.match_id
     const crown_match_id = data.crown_match_id
@@ -120,21 +126,6 @@ async function processV3Check(
 
         //如果有数据，且这个数据的盘口水位完全相等，那么什么都不做，直接返回
         if (lastOne) {
-            console.log(
-                oddInfo.condition,
-                lastOne.condition,
-                Decimal(oddInfo.condition).eq(lastOne.condition),
-            )
-            console.log(
-                oddInfo.value_h,
-                lastOne.value1,
-                Decimal(oddInfo.value_h).eq(lastOne.value1),
-            )
-            console.log(
-                oddInfo.value_c,
-                lastOne.value2,
-                Decimal(oddInfo.value_c).eq(lastOne.value2),
-            )
             if (
                 Decimal(oddInfo.condition).eq(lastOne.condition) &&
                 Decimal(oddInfo.value_h).eq(lastOne.value1) &&
@@ -225,7 +216,7 @@ async function processV3Check(
             order: [['id', 'asc']],
         })
 
-        //如果记录的总数都不够2条那也不处理了
+        //如果记录的总数都不够3条那也不处理了
         if (rows.length < 3) return
 
         let current = 1
@@ -270,8 +261,11 @@ async function processV3Check(
             }
 
             //然后进行最大时段判断，因为查询出来的数据都是已经满足最大时段的数据，所以只需要判断水位下降得够不够就行了
-            if (!Decimal(fromRow[direction]).sub(currentRow[direction]).gte(v3_check_max_value)) {
-                //水位下降不足，把当前行压入堆栈，继续进行循环判断
+            if (
+                !Decimal(fromRow[direction]).sub(currentRow[direction]).gte(v3_check_max_value) ||
+                Decimal(currentRow[direction]).lt(v3_check_min_promote_value)
+            ) {
+                //水位下降不足，或者水位低于最低推荐水位，把当前行压入堆栈，继续进行循环判断
                 stackRows.push(currentRow)
                 current++
                 continue
@@ -317,8 +311,38 @@ async function processV3Check(
             type: oddType,
             condition,
             back: 0,
-            value: resultRow[lastDirection],
+            value: resultRow[result],
+            start_odd_data: {
+                id: stackRows[0].id,
+                field: result,
+                value: stackRows[0][result],
+                time: stackRows[0].updated_at.valueOf(),
+            },
+            end_odd_data: {
+                id: resultRow.id,
+                field: result,
+                value: resultRow[result],
+                time: resultRow.updated_at.valueOf(),
+            },
         })
+
+        //更新盘口记录表中的数据，标记判定成功开始和结束区间
+        await CrownOdd.update(
+            {
+                promote_flag: 1,
+            },
+            {
+                where: {
+                    id: {
+                        [Op.between]: [stackRows[0].id, resultRow.id],
+                    },
+                    match_id,
+                    variety: oddInfo.variety,
+                    period,
+                    type,
+                },
+            },
+        )
 
         //发送推送信息
         publish(CONFIG.queues['send_promoted_channel2'], JSON.stringify({ id: promoted.id }))
@@ -328,8 +352,6 @@ async function processV3Check(
     const goalAh = data.data.odds.find((t) => t.variety === 'goal' && t.type === 'r')
     const goalSum = data.data.odds.find((t) => t.variety === 'goal' && t.type === 'ou')
 
-    console.log('比赛id', match_id, '让球盘口', goalAh)
-    console.log('比赛id', match_id, '大小球盘口', goalSum)
     if (goalAh) {
         await processOdd(goalAh, 'regularTime', 'ah')
     }

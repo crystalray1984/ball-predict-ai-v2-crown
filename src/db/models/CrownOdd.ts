@@ -49,4 +49,7 @@ export class CrownOdd extends Model<InferAttributes<CrownOdd>, InferCreationAttr
 
     @Column(DataType.INTEGER)
     declare is_ignored: CreationOptional<number>
+
+    @Column(DataType.INTEGER)
+    declare promote_flag: CreationOptional<number>
 }

@@ -140,4 +140,10 @@ export class PromotedOddChannel2 extends Model<
 
     @Column(DataType.DECIMAL)
     declare value: CreationOptional<string>
+
+    @Column(DataType.JSONB)
+    declare start_odd_data: CreationOptional<any>
+
+    @Column(DataType.JSONB)
+    declare end_odd_data: CreationOptional<any>
 }
