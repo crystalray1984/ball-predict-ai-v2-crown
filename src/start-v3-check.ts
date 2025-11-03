@@ -115,6 +115,7 @@ async function processV3Check(
                 period,
                 type,
             },
+            order: [['id', 'desc']],
         })
 
         //如果有数据，且这个数据的盘口水位完全相等，那么什么都不做，直接返回
