@@ -119,6 +119,21 @@ async function processV3Check(
 
         //如果有数据，且这个数据的盘口水位完全相等，那么什么都不做，直接返回
         if (lastOne) {
+            console.log(
+                oddInfo.condition,
+                lastOne.condition,
+                Decimal(oddInfo.condition).eq(lastOne.condition),
+            )
+            console.log(
+                oddInfo.value_h,
+                lastOne.value1,
+                Decimal(oddInfo.value_h).eq(lastOne.value1),
+            )
+            console.log(
+                oddInfo.value_c,
+                lastOne.value2,
+                Decimal(oddInfo.value_c).eq(lastOne.value2),
+            )
             if (
                 Decimal(oddInfo.condition).eq(lastOne.condition) &&
                 Decimal(oddInfo.value_h).eq(lastOne.value1) &&
