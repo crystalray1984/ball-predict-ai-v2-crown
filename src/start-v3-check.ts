@@ -318,7 +318,7 @@ async function processV3Check(
         await processOdd(goalAh, 'regularTime', 'ah')
     }
     if (goalSum) {
-        await processOdd(goalSum, 'regularTime', 'ah')
+        await processOdd(goalSum, 'regularTime', 'sum')
     }
 }
 
