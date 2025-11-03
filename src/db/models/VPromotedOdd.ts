@@ -1,4 +1,4 @@
-import type { InferAttributes } from 'sequelize'
+import type { CreationOptional, InferAttributes } from 'sequelize'
 import { Column, DataType, Model, PrimaryKey, Table } from 'sequelize-typescript'
 
 /**
@@ -140,4 +140,7 @@ export class VPromotedOdd extends Model<InferAttributes<VPromotedOdd>> {
 
     @Column(DataType.STRING)
     declare team2_name: string
+
+    @Column(DataType.DECIMAL)
+    declare value: CreationOptional<string>
 }

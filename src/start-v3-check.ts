@@ -213,7 +213,7 @@ async function processV3Check(
         if (rows.length < 3) return
 
         let current = 1
-        let lastDirection = ''
+        let lastDirection = '' as unknown as 'value1' | 'value2'
         let stackRows: CrownOdd[] = [rows[0]]
         let result: 'value1' | 'value2' | undefined = undefined
         let resultRow: CrownOdd | undefined = undefined
@@ -301,6 +301,7 @@ async function processV3Check(
             type: oddType,
             condition,
             back: 0,
+            value: resultRow[lastDirection],
         })
 
         //发送推送信息

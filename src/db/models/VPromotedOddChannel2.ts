@@ -140,4 +140,7 @@ export class VPromotedOddChannel2 extends Model<InferAttributes<VPromotedOddChan
 
     @Column(DataType.STRING)
     declare team2_name: string
+
+    @Column(DataType.DECIMAL)
+    declare value: string
 }

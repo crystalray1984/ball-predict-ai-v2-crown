@@ -1,7 +1,8 @@
-import { getNumberWithSymbol } from '@/common/helpers'
+import { getNumberWithSymbol, isEmpty } from '@/common/helpers'
 import { close, consume, publish } from '@/common/rabbitmq'
 import { db, NotificationLog, VLuffaUser, VPromotedOdd, VPromotedOddChannel2 } from '@/db'
 import dayjs from 'dayjs'
+import Decimal from 'decimal.js'
 import { Op } from 'sequelize'
 import { getSetting } from './common/settings'
 import { CONFIG } from './config'
@@ -11,25 +12,25 @@ import { CONFIG } from './config'
  */
 function createPromotionMessage(promoted: VPromotedOdd) {
     const oddParts: string[] = []
-    if (promoted.variety === 'corner') {
-        oddParts.push('角球')
-    }
-    oddParts.push(promoted.period === 'period1' ? '半场' : '全场')
+    // if (promoted.variety === 'corner') {
+    //     oddParts.push('角球')
+    // }
+    // oddParts.push(promoted.period === 'period1' ? '半场' : '全场')
     switch (promoted.type) {
         case 'ah1':
-            oddParts.push('主胜')
+            oddParts.push(promoted.team1_name)
             oddParts.push(getNumberWithSymbol(promoted.condition))
             break
         case 'ah2':
-            oddParts.push('客胜')
+            oddParts.push(promoted.team2_name)
             oddParts.push(getNumberWithSymbol(promoted.condition))
             break
         case 'over':
-            oddParts.push('大球')
+            oddParts.push('大')
             oddParts.push(parseFloat(promoted.condition).toString())
             break
         case 'under':
-            oddParts.push('小球')
+            oddParts.push('小')
             oddParts.push(parseFloat(promoted.condition).toString())
             break
         case 'draw':
@@ -37,14 +38,25 @@ function createPromotionMessage(promoted: VPromotedOdd) {
             break
     }
 
+    if (!isEmpty(promoted.value)) {
+        oddParts.push(`@`, Decimal(promoted.value).toString())
+    }
+
     //构建抛入到下一个队列的数据
-    const text = `**比赛推荐**
-${dayjs(promoted.match_time).format('M/D HH:mm')} UTC+8
+    const text = `=====${promoted.id}=====
+
+${dayjs(promoted.match_time).format('YYYY-MM-DD HH:mm')}
+
 ${promoted.tournament_name}
+
 ${promoted.team1_name}
+
 ${promoted.team2_name}
 
-${oddParts.join(' ')}`
+全场
+
+${oddParts.join('')}
+`
 
     return text
 }

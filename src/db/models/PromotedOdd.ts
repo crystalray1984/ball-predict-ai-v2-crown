@@ -137,4 +137,7 @@ export class PromotedOdd extends Model<
     @UpdatedAt
     @Column(DataType.DATE)
     declare updated_at: CreationOptional<Date>
+
+    @Column(DataType.DECIMAL)
+    declare value: CreationOptional<string>
 }
