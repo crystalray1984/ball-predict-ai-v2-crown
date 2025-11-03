@@ -119,7 +119,7 @@ async function processLuffaSendMessage(content: string) {
  */
 async function startLuffaMessageQueue() {
     while (true) {
-        const [promise] = consume('send_luffa_message', processLuffaSendMessage, {
+        const [promise] = consume(CONFIG.queues['send_luffa_message'], processLuffaSendMessage, {
             prefetchCount: 5,
         })
         await promise
@@ -338,7 +338,9 @@ async function processSendPromotedChannel2(content: string) {
  */
 async function startPromotedQueue() {
     while (true) {
-        const [promise] = consume('send_promoted', processSendPromoted, { noLocal: false })
+        const [promise] = consume(CONFIG.queues['send_promoted'], processSendPromoted, {
+            noLocal: false,
+        })
         await promise
         await close()
     }
@@ -349,9 +351,13 @@ async function startPromotedQueue() {
  */
 async function startPromotedQueueChannel2() {
     while (true) {
-        const [promise] = consume('send_promoted_channel2', processSendPromotedChannel2, {
-            noLocal: false,
-        })
+        const [promise] = consume(
+            CONFIG.queues['send_promoted_channel2'],
+            processSendPromotedChannel2,
+            {
+                noLocal: false,
+            },
+        )
         await promise
         await close()
     }

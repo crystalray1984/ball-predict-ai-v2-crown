@@ -14,12 +14,13 @@ import { findMatchedOdd } from '@/crown'
 import { db, ManualPromoteOdd, Match, Odd, PromotedOdd, VMatch } from '@/db'
 import Decimal from 'decimal.js'
 import { CreationAttributes, literal, Op, QueryTypes } from 'sequelize'
+import { CONFIG } from './config'
 
 /**
  * 将推荐数据发送到队列中推荐给用户
  */
 function sendPromotedQueue(id: number) {
-    return publish('send_promoted', JSON.stringify({ id }))
+    return publish(CONFIG.queues['send_promoted'], JSON.stringify({ id }))
 }
 
 /**
@@ -490,7 +491,7 @@ async function processNearlyMatches() {
         'crown_odd',
         matches.map((match) => {
             return JSON.stringify({
-                next: 'final_check',
+                next: CONFIG.queues['final_check'],
                 crown_match_id: match.crown_match_id,
                 extra: {
                     match_id: match.id,
@@ -777,7 +778,7 @@ export async function startBeforeFinalCheck() {
  * 开始带有皇冠盘口数据的二次数据检查
  */
 export async function startFinalCrownCheck() {
-    const [promise] = consume('final_check', async (content) => {
+    const [promise] = consume(CONFIG.queues['final_check'], async (content) => {
         await processFinalCheck(JSON.parse(content))
     })
     await promise

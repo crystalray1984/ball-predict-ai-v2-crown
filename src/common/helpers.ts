@@ -8,6 +8,7 @@ import { Op } from 'sequelize'
 import { publish } from './rabbitmq'
 import { RateLimiter } from './rate-limiter'
 import { getSetting } from './settings'
+import { CONFIG } from '@/config'
 
 /**
  * 返回一个等待指定时间的Promise
@@ -597,7 +598,7 @@ export async function checkChannel2Publish(odd: Odd) {
                 },
             )
 
-            publish('send_promoted_channel2', JSON.stringify({ id: promoted.id }))
+            publish(CONFIG.queues['send_promoted_channel2'], JSON.stringify({ id: promoted.id }))
         })
     } catch (err) {
         console.error(err)
