@@ -6,7 +6,7 @@ import { CONFIG } from '@/config'
 import { CrownAccount, db } from '@/db'
 import { XMLParser } from 'fast-xml-parser'
 import { machineIdSync } from 'node-machine-id'
-import { Browser, launch, Page } from 'puppeteer'
+import { Browser, launch, Page } from 'puppeteer-core'
 import { literal, Op } from 'sequelize'
 
 /**

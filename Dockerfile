@@ -43,7 +43,7 @@ RUN apt-get update && \
     libxtst6
 
 RUN npm config -g set registry=https://registry.npmmirror.com
-RUN npm i -g pm2
+RUN npm i -g pm2 puppeteer@24.27.0
 RUN pm2 install pm2-logrotate
 
 RUN pm2 set pm2-logrotate:max_size 100G && \

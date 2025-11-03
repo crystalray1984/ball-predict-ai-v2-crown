@@ -2,7 +2,7 @@ import { delay } from '@/common/helpers'
 import dayjs from 'dayjs'
 import timezone from 'dayjs/plugin/timezone'
 import utc from 'dayjs/plugin/utc'
-import { Page } from 'puppeteer'
+import { Page } from 'puppeteer-core'
 import { crownQueue, ready, xmlParser } from './base'
 
 dayjs.extend(utc)
