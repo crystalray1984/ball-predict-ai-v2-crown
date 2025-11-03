@@ -12,6 +12,7 @@ queues:
   crown_matches_data: 'v3:crown_matches_data'
   send_promoted: 'v3:send_promoted'
   send_promoted_channel2: 'v3:send_promoted_channel2'
+  v3_check: 'v3_check'
 
 surebet:
   #surebet接口调用凭证

@@ -2,6 +2,7 @@ import { CONFIG } from '@/config'
 import { merge } from 'lodash'
 import { Sequelize, SequelizeOptions } from 'sequelize-typescript'
 import { CrownAccount } from './models/CrownAccount'
+import { CrownOdd } from './models/CrownOdd'
 import { LuffaUser } from './models/LuffaUser'
 import { ManualPromoteOdd } from './models/ManualPromoteOdd'
 import { Match } from './models/Match'
@@ -49,12 +50,14 @@ export const db = new Sequelize(
                 NotificationLog,
                 PromotedOddChannel2,
                 VPromotedOddChannel2,
+                CrownOdd,
             ],
         },
     ),
 )
 
 export { CrownAccount } from './models/CrownAccount'
+export { CrownOdd } from './models/CrownOdd'
 export { LuffaUser } from './models/LuffaUser'
 export { ManualPromoteOdd } from './models/ManualPromoteOdd'
 export { Match } from './models/Match'
