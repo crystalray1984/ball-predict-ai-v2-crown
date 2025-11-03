@@ -25,4 +25,6 @@ module.exports = {
     'surebet-check': createConfig('surebet-check'),
     titan007: createConfig('titan007'),
     'luffa-robot': createConfig('luffa-robot'),
+    'luffa-message': createConfig('luffa-message'),
+    createConfig,
 }
