@@ -2,8 +2,9 @@
     "name": "ball-predict-ai-crown",
     "description": "皇冠爬取支持服务",
     "scripts": {
-        "build": "yarn && rimraf dist && tsc",
-        "start": "yarn build && pm2-runtime start pm2-local.config.js",
+        "build": "rimraf dist && tsc",
+        "install_build": "yarn && rimraf dist && tsc",
+        "start": "yarn install_build && pm2-runtime start pm2-local.config.js",
         "dev:crown-matches": "ts-node -r tsconfig-paths/register ./src/start-crown-matches.ts",
         "test:crown": "ts-node -r tsconfig-paths/register ./src/test-crown.ts"
     },
