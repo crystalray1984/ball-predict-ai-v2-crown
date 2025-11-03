@@ -4,6 +4,15 @@ machine_id: ''
 #皇冠网站地址
 crown_url: 'https://mos011.com'
 
+#队列名配置
+queues:
+  surebet_check: 'surebet_check'
+  ready_check_after: 'ready_check_after'
+  final_check: 'final_check'
+  crown_matches_data: 'crown_matches_data'
+  send_promoted: 'send_promoted'
+  send_promoted_channel2: 'send_promoted_channel2'
+
 surebet:
   #surebet接口调用凭证
   token: ''

@@ -18,6 +18,7 @@ function createConfig(name, script) {
 
 module.exports = {
     'crown-matches': createConfig('crown-matches'),
+    'crown-matches-data': createConfig('crown-matches-data'),
     'crown-robot': createConfig('crown-robot'),
     'final-check': createConfig('final-check'),
     'ready-check': createConfig('ready-check'),
