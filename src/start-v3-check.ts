@@ -312,6 +312,8 @@ async function processV3Check(
     const goalAh = data.data.odds.find((t) => t.variety === 'goal' && t.type === 'r')
     const goalSum = data.data.odds.find((t) => t.variety === 'goal' && t.type === 'ou')
 
+    console.log('比赛id', match_id, '让球盘口', goalAh)
+    console.log('比赛id', match_id, '大小球盘口', goalSum)
     if (goalAh) {
         await processOdd(goalAh, 'regularTime', 'ah')
     }
