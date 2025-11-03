@@ -5,6 +5,7 @@ import Decimal from 'decimal.js'
 import { omit } from 'lodash'
 import { getSetting } from './common/settings'
 import { CONFIG } from './config'
+import dayjs from 'dayjs'
 
 /**
  * 解析surebet时间条件的时长
@@ -57,19 +58,30 @@ async function processSurebetCheck(content: string) {
     const startOf = parseTimeCondition(settings.surebet_start_of)
     const endOf = parseTimeCondition(settings.surebet_end_of)
 
+    // console.log(settings)
+    // console.log('startOf', startOf)
+    // console.log('endOf', endOf)
+
     const nextDataList: string[] = []
 
     for (const record of records) {
         //收益率筛选
         const profit = Decimal(record.profit)
-        if (profit.lt(minProfit) || profit.gt(maxProfit)) continue
+        if (profit.lt(minProfit) || profit.gt(maxProfit)) {
+            console.log('收益率不满足', record.profit)
+            continue
+        }
 
         //只筛选188bet的数据
         const odd = record.prongs.find((t) => t.bk === '188bet')
         if (!odd) continue
 
         //比赛时间筛选
-        if (odd.time < Date.now() + endOf || odd.time > Date.now() + startOf) continue
+        console.log('timeMatch', odd.time < Date.now() + endOf || odd.time > Date.now() + startOf)
+        if (odd.time < Date.now() + endOf || odd.time > Date.now() + startOf) {
+            console.log('时间不满足', dayjs(odd.time).format('YYYY-MM-DD HH:mm'))
+            continue
+        }
 
         //插入surebet抓取数据
         try {
