@@ -5,6 +5,7 @@ import { findMatchedOdd } from '@/crown'
 import { Match, Odd } from '@/db'
 import Decimal from 'decimal.js'
 import { literal, UniqueConstraintError } from 'sequelize'
+import { CONFIG } from './config'
 
 /**
  * 处理首次数据比对
@@ -147,7 +148,7 @@ async function processReadyCheck(content: string) {
  */
 export async function startReadyCheck() {
     while (true) {
-        const [promise] = consume('ready_check_after', processReadyCheck)
+        const [promise] = consume(CONFIG.queues['ready_check_after'], processReadyCheck)
         await promise
         await close()
     }

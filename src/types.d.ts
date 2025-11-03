@@ -340,6 +340,14 @@ declare namespace Surebet {
          * 推荐的盘口
          */
         prongs: OddInfo[]
+        /**
+         * 收益率
+         */
+        profit: number
+        /**
+         * 投资回报率
+         */
+        roi: number
     }
 
     /**

@@ -59,13 +59,36 @@ export interface AppConfig {
      */
     rabbitmq: RabbitmqOptions.Connect
     /**
-     * surebet抓取token
-     */
-    surebet_token: string
-    /**
      * Luffa机器人配置
      */
     luffa: LuffaConfig
+    /**
+     * surebet采集配置
+     */
+    surebet: SurebetConfig
+    /**
+     * 队列名称
+     */
+    queues: Record<string, string>
+
+    /**
+     * 采集到皇冠比赛数据后要抛到的队列
+     */
+    crown_matches_data_queues: string[]
+}
+
+/**
+ * surebet抓取配置
+ */
+export interface SurebetConfig {
+    /**
+     * 采集数据的token
+     */
+    token: string
+    /**
+     * 采集到数据之后后续抛到的队列
+     */
+    next_queues: string[]
 }
 
 export interface LuffaAtItem {

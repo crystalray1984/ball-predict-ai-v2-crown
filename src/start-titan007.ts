@@ -12,7 +12,7 @@ import dayjs from 'dayjs'
 import { intersection } from 'lodash'
 import { writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
-import { InferAttributes, Op, QueryTypes, UniqueConstraintError, WhereOptions } from 'sequelize'
+import { InferAttributes, Op, QueryTypes, WhereOptions } from 'sequelize'
 
 /**
  * 处理今日抓到的单场比赛数据

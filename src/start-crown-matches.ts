@@ -1,6 +1,7 @@
 import { runLoop } from '@/common/helpers'
+import { publish } from '@/common/rabbitmq'
+import { CONFIG } from '@/config'
 import { getCrownMatches, reset } from '@/crown'
-import { Match } from '@/db'
 
 /**
  * 开启皇冠比赛列表抓取
@@ -14,15 +15,13 @@ export function startCrownMatches() {
 
         console.log('采集到比赛数据', matches.length)
 
-        //插入比赛数据
-        let newCount = 0
-        for (const match of matches) {
-            const [_, isNew] = await Match.prepare(match)
-            if (isNew) {
-                newCount++
-            }
+        //把数据抛到队列中
+        const data = JSON.stringify(matches)
+
+        for (const queue of CONFIG.crown_matches_data_queues) {
+            await publish(queue, data)
         }
-        console.log(`新增比赛数据`, newCount)
+
         await reset()
     })
 }

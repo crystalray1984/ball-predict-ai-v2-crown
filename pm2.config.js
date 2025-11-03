@@ -22,6 +22,7 @@ module.exports = {
     'final-check': createConfig('final-check'),
     'ready-check': createConfig('ready-check'),
     surebet: createConfig('surebet'),
+    'surebet-check': createConfig('surebet-check'),
     titan007: createConfig('titan007'),
     'luffa-robot': createConfig('luffa-robot'),
 }

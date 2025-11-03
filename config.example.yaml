@@ -1,8 +1,18 @@
 #皇冠网站地址
 crown_url: 'https://mos011.com'
 
-#surebet接口调用凭证
-surebet_token: ''
+surebet:
+  #surebet接口调用凭证
+  token: ''
+  #获取到数据后需要抛到的下一个队列
+  next_queues:
+    - 'surebet_check'
+    - 'v3:surebet_check'
+
+#采集到皇冠比赛数据后要抛到的队列
+crown_matches_data_queues:
+  - 'crown_matches_data'
+  - 'v3:crown_matches_data'
 
 #数据库配置
 db:
