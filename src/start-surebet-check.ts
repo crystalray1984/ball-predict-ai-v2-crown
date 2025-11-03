@@ -78,6 +78,8 @@ async function processSurebetCheck(content: string) {
 
         //比赛时间筛选
         if (odd.time < Date.now() + endOf || odd.time > Date.now() + startOf) {
+            console.log({ startOf, endOf })
+            console.log({ startTime: Date.now() + endOf, endTime: Date.now() + startOf })
             console.log('时间不满足', dayjs(odd.time).format('YYYY-MM-DD HH:mm'))
             continue
         }
