@@ -1,4 +1,4 @@
-import { delay } from '@/common/helpers'
+import { delay, isEmpty } from '@/common/helpers'
 import { sendNotification } from '@/common/luffa'
 import { Queue } from '@/common/queue'
 import { singleton } from '@/common/singleton'
@@ -21,7 +21,12 @@ const PAGE_URL = CONFIG.crown_url ?? 'https://mos011.com'
 /**
  * 设备号
  */
-const MACHINE_ID = machineIdSync()
+const MACHINE_ID = (() => {
+    if (!isEmpty(CONFIG.machine_id)) {
+        return CONFIG.machine_id
+    }
+    return machineIdSync()
+})()
 
 let browser = undefined as unknown as Browser
 let mainPage = undefined as unknown as Page
