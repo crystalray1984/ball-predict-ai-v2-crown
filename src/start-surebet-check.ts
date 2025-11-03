@@ -68,7 +68,7 @@ async function processSurebetCheck(content: string) {
         //收益率筛选
         const profit = Decimal(record.profit)
         if (profit.lt(minProfit) || profit.gt(maxProfit)) {
-            console.log('收益率不满足', record.profit)
+            // console.log('收益率不满足', record.profit)
             continue
         }
 
@@ -77,9 +77,9 @@ async function processSurebetCheck(content: string) {
         if (!odd) continue
 
         //比赛时间筛选
-        if (odd.time < Date.now() + endOf || odd.time > Date.now() + startOf) {
+        if (odd.time < Date.now() + startOf || odd.time > Date.now() + endOf) {
             console.log({ startOf, endOf })
-            console.log({ startTime: Date.now() + endOf, endTime: Date.now() + startOf })
+            console.log({ startTime: Date.now() + startOf, endTime: Date.now() + endOf })
             console.log('时间不满足', dayjs(odd.time).format('YYYY-MM-DD HH:mm'))
             continue
         }
