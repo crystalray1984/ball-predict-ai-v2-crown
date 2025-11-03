@@ -27,5 +27,6 @@ module.exports = {
     titan007: createConfig('titan007'),
     'luffa-robot': createConfig('luffa-robot'),
     'luffa-message': createConfig('luffa-message'),
+    'v3-check': createConfig('v3-check'),
     createConfig,
 }
