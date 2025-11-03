@@ -69,7 +69,7 @@ async function processSurebetCheck(content: string) {
         if (!odd) continue
 
         //比赛时间筛选
-        if (odd.time < Date.now() + endOf || odd.time > Date.now() + startOf) continue
+        if (odd.time < Date.now() + startOf || odd.time > Date.now() + endOf) continue
 
         //插入surebet抓取数据
         try {
