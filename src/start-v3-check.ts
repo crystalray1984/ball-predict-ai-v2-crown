@@ -25,19 +25,23 @@ async function startV3Check() {
         {
             query: `
         SELECT
-            id,
-            crown_match_id
+            match.id,
+            match.crown_match_id
         FROM
             match
+        INNER JOIN
+            tournament ON tournament.id = match.tournament_id
         WHERE
-            match_time > ?
-            AND status = ?
-            AND id IN (SELECT match_id FROM odd WHERE status = ?)
+            match.match_time > ?
+            AND match.status = ?
+            AND match.id IN (SELECT match_id FROM odd WHERE status = ?)
+            AND tournament.is_open = ?
         `,
             values: [
                 new Date(Date.now() + final_check_time * 60000), //只抓取5分内开赛的比赛
                 '', //只选择还未结算的比赛
                 'ready', //有准备中的盘口的比赛
+                1, //只抓取开启中的联赛
             ],
         },
         {
