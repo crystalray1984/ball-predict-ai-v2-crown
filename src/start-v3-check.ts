@@ -313,13 +313,13 @@ async function processV3Check(
             back: 0,
             value: resultRow[result],
             start_odd_data: {
-                id: stackRows[0].id,
+                id: Number(stackRows[0].id),
                 field: result,
                 value: stackRows[0][result],
                 time: stackRows[0].created_at.valueOf(),
             },
             end_odd_data: {
-                id: resultRow.id,
+                id: Number(resultRow.id),
                 field: result,
                 value: resultRow[result],
                 time: resultRow.created_at.valueOf(),
