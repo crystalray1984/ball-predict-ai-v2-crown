@@ -305,7 +305,16 @@ async function processV3Check(
         })()
 
         const is_valid = match.tournament_is_open
-        const week_day = parseInt(dayjs().startOf('week').format('YYYYMMDD'))
+        const week_day = (() => {
+            let day = dayjs().startOf('day')
+            if (day.day() === 0) {
+                day = day.subtract(6, 'day')
+            } else if (day.day() > 1) {
+                day = day.subtract(day.day() - 1, 'day')
+            }
+            return parseInt(day.format('YYYYMMDD'))
+        })()
+        // const week_day = parseInt(dayjs().startOf('week').format('YYYYMMDD'))
 
         const promoted = await PromotedOddChannel2.create({
             match_id,
