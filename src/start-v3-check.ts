@@ -4,7 +4,7 @@ import { runLoop } from './common/helpers'
 import { consume, publish } from './common/rabbitmq'
 import { getSetting } from './common/settings'
 import { CONFIG } from './config'
-import { CrownOdd, db, Match, Odd, PromotedOddChannel2, Tournament, VMatch } from './db'
+import { CrownOdd, db, Match, Odd, PromotedOddChannel2 } from './db'
 
 /**
  * v3检查进程
