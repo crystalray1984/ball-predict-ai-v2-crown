@@ -209,8 +209,8 @@ async function processV3Check(
                 id: {
                     [Op.lte]: newOne.id,
                 },
-                updated_at: {
-                    [Op.gte]: new Date(newOne.updated_at.valueOf() - v3_check_max_duration * 60000),
+                created_at: {
+                    [Op.gte]: new Date(newOne.created_at.valueOf() - v3_check_max_duration * 60000),
                 },
             },
             order: [['id', 'asc']],
@@ -244,8 +244,8 @@ async function processV3Check(
             //先进行异常波动的判断，寻找满足异常时间段内的最早的记录
             const minCheckFirstRow = rows.find(
                 (t) =>
-                    t.updated_at.valueOf() >=
-                    currentRow.updated_at.valueOf() - v3_check_min_duration * 60000,
+                    t.created_at.valueOf() >=
+                    currentRow.created_at.valueOf() - v3_check_min_duration * 60000,
             )
             //如果异常时间段内有记录，且水位下降超过限定值
             if (
@@ -316,13 +316,13 @@ async function processV3Check(
                 id: stackRows[0].id,
                 field: result,
                 value: stackRows[0][result],
-                time: stackRows[0].updated_at.valueOf(),
+                time: stackRows[0].created_at.valueOf(),
             },
             end_odd_data: {
                 id: resultRow.id,
                 field: result,
                 value: resultRow[result],
-                time: resultRow.updated_at.valueOf(),
+                time: resultRow.created_at.valueOf(),
             },
         })
 

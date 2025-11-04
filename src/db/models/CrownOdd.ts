@@ -2,6 +2,7 @@ import { CreationOptional, InferAttributes, InferCreationAttributes } from 'sequ
 import {
     AutoIncrement,
     Column,
+    CreatedAt,
     DataType,
     Model,
     PrimaryKey,
@@ -12,7 +13,7 @@ import {
 /**
  * 皇冠盘口追踪表
  */
-@Table({ tableName: 'crown_odd', createdAt: false, underscored: false })
+@Table({ tableName: 'crown_odd', underscored: false })
 export class CrownOdd extends Model<InferAttributes<CrownOdd>, InferCreationAttributes<CrownOdd>> {
     @AutoIncrement
     @PrimaryKey
@@ -42,6 +43,10 @@ export class CrownOdd extends Model<InferAttributes<CrownOdd>, InferCreationAttr
 
     @Column(DataType.DECIMAL(12, 6))
     declare value2: string
+
+    @CreatedAt
+    @Column(DataType.DATE)
+    declare created_at: CreationOptional<Date>
 
     @UpdatedAt
     @Column(DataType.DATE)
