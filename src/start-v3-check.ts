@@ -192,7 +192,6 @@ async function processV3Check(
         const exists = await PromotedOddChannel2.findOne({
             where: {
                 match_id,
-                is_valid: 1,
                 variety: oddInfo.variety,
                 period,
                 type: {
@@ -287,6 +286,27 @@ async function processV3Check(
             return
         }
 
+        //更新盘口记录表中的数据，标记判定成功开始和结束区间
+        await CrownOdd.update(
+            {
+                promote_flag: result === 'value1' ? 1 : 2,
+            },
+            {
+                where: {
+                    id: {
+                        [Op.between]: [stackRows[0].id, resultRow.id],
+                    },
+                    match_id,
+                    variety: oddInfo.variety,
+                    period,
+                    type,
+                },
+            },
+        )
+
+        const is_valid = match.tournament_is_open
+        if (!is_valid) return
+
         //创建满足条件的推荐数据
         //计算推荐数据
         const oddType = (() => {
@@ -308,7 +328,6 @@ async function processV3Check(
             }
         })()
 
-        const is_valid = match.tournament_is_open
         const week_day = (() => {
             let day = dayjs().startOf('day')
             if (day.day() === 0) {
@@ -358,26 +377,10 @@ async function processV3Check(
             await promoted.save()
         }
 
-        //更新盘口记录表中的数据，标记判定成功开始和结束区间
-        await CrownOdd.update(
-            {
-                promote_flag: result === 'value1' ? 1 : 2,
-            },
-            {
-                where: {
-                    id: {
-                        [Op.between]: [stackRows[0].id, resultRow.id],
-                    },
-                    match_id,
-                    variety: oddInfo.variety,
-                    period,
-                    type,
-                },
-            },
-        )
-
         //发送推送信息
-        publish(CONFIG.queues['send_promoted_channel2'], JSON.stringify({ id: promoted.id }))
+        if (is_valid) {
+            publish(CONFIG.queues['send_promoted_channel2'], JSON.stringify({ id: promoted.id }))
+        }
     }
 
     //读取各个类型的主盘口数据
