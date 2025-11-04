@@ -329,7 +329,7 @@ async function processV3Check(
         //更新盘口记录表中的数据，标记判定成功开始和结束区间
         await CrownOdd.update(
             {
-                promote_flag: 1,
+                promote_flag: result === 'value1' ? 1 : 2,
             },
             {
                 where: {
