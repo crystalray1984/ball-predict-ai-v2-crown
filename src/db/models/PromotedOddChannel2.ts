@@ -146,4 +146,10 @@ export class PromotedOddChannel2 extends Model<
 
     @Column(DataType.JSONB)
     declare end_odd_data: CreationOptional<any>
+
+    @Column(DataType.INTEGER)
+    declare week_day: CreationOptional<number>
+
+    @Column(DataType.INTEGER)
+    declare week_id: CreationOptional<number>
 }

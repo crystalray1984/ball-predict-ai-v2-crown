@@ -143,4 +143,10 @@ export class VPromotedOddChannel2 extends Model<InferAttributes<VPromotedOddChan
 
     @Column(DataType.DECIMAL)
     declare value: string
+
+    @Column(DataType.INTEGER)
+    declare week_day: number
+
+    @Column(DataType.INTEGER)
+    declare week_id: number
 }

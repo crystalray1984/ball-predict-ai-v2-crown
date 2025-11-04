@@ -4,7 +4,8 @@ import { runLoop } from './common/helpers'
 import { consume, publish } from './common/rabbitmq'
 import { getSetting } from './common/settings'
 import { CONFIG } from './config'
-import { CrownOdd, db, Match, Odd, PromotedOddChannel2 } from './db'
+import { CrownOdd, db, Match, Odd, PromotedOddChannel2, VMatch } from './db'
+import dayjs from 'dayjs'
 
 /**
  * v3检查进程
@@ -93,7 +94,7 @@ async function processV3Check(
     const crown_match_id = data.crown_match_id
 
     //读取对应的比赛和盘口数据
-    const match = await Match.findOne({
+    const match = await VMatch.findOne({
         where: {
             id: match_id,
         },
@@ -303,9 +304,12 @@ async function processV3Check(
             }
         })()
 
+        const is_valid = match.tournament_is_open
+        const week_day = parseInt(dayjs().startOf('week').format('YYYYMMDD'))
+
         const promoted = await PromotedOddChannel2.create({
             match_id,
-            is_valid: 1,
+            is_valid,
             variety: oddInfo.variety,
             period,
             type: oddType,
@@ -324,7 +328,22 @@ async function processV3Check(
                 value: resultRow[result],
                 time: resultRow.created_at.valueOf(),
             },
+            week_day,
         })
+
+        if (is_valid) {
+            const week_id = await PromotedOddChannel2.count({
+                where: {
+                    week_day,
+                    is_valid: 1,
+                    id: {
+                        [Op.lte]: promoted.id,
+                    },
+                },
+            })
+            promoted.week_id = week_id
+            await promoted.save()
+        }
 
         //更新盘口记录表中的数据，标记判定成功开始和结束区间
         await CrownOdd.update(
