@@ -1,4 +1,4 @@
-import { isNullOrUndefined } from '@/common/helpers'
+import { getOddIdentification, isNullOrUndefined } from '@/common/helpers'
 import { close, consume } from '@/common/rabbitmq'
 import { getSetting } from '@/common/settings'
 import { findMatchedOdd } from '@/crown'
@@ -111,6 +111,7 @@ async function processReadyCheck(content: string) {
                 crown_value: exists.value,
                 status,
                 ready_at: status === 'ready' ? (literal('CURRENT_TIMESTAMP') as any) : null,
+                odd_type: getOddIdentification(extra.type.type),
             })
         } catch (err) {
             if (err instanceof UniqueConstraintError) {

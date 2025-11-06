@@ -151,4 +151,7 @@ export class PromotedOdd extends Model<
 
     @Column(DataType.INTEGER)
     declare week_id: CreationOptional<number>
+
+    @Column(DataType.STRING)
+    declare odd_type: 'ah' | 'sum'
 }

@@ -343,9 +343,7 @@ export function getOddIdentification(type: OddType) {
             return 'ah'
         case 'over':
         case 'under':
-            return 'goal'
-        default:
-            return ''
+            return 'sum'
     }
 }
 
@@ -354,13 +352,10 @@ export function getOddIdentification(type: OddType) {
  * @param type 当前盘口标识
  */
 export function getSameOddTypes(type: OddType): OddType[] {
-    switch (type) {
-        case 'ah1':
-        case 'ah2':
-        case 'draw':
+    switch (getOddIdentification(type)) {
+        case 'ah':
             return ['ah1', 'ah2', 'draw']
-        case 'over':
-        case 'under':
+        case 'sum':
             return ['over', 'under']
         default:
             return []

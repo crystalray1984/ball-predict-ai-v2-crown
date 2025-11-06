@@ -111,4 +111,10 @@ export class Odd extends Model<InferAttributes<Odd>, InferCreationAttributes<Odd
      */
     @Column(DataType.SMALLINT)
     declare is_open: CreationOptional<number>
+
+    /**
+     * 投注方向类型
+     */
+    @Column(DataType.STRING)
+    declare odd_type: 'ah' | 'sum'
 }

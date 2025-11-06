@@ -1,7 +1,7 @@
 import dayjs from 'dayjs'
 import Decimal from 'decimal.js'
 import { Op, QueryTypes } from 'sequelize'
-import { runLoop } from './common/helpers'
+import { getOddIdentification, runLoop } from './common/helpers'
 import { consume, publish } from './common/rabbitmq'
 import { getSetting } from './common/settings'
 import { CONFIG } from './config'
@@ -194,9 +194,7 @@ async function processV3Check(
                 match_id,
                 variety: oddInfo.variety,
                 period,
-                type: {
-                    [Op.in]: type === 'ah' ? ['ah1', 'ah2'] : ['over', 'under'],
-                },
+                odd_type: type,
             },
             attributes: ['id'],
         })
@@ -363,6 +361,7 @@ async function processV3Check(
                 time: resultRow.created_at.valueOf(),
             },
             week_day,
+            odd_type: getOddIdentification(oddType),
         })
 
         if (is_valid) {
