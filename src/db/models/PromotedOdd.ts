@@ -34,18 +34,17 @@ export class PromotedOdd extends Model<
     declare match_id: number
 
     /**
-     * 原始盘口id
+     * 源数据类型
      */
-
-    @Column(DataType.INTEGER)
-    declare odd_id: CreationOptional<number>
+    @Column(DataType.STRING)
+    declare source: CreationOptional<string>
 
     /**
-     * 手动推荐盘口id
+     * 源数据ID
      */
 
     @Column(DataType.INTEGER)
-    declare manual_promote_odd_id: CreationOptional<number>
+    declare source_id: CreationOptional<number>
 
     /**
      * 是否最终推荐给用户
@@ -140,4 +139,16 @@ export class PromotedOdd extends Model<
 
     @Column(DataType.DECIMAL)
     declare value: CreationOptional<string>
+
+    @Column(DataType.JSONB)
+    declare start_odd_data: CreationOptional<any>
+
+    @Column(DataType.JSONB)
+    declare end_odd_data: CreationOptional<any>
+
+    @Column(DataType.INTEGER)
+    declare week_day: CreationOptional<number>
+
+    @Column(DataType.INTEGER)
+    declare week_id: CreationOptional<number>
 }

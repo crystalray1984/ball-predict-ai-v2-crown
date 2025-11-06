@@ -31,8 +31,6 @@ async function main() {
         //日期
         const date = dayjs(group[0].match_time)
 
-        console.log(date.format('YYYY-MM-DD'))
-
         //读取这个日期的完场赛事
         const finalData = await getFinalMatches(date)
 

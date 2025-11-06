@@ -1,14 +1,10 @@
-import { db, Odd, PromotedOdd, PromotedOddChannel2, Titan007Odd } from '@/db'
+import { PromotedOdd, Titan007Odd } from '@/db'
 import dayjs from 'dayjs'
 import Decimal from 'decimal.js'
 import { stat } from 'node:fs'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
-import { Op } from 'sequelize'
-import { publish } from './rabbitmq'
 import { RateLimiter } from './rate-limiter'
-import { getSetting } from './settings'
-import { CONFIG } from '@/config'
 
 /**
  * 返回一个等待指定时间的Promise
@@ -510,98 +506,6 @@ export function getNumberWithSymbol(input: Decimal.Value) {
         return '+' + value.toNumber()
     } else {
         return value.toNumber().toString()
-    }
-}
-
-/**
- * 通道2推送判断
- */
-export async function checkChannel2Publish(odd: Odd) {
-    //读取推送配置
-    let direct_config = await getSetting<DirectConfig[]>('direct_config')
-    if (!Array.isArray(direct_config)) return
-
-    //对推送配置进行筛选，只筛选选定了通道2的规则
-    direct_config = direct_config.filter((config) => {
-        if (!Array.isArray(config.publish_channels)) {
-            return false
-        }
-
-        if (!config.publish_channels.includes('channel2')) {
-            return false
-        }
-
-        //根据当前盘口状态筛选，如果这个盘口是没有通过一次判断的，那么只能匹配不要求一次对比的规则
-        if (odd.status === '') {
-            return !config.first_check
-        }
-
-        return true
-    })
-
-    //寻找是否有满足条件的规则
-    const rule = findRuleWithValue(direct_config, {
-        variety: odd.variety,
-        period: odd.period,
-        type: odd.type,
-        condition: odd.condition,
-        value: odd.surebet_value,
-    })
-
-    //没有满足规则的条件就出去
-    if (!rule) return
-
-    //再看看是否已经存在同类的推荐
-    const promoted = await PromotedOddChannel2.findOne({
-        where: {
-            match_id: odd.match_id,
-            variety: odd.variety,
-            period: odd.period,
-            type: {
-                [Op.in]: getSameOddTypes(odd.type),
-            },
-        },
-        attributes: ['id'],
-    })
-
-    if (promoted) {
-        //已经有推荐了，那就不推了
-        return
-    }
-
-    //确定推荐的方向和盘口
-    let { condition, type } = getPromotedOddInfo(odd, rule.back)
-
-    //确定变盘
-    condition = Decimal(condition).add(rule.adjust).toString()
-
-    //生成推荐
-    try {
-        await db.transaction(async (transaction) => {
-            //创建推荐
-            const promoted = await PromotedOddChannel2.create(
-                {
-                    match_id: odd.match_id,
-                    odd_id: odd.id,
-                    is_valid: 1,
-                    skip: '',
-                    variety: odd.variety,
-                    period: odd.period,
-                    condition,
-                    type,
-                    back: rule.back ? 1 : 0,
-                    final_rule: 'direct',
-                },
-                {
-                    transaction,
-                    returning: ['id'],
-                },
-            )
-
-            publish(CONFIG.queues['send_promoted_channel2'], JSON.stringify({ id: promoted.id }))
-        })
-    } catch (err) {
-        console.error(err)
     }
 }
 

@@ -1,4 +1,4 @@
-import { checkChannel2Publish, isNullOrUndefined } from '@/common/helpers'
+import { isNullOrUndefined } from '@/common/helpers'
 import { close, consume } from '@/common/rabbitmq'
 import { getSetting } from '@/common/settings'
 import { findMatchedOdd } from '@/crown'
@@ -154,9 +154,6 @@ async function processReadyCheck(content: string) {
             }
         }
     }
-
-    //特殊的通道2判断
-    await checkChannel2Publish(odd)
 }
 
 /**

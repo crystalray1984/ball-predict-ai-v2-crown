@@ -1,11 +1,11 @@
+import dayjs from 'dayjs'
 import Decimal from 'decimal.js'
 import { Op, QueryTypes } from 'sequelize'
 import { runLoop } from './common/helpers'
 import { consume, publish } from './common/rabbitmq'
 import { getSetting } from './common/settings'
 import { CONFIG } from './config'
-import { CrownOdd, db, Match, Odd, PromotedOddChannel2, VMatch } from './db'
-import dayjs from 'dayjs'
+import { CrownOdd, db, Odd, PromotedOdd, VMatch } from './db'
 
 /**
  * v3检查进程
@@ -189,7 +189,7 @@ async function processV3Check(
         if (!newOne) return
 
         //查看这个类型的盘口是否已经有了推荐，如果有了也不做后续的处理了
-        const exists = await PromotedOddChannel2.findOne({
+        const exists = await PromotedOdd.findOne({
             where: {
                 match_id,
                 variety: oddInfo.variety,
@@ -339,8 +339,10 @@ async function processV3Check(
         })()
         // const week_day = parseInt(dayjs().startOf('week').format('YYYYMMDD'))
 
-        const promoted = await PromotedOddChannel2.create({
+        const promoted = await PromotedOdd.create({
             match_id,
+            source: 'crown_odd',
+            source_id: resultRow.id,
             is_valid,
             variety: oddInfo.variety,
             period,
@@ -364,15 +366,18 @@ async function processV3Check(
         })
 
         if (is_valid) {
-            const week_id = await PromotedOddChannel2.count({
+            const lastRow = await PromotedOdd.findOne({
                 where: {
                     week_day,
                     is_valid: 1,
                     id: {
-                        [Op.lte]: promoted.id,
+                        [Op.lt]: promoted.id,
                     },
                 },
+                order: [['id', 'desc']],
+                attributes: ['week_id'],
             })
+            const week_id = lastRow ? lastRow.week_id + 1 : 1
             promoted.week_id = week_id
             await promoted.save()
         }

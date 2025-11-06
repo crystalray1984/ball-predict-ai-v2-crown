@@ -95,18 +95,6 @@ export class Odd extends Model<InferAttributes<Odd>, InferCreationAttributes<Odd
     @Column(DataType.DATE)
     declare ready_at: CreationOptional<Date | null>
 
-    /**
-     * 二次对比完成时间
-     */
-    @Column(DataType.DATE)
-    declare final_at: CreationOptional<Date | null>
-
-    /**
-     * 二次对比规则时间
-     */
-    @Column(DataType.STRING)
-    declare final_rule: CreationOptional<PromotedFinalRule>
-
     @CreatedAt
     @Column(DataType.DATE)
     declare created_at: CreationOptional<Date>

@@ -1,6 +1,6 @@
 import { getNumberWithSymbol, isEmpty } from '@/common/helpers'
 import { close, consume, publish } from '@/common/rabbitmq'
-import { VPromotedOddChannel2 } from '@/db'
+import { VPromotedOdd } from '@/db'
 import dayjs from 'dayjs'
 import Decimal from 'decimal.js'
 import { CONFIG } from './config'
@@ -8,7 +8,7 @@ import { CONFIG } from './config'
 /**
  * 根据推荐的盘口生成Luffa推荐文本内容
  */
-function createPromotionMessage(promoted: VPromotedOddChannel2) {
+function createPromotionMessage(promoted: VPromotedOdd) {
     const oddParts: string[] = []
     // if (promoted.variety === 'corner') {
     //     oddParts.push('角球')
@@ -68,7 +68,7 @@ async function processSendPromotedChannel2(content: string) {
     console.log('推送推荐信息到通道2', id)
 
     //查询推荐盘口信息
-    const promoted = await VPromotedOddChannel2.findOne({
+    const promoted = await VPromotedOdd.findOne({
         where: {
             id,
         },

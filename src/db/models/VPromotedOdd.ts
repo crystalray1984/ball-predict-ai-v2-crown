@@ -1,4 +1,4 @@
-import type { CreationOptional, InferAttributes } from 'sequelize'
+import type { InferAttributes } from 'sequelize'
 import { Column, DataType, Model, PrimaryKey, Table } from 'sequelize-typescript'
 
 /**
@@ -21,18 +21,17 @@ export class VPromotedOdd extends Model<InferAttributes<VPromotedOdd>> {
     declare match_id: number
 
     /**
-     * 原始盘口id
+     * 源数据类型
      */
-
-    @Column(DataType.INTEGER)
-    declare odd_id: number
+    @Column(DataType.STRING)
+    declare source: string
 
     /**
-     * 手动推荐盘口id
+     * 源数据ID
      */
 
     @Column(DataType.INTEGER)
-    declare manual_promote_odd_id: number
+    declare source_id: number
 
     /**
      * 是否最终推荐给用户
@@ -123,6 +122,21 @@ export class VPromotedOdd extends Model<InferAttributes<VPromotedOdd>> {
     @Column(DataType.DATE)
     declare updated_at: Date
 
+    @Column(DataType.DECIMAL)
+    declare value: string
+
+    @Column(DataType.JSONB)
+    declare start_odd_data: any
+
+    @Column(DataType.JSONB)
+    declare end_odd_data: any
+
+    @Column(DataType.INTEGER)
+    declare week_day: number
+
+    @Column(DataType.INTEGER)
+    declare week_id: number
+
     @Column(DataType.DATE)
     declare match_time: Date
 
@@ -140,7 +154,4 @@ export class VPromotedOdd extends Model<InferAttributes<VPromotedOdd>> {
 
     @Column(DataType.STRING)
     declare team2_name: string
-
-    @Column(DataType.DECIMAL)
-    declare value: CreationOptional<string>
 }
