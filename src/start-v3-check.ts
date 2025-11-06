@@ -384,7 +384,7 @@ async function processV3Check(
 
         //发送推送信息
         if (is_valid) {
-            publish(CONFIG.queues['send_promoted_channel2'], JSON.stringify({ id: promoted.id }))
+            publish(CONFIG.queues['send_promoted'], JSON.stringify({ id: promoted.id }))
         }
     }
 

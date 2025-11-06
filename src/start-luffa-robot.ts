@@ -41,7 +41,7 @@ function createPromotionMessage(promoted: VPromotedOdd) {
     }
 
     //构建抛入到下一个队列的数据
-    const text = `=====${promoted.id}=====
+    const text = `=====${promoted.week_id}=====
 
 ${dayjs(promoted.match_time).format('YYYY-MM-DD HH:mm')}
 
@@ -60,12 +60,12 @@ ${oddParts.join('')}
 }
 
 /**
- * 处理最终推荐的推送消息到通道2
+ * 处理推送到群和用户的推荐消息
  * @param content
  */
-async function processSendPromotedChannel2(content: string) {
+async function processSendPromoted(content: string) {
     const { id } = JSON.parse(content) as { id: number }
-    console.log('推送推荐信息到通道2', id)
+    console.log('推送推荐信息', id)
 
     //查询推荐盘口信息
     const promoted = await VPromotedOdd.findOne({
@@ -101,13 +101,9 @@ async function processSendPromotedChannel2(content: string) {
  */
 async function startPromotedQueueChannel2() {
     while (true) {
-        const [promise] = consume(
-            CONFIG.queues['send_promoted_channel2'],
-            processSendPromotedChannel2,
-            {
-                noLocal: false,
-            },
-        )
+        const [promise] = consume(CONFIG.queues['send_promoted'], processSendPromoted, {
+            noLocal: false,
+        })
         await promise
         await close()
     }
