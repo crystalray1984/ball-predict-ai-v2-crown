@@ -446,20 +446,23 @@ async function startSurebetV2ToV3Check() {
  * @param surebet
  */
 async function processSurebetV2ToV3Check(surebet: Surebet.Output) {
+    //需要对surebet数据做一次反推
+    const oddInfo = getPromotedOddInfo(surebet.type, 1)
+
     const [odd, created] = await SurebetV2Odd.findOrCreate({
         where: {
             crown_match_id: surebet.crown_match_id,
             variety: surebet.type.variety,
             period: surebet.type.period,
-            type: surebet.type.type,
-            condition: surebet.type.condition,
+            type: oddInfo.type,
+            condition: oddInfo.condition,
         },
         defaults: {
             crown_match_id: surebet.crown_match_id,
             variety: surebet.type.variety,
             period: surebet.type.period,
-            type: surebet.type.type,
-            condition: surebet.type.condition,
+            type: oddInfo.type,
+            condition: oddInfo.condition,
             value: surebet.surebet_value,
         },
     })
