@@ -515,7 +515,7 @@ async function createV2ToV3Promote(odd: SurebetV2Odd, promoted: PromotedOdd) {
     if (odd.promote_id > 0) return
 
     //判断v3推荐的初始条件
-    if (promoted.is_valid || !promoted.end_odd_data) return
+    if (!promoted.is_valid || !promoted.end_odd_data) return
 
     //读取系统配置
     const { surebet_v2_to_v3_back, surebet_v2_to_v3_min_value } = await getSetting(
