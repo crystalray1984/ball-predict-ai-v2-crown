@@ -602,7 +602,7 @@ async function createV2ToV3Promote(odd: SurebetV2Odd, promoted: PromotedOdd) {
         //发出推荐
         await publish(
             CONFIG.queues['send_promoted'],
-            JSON.stringify({ id: promoted.id, type: 'surebet_v2_promoted' }),
+            JSON.stringify({ id: promotedOdd.id, type: 'surebet_v2_promoted' }),
         )
     }
 }
