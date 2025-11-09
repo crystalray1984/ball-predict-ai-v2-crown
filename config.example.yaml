@@ -12,6 +12,8 @@ queues:
   crown_matches_data: 'crown_matches_data'
   send_promoted: 'send_promoted'
   send_promoted_channel2: 'send_promoted_channel2'
+  #满足v2版surebet参数的盘口，抛到v3进行推荐比对
+  surebet_v2_to_v3: 'surebet_v2_to_v3'
 
 surebet:
   #surebet接口调用凭证

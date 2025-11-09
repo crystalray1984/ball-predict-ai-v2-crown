@@ -58,6 +58,7 @@ async function processSurebetCheck(content: string) {
     const endOf = parseTimeCondition(settings.surebet_end_of)
 
     const nextDataList: string[] = []
+    const toV3List: string[] = []
 
     for (const record of records) {
         //收益率筛选
@@ -198,6 +199,11 @@ async function processSurebetCheck(content: string) {
             match_time: odd.time,
             type: omit(odd.type, 'game', 'base'),
             surebet_value: String(odd.value),
+        }
+
+        //满足v2条件的全场盘口，抛到v3队列进行比对
+        if (output.type.period === 'regularTime' && output.type.variety === 'goal') {
+            toV3List.push(JSON.stringify(output))
         }
 
         //确定盘口是否存在
