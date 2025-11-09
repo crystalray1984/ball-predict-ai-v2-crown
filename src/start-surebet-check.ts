@@ -252,6 +252,9 @@ async function processSurebetCheck(content: string) {
     if (nextDataList.length > 0) {
         await publish('crown_odd', nextDataList)
     }
+    if (toV3List.length > 0) {
+        await publish(CONFIG.queues['surebet_v2_to_v3'], toV3List)
+    }
 }
 
 /**
