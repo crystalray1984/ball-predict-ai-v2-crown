@@ -12,6 +12,8 @@ queues:
   crown_matches_data: 'v3:crown_matches_data'
   send_promoted: 'v3:send_promoted'
   v3_check: 'v3_check'
+  #从v2抛过来的满足条件的surebet盘口
+  surebet_v2_to_v3: 'surebet_v2_to_v3'
 
 surebet:
   #surebet接口调用凭证
@@ -69,3 +71,7 @@ luffa:
       atList:
         - name: ''
           did: ''
+  #SurebetV3和V3融合推送队列
+  surebet_v2_to_v3:
+    - type: 1
+      uid: ''

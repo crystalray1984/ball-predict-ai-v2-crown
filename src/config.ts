@@ -126,6 +126,7 @@ export interface LuffaConfig {
     secret: string
     notification: LuffaNotificationConfig[]
     notification_channel2: LuffaNotificationConfig[]
+    surebet_v2_to_v3: LuffaNotificationConfig[]
 }
 
 /**

@@ -13,10 +13,10 @@ import {
 /**
  * 最终推荐盘口表
  */
-@Table({ tableName: 'promoted_odd' })
-export class PromotedOdd extends Model<
-    InferAttributes<PromotedOdd>,
-    InferCreationAttributes<PromotedOdd>
+@Table({ tableName: 'surebet_v2_promoted' })
+export class SurebetV2Promoted extends Model<
+    InferAttributes<SurebetV2Promoted>,
+    InferCreationAttributes<SurebetV2Promoted>
 > {
     /**
      * 盘口id
@@ -29,22 +29,8 @@ export class PromotedOdd extends Model<
     /**
      * 比赛id
      */
-
     @Column(DataType.INTEGER)
     declare match_id: number
-
-    /**
-     * 源数据类型
-     */
-    @Column(DataType.STRING)
-    declare source: CreationOptional<string>
-
-    /**
-     * 源数据ID
-     */
-
-    @Column(DataType.INTEGER)
-    declare source_id: CreationOptional<number>
 
     /**
      * 是否最终推荐给用户
@@ -81,12 +67,6 @@ export class PromotedOdd extends Model<
     declare type: OddType
 
     /**
-     * 第二投注方向
-     */
-    @Column(DataType.STRING)
-    declare type2: CreationOptional<OddType | null>
-
-    /**
      * 盘口条件
      */
 
@@ -94,31 +74,13 @@ export class PromotedOdd extends Model<
     declare condition: string
 
     /**
-     * 第二盘口条件
-     */
-    @Column(DataType.DECIMAL(5, 2))
-    declare condition2: CreationOptional<string | null>
-
-    /**
      * 是否反推
      */
     @Column(DataType.INTEGER)
     declare back: number
 
-    /**
-     * 正反推规则
-     */
-    @Column(DataType.STRING)
-    declare final_rule: CreationOptional<string>
-
     @Column(DataType.TINYINT)
     declare result: CreationOptional<number | null>
-
-    @Column(DataType.TINYINT)
-    declare result1: CreationOptional<number | null>
-
-    @Column(DataType.TINYINT)
-    declare result2: CreationOptional<number | null>
 
     @Column(DataType.STRING)
     declare score: CreationOptional<string | null>
@@ -139,22 +101,6 @@ export class PromotedOdd extends Model<
 
     @Column(DataType.DECIMAL)
     declare value: CreationOptional<string>
-
-    @Column(DataType.JSONB)
-    declare start_odd_data: CreationOptional<{
-        id: number
-        field: 'value1' | 'value2'
-        value: string
-        time: number
-    } | null>
-
-    @Column(DataType.JSONB)
-    declare end_odd_data: CreationOptional<{
-        id: number
-        field: 'value1' | 'value2'
-        value: string
-        time: number
-    } | null>
 
     @Column(DataType.INTEGER)
     declare week_day: CreationOptional<number>

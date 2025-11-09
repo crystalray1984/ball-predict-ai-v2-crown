@@ -11,12 +11,15 @@ import { Odd } from './models/Odd'
 import { PromotedOdd } from './models/PromotedOdd'
 import { Setting } from './models/Setting'
 import { SurebetRecord } from './models/SurebetRecord'
+import { SurebetV2Odd } from './models/SurebetV2Odd'
+import { SurebetV2Promoted } from './models/SurebetV2Promoted'
 import { Team } from './models/Team'
 import { Titan007Odd } from './models/Titan007Odd'
 import { Tournament } from './models/Tournament'
 import { VLuffaUser } from './models/VLuffaUser'
 import { VMatch } from './models/VMatch'
 import { VPromotedOdd } from './models/VPromotedOdd'
+import { VSurebetV2Promoted } from './models/VSurebetV2Promoted'
 
 /**
  * 数据库连接
@@ -47,6 +50,9 @@ export const db = new Sequelize(
                 VPromotedOdd,
                 NotificationLog,
                 CrownOdd,
+                SurebetV2Odd,
+                SurebetV2Promoted,
+                VSurebetV2Promoted,
             ],
         },
     ),
@@ -62,9 +68,12 @@ export { Odd } from './models/Odd'
 export { PromotedOdd } from './models/PromotedOdd'
 export { Setting } from './models/Setting'
 export { SurebetRecord } from './models/SurebetRecord'
+export { SurebetV2Odd } from './models/SurebetV2Odd'
+export { SurebetV2Promoted } from './models/SurebetV2Promoted'
 export { Team } from './models/Team'
 export { Titan007Odd } from './models/Titan007Odd'
 export { Tournament } from './models/Tournament'
 export { VLuffaUser } from './models/VLuffaUser'
 export { VMatch } from './models/VMatch'
 export { VPromotedOdd } from './models/VPromotedOdd'
+export { VSurebetV2Promoted } from './models/VSurebetV2Promoted'

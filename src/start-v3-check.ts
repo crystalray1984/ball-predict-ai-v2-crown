@@ -1,11 +1,21 @@
 import dayjs from 'dayjs'
 import Decimal from 'decimal.js'
 import { Op, QueryTypes } from 'sequelize'
-import { getOddIdentification, runLoop } from './common/helpers'
+import { getOddIdentification, getOddResult, getPromotedOddInfo, runLoop } from './common/helpers'
 import { consume, publish } from './common/rabbitmq'
 import { getSetting } from './common/settings'
 import { CONFIG } from './config'
-import { CrownOdd, db, Odd, PromotedOdd, VMatch } from './db'
+import {
+    CrownOdd,
+    db,
+    Match,
+    Odd,
+    PromotedOdd,
+    SurebetV2Odd,
+    SurebetV2Promoted,
+    VMatch,
+    VPromotedOdd,
+} from './db'
 
 /**
  * v3检查进程
@@ -379,11 +389,23 @@ async function processV3Check(
             const week_id = lastRow ? lastRow.week_id + 1 : 1
             promoted.week_id = week_id
             await promoted.save()
-        }
 
-        //发送推送信息
-        if (is_valid) {
-            publish(CONFIG.queues['send_promoted'], JSON.stringify({ id: promoted.id }))
+            await publish(CONFIG.queues['send_promoted'], JSON.stringify({ id: promoted.id }))
+
+            //调用与v2的surebet数据的融合判断
+            //查询是否存在对应的surebet数据
+            const surebetOdd = await SurebetV2Odd.findOne({
+                where: {
+                    crown_match_id,
+                    variety: oddInfo.variety,
+                    period,
+                    type: oddType,
+                    condition,
+                },
+            })
+
+            if (!surebetOdd || surebetOdd.promote_id) return
+            await createV2ToV3Promote(surebetOdd, promoted)
         }
     }
 
@@ -409,7 +431,184 @@ async function startV3CheckProcessor() {
     await promise
 }
 
+/**
+ * 拿到v2系统抛过来的surebet数据之后的检查进程
+ */
+async function startSurebetV2ToV3Check() {
+    const [promise] = consume(CONFIG.queues['surebet_v2_to_v3'], async (content) => {
+        await processSurebetV2ToV3Check(JSON.parse(content))
+    })
+    await promise
+}
+
+/**
+ * 处理v2系统抛过来的surebet数据
+ * @param surebet
+ */
+async function processSurebetV2ToV3Check(surebet: Surebet.Output) {
+    const [odd, created] = await SurebetV2Odd.findOrCreate({
+        where: {
+            crown_match_id: surebet.crown_match_id,
+            variety: surebet.type.variety,
+            period: surebet.type.period,
+            type: surebet.type.type,
+            condition: surebet.type.condition,
+        },
+        defaults: {
+            crown_match_id: surebet.crown_match_id,
+            variety: surebet.type.variety,
+            period: surebet.type.period,
+            type: surebet.type.type,
+            condition: surebet.type.condition,
+            value: surebet.surebet_value,
+        },
+    })
+
+    if (!created) {
+        //如果不是新增的数据，仅仅更新一下水位就可以出去了
+        odd.value = surebet.surebet_value
+        await odd.save()
+        return
+    }
+
+    //只有新增数据的时候需要判断是否有匹配的盘口
+    //首先寻找盘口对应的比赛
+    const match = await Match.findOne({
+        where: {
+            crown_match_id: surebet.crown_match_id,
+        },
+        transaction: null,
+        attributes: ['id', 'status'],
+    })
+
+    //如果没有找到比赛，或者比赛状态不对，那么就出去了
+    if (!match || match.status !== '') {
+        return
+    }
+
+    //再根据比赛id，寻找有没有盘口相同的推荐
+    const promoted = await PromotedOdd.findOne({
+        where: {
+            match_id: match.id,
+            source: 'crown_odd',
+            variety: odd.variety,
+            period: odd.period,
+            type: odd.type,
+            condition: odd.condition,
+            is_valid: 1,
+        },
+    })
+
+    if (!promoted) {
+        //没有找到盘口，或者是找到的盘口标记为不推荐，那也出去了
+        return
+    }
+
+    await createV2ToV3Promote(odd, promoted)
+}
+
+/**
+ * 创建V2和V3的surebet融合推荐
+ */
+async function createV2ToV3Promote(odd: SurebetV2Odd, promoted: PromotedOdd) {
+    //判断surebet盘口的初始条件
+    if (odd.promote_id > 0) return
+
+    //判断v3推荐的初始条件
+    if (promoted.is_valid || !promoted.end_odd_data) return
+
+    //读取系统配置
+    const { surebet_v2_to_v3_back, surebet_v2_to_v3_min_value } = await getSetting(
+        'surebet_v2_to_v3_back',
+        'surebet_v2_to_v3_min_value',
+    )
+
+    //先创建要推送的盘口数据
+    const oddInfo = getPromotedOddInfo(promoted, surebet_v2_to_v3_back)
+
+    //创建标识
+    const oddType = getOddIdentification(oddInfo.type)
+
+    //检查是否已经存在了推荐
+    const exists = await SurebetV2Promoted.findOne({
+        where: {
+            match_id: promoted.match_id,
+            variety: promoted.variety,
+            period: promoted.period,
+            odd_type: oddType,
+        },
+        attributes: ['id'],
+    })
+    if (exists) return
+
+    //计算水位是否满足要求
+    const value = await (async () => {
+        if (!surebet_v2_to_v3_back) {
+            //不是反推，就直接取原始水位就行
+            return promoted.end_odd_data!.value
+        }
+
+        //反推就需要读取原始数据
+        const field = promoted.end_odd_data!.field === 'value1' ? 'value2' : 'value1'
+        const origin_odd = await CrownOdd.findOne({
+            where: {
+                id: promoted.end_odd_data!.id,
+            },
+        })
+        if (!origin_odd) return '0'
+        return origin_odd[field]
+    })()
+
+    const is_valid = Decimal(value).gte(surebet_v2_to_v3_min_value) ? 1 : 0
+
+    //插入数据
+    const promotedOdd = await SurebetV2Promoted.create({
+        match_id: promoted.match_id,
+        is_valid,
+        week_day: promoted.week_day,
+        skip: is_valid ? '' : 'value',
+        variety: promoted.variety,
+        period: promoted.period,
+        type: oddInfo.type,
+        condition: oddInfo.condition,
+        back: surebet_v2_to_v3_back ? 1 : 0,
+        odd_type: oddType,
+        value,
+    })
+
+    //更新原始表的数据
+    await SurebetV2Odd.update(
+        { promote_id: promotedOdd.id },
+        { where: { id: odd.id }, returning: false },
+    )
+
+    if (is_valid) {
+        //计算排序
+        const lastRow = await SurebetV2Promoted.findOne({
+            where: {
+                week_day: promoted.week_day,
+                is_valid: 1,
+                id: {
+                    [Op.lt]: promotedOdd.id,
+                },
+            },
+            order: [['id', 'desc']],
+            attributes: ['week_id'],
+        })
+        const week_id = lastRow ? lastRow.week_id + 1 : 1
+        promotedOdd.week_id = week_id
+        await promotedOdd.save()
+
+        //发出推荐
+        await publish(
+            CONFIG.queues['send_promoted'],
+            JSON.stringify({ id: promoted.id, type: 'surebet_v2_promoted' }),
+        )
+    }
+}
+
 if (require.main === module) {
     runLoop(60000, startV3Check)
     startV3CheckProcessor()
+    startSurebetV2ToV3Check()
 }
