@@ -51,4 +51,10 @@ export class Tournament extends Model<
      */
     @Column(DataType.SMALLINT)
     declare is_open: CreationOptional<number>
+
+    /**
+     * 标签id
+     */
+    @Column(DataType.INTEGER)
+    declare label_id: CreationOptional<number>
 }

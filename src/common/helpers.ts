@@ -1,5 +1,5 @@
 import { PromotedOdd, Titan007Odd } from '@/db'
-import dayjs from 'dayjs'
+import dayjs, { ConfigType, Dayjs } from 'dayjs'
 import Decimal from 'decimal.js'
 import { stat } from 'node:fs'
 import { mkdir, writeFile } from 'node:fs/promises'
@@ -522,4 +522,18 @@ export async function debugFileLog(name: string, data: any) {
     })()
 
     await writeFile(logFile, content)
+}
+
+/**
+ * 获取周标记
+ * @param input
+ */
+export function getWeekDay(input?: ConfigType): number {
+    let day = dayjs(input).startOf('day')
+    if (day.day() === 0) {
+        day = day.subtract(6, 'day')
+    } else if (day.day() > 1) {
+        day = day.subtract(day.day() - 1, 'day')
+    }
+    return parseInt(day.format('YYYYMMDD'))
 }

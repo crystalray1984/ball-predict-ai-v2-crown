@@ -1,8 +1,9 @@
 import { getNumberWithSymbol, isEmpty } from '@/common/helpers'
 import { close, consume, publish } from '@/common/rabbitmq'
-import { VPromotedOdd, VSurebetV2Promoted } from '@/db'
+import { VLabelPromoted, VPromotedOdd, VSurebetV2Promoted } from '@/db'
 import dayjs from 'dayjs'
 import Decimal from 'decimal.js'
+import { getLabelInfo } from './common/label'
 import { CONFIG } from './config'
 
 type VPromotedData = Pick<
@@ -105,6 +106,34 @@ async function processSendPromoted(content: string) {
                 msg: { text },
             }),
         )
+
+        await publish('send_luffa_message', queueData)
+    } else if (type === 'label_promoted') {
+        //有标签的赛事推荐
+
+        //查询推荐盘口信息
+        const promoted = await VLabelPromoted.findOne({
+            where: {
+                id,
+            },
+        })
+
+        if (!promoted) return
+
+        //查询标签推送信息
+        const label = await getLabelInfo(promoted.label_id)
+        if (!label) return
+
+        //构建抛入到下一个队列的数据
+        const text = createPromotionMessage(promoted)
+
+        //构建队列数据
+        const queueData = JSON.stringify({
+            uid: label.luffa_uid,
+            is_group: label.luffa_type === 1,
+            msg_type: 1,
+            msg: { text },
+        })
 
         await publish('send_luffa_message', queueData)
     } else {

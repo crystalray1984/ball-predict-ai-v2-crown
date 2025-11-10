@@ -1,20 +1,19 @@
-import dayjs from 'dayjs'
 import Decimal from 'decimal.js'
 import { Op, QueryTypes } from 'sequelize'
-import { getOddIdentification, getOddResult, getPromotedOddInfo, runLoop } from './common/helpers'
+import { getOddIdentification, getPromotedOddInfo, getWeekDay, runLoop } from './common/helpers'
 import { consume, publish } from './common/rabbitmq'
 import { getSetting } from './common/settings'
 import { CONFIG } from './config'
 import {
     CrownOdd,
     db,
+    LabelPromoted,
     Match,
     Odd,
     PromotedOdd,
     SurebetV2Odd,
     SurebetV2Promoted,
     VMatch,
-    VPromotedOdd,
 } from './db'
 
 /**
@@ -336,16 +335,7 @@ async function processV3Check(
             }
         })()
 
-        const week_day = (() => {
-            let day = dayjs().startOf('day')
-            if (day.day() === 0) {
-                day = day.subtract(6, 'day')
-            } else if (day.day() > 1) {
-                day = day.subtract(day.day() - 1, 'day')
-            }
-            return parseInt(day.format('YYYYMMDD'))
-        })()
-        // const week_day = parseInt(dayjs().startOf('week').format('YYYYMMDD'))
+        const week_day = getWeekDay()
 
         const promoted = await PromotedOdd.create({
             match_id,
@@ -404,8 +394,38 @@ async function processV3Check(
                 },
             })
 
-            if (!surebetOdd || surebetOdd.promote_id) return
-            await createV2ToV3Promote(surebetOdd, promoted)
+            if (surebetOdd && !surebetOdd.promote_id) {
+                await createV2ToV3Promote(surebetOdd, promoted)
+            }
+
+            //如果这个推荐是有标签的，那么还要按标签做推送
+            if (match.tournament_label_id > 0) {
+                //生成推送数据
+                const label_promoted = await LabelPromoted.create({
+                    promote_id: promoted.id,
+                    label_id: match.tournament_label_id,
+                    week_day: promoted.week_day,
+                })
+                const lastRow = await LabelPromoted.findOne({
+                    where: {
+                        label_id: match.tournament_label_id,
+                        week_day,
+                        id: {
+                            [Op.lt]: label_promoted.id,
+                        },
+                    },
+                    order: [['id', 'desc']],
+                    attributes: ['week_id'],
+                })
+                const week_id = lastRow ? lastRow.week_id + 1 : 1
+                label_promoted.week_id = week_id
+                await label_promoted.save()
+
+                await publish(
+                    CONFIG.queues['send_promoted'],
+                    JSON.stringify({ id: label_promoted.id, type: 'label_promoted' }),
+                )
+            }
         }
     }
 

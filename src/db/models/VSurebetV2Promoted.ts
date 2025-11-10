@@ -120,6 +120,12 @@ export class VSurebetV2Promoted extends Model<InferAttributes<VSurebetV2Promoted
     @Column(DataType.SMALLINT)
     declare tournament_is_open: number
 
+    /**
+     * 联赛标签id
+     */
+    @Column(DataType.INTEGER)
+    declare tournament_label_id: number
+
     @Column(DataType.STRING)
     declare team1_name: string
 

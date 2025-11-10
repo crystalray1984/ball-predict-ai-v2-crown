@@ -4,8 +4,8 @@ import { Column, DataType, Model, PrimaryKey, Table } from 'sequelize-typescript
 /**
  * 最终推荐盘口视图
  */
-@Table({ tableName: 'v_promoted_odd', timestamps: false })
-export class VPromotedOdd extends Model<InferAttributes<VPromotedOdd>> {
+@Table({ tableName: 'v_label_promoted', timestamps: false })
+export class VLabelPromoted extends Model<InferAttributes<VLabelPromoted>> {
     /**
      * 盘口id
      */
@@ -143,17 +143,13 @@ export class VPromotedOdd extends Model<InferAttributes<VPromotedOdd>> {
     @Column(DataType.STRING)
     declare tournament_name: string
 
+    declare label_id: number
+
     /**
      * 此联赛是否开启推荐
      */
     @Column(DataType.SMALLINT)
     declare tournament_is_open: number
-
-    /**
-     * 联赛标签id
-     */
-    @Column(DataType.INTEGER)
-    declare tournament_label_id: number
 
     @Column(DataType.STRING)
     declare team1_name: string
