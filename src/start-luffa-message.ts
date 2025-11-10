@@ -25,24 +25,18 @@ async function receiveLuffaMsg() {
     }
 
     for (const group of groups) {
-        if (group.type === 0) {
-            //是普通用户
-            try {
-                await LuffaUser.findOrCreate({
-                    where: {
-                        uid: group.uid,
-                    },
-                    defaults: {
-                        uid: group.uid,
-                        type: group.type,
-                        open_push: 1,
-                    },
-                    attributes: ['uid'],
-                })
-            } catch (err) {
-                console.error(err)
-            }
+        //不管是普通用户还是群组，都记录到数据库
+        try {
+            await LuffaUser.create(
+                {
+                    uid: group.uid,
+                    type: group.type as 0 | 1,
+                },
+                { ignoreDuplicates: true, returning: false },
+            )
+        } catch {}
 
+        if (group.type === 0) {
             const messages = group.message.map<LuffaMessage>((str) => JSON.parse(str))
 
             //判断有没有新关注的消息
