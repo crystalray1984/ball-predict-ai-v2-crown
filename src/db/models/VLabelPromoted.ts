@@ -143,6 +143,7 @@ export class VLabelPromoted extends Model<InferAttributes<VLabelPromoted>> {
     @Column(DataType.STRING)
     declare tournament_name: string
 
+    @Column(DataType.STRING)
     declare label_id: number
 
     /**

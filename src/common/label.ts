@@ -28,7 +28,9 @@ export async function getLabelInfo(
  */
 async function refreshLabels() {
     const rows = await TournamentLabel.findAll()
-    const cacheData = Object.fromEntries(rows.map((row) => [row.id.toString(), row.toJSON()]))
+    const cacheData = Object.fromEntries(
+        rows.map((row) => [row.id.toString(), JSON.stringify(row)]),
+    )
     const client = await redis.multi()
     await client.del(CACHE_LABELS_KEY).hmset(CACHE_LABELS_KEY, cacheData).exec()
 
