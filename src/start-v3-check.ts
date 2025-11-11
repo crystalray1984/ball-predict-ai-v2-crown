@@ -395,36 +395,7 @@ async function processV3Check(
             })
 
             if (surebetOdd && !surebetOdd.promote_id) {
-                await createV2ToV3Promote(surebetOdd, promoted)
-            }
-
-            //如果这个推荐是有标签的，那么还要按标签做推送
-            if (match.tournament_label_id > 0) {
-                //生成推送数据
-                const label_promoted = await LabelPromoted.create({
-                    promote_id: promoted.id,
-                    label_id: match.tournament_label_id,
-                    week_day: promoted.week_day,
-                })
-                const lastRow = await LabelPromoted.findOne({
-                    where: {
-                        label_id: match.tournament_label_id,
-                        week_day,
-                        id: {
-                            [Op.lt]: label_promoted.id,
-                        },
-                    },
-                    order: [['id', 'desc']],
-                    attributes: ['week_id'],
-                })
-                const week_id = lastRow ? lastRow.week_id + 1 : 1
-                label_promoted.week_id = week_id
-                await label_promoted.save()
-
-                await publish(
-                    CONFIG.queues['send_promoted'],
-                    JSON.stringify({ id: label_promoted.id, type: 'label_promoted' }),
-                )
+                await createV2ToV3Promote(surebetOdd, promoted, match.tournament_label_id)
             }
         }
     }
@@ -496,12 +467,12 @@ async function processSurebetV2ToV3Check(surebet: Surebet.Output) {
 
     //只有新增数据的时候需要判断是否有匹配的盘口
     //首先寻找盘口对应的比赛
-    const match = await Match.findOne({
+    const match = await VMatch.findOne({
         where: {
             crown_match_id: surebet.crown_match_id,
         },
         transaction: null,
-        attributes: ['id', 'status'],
+        attributes: ['id', 'status', 'tournament_label_id'],
     })
 
     //如果没有找到比赛，或者比赛状态不对，那么就出去了
@@ -527,13 +498,17 @@ async function processSurebetV2ToV3Check(surebet: Surebet.Output) {
         return
     }
 
-    await createV2ToV3Promote(odd, promoted)
+    await createV2ToV3Promote(odd, promoted, match.tournament_label_id)
 }
 
 /**
  * 创建V2和V3的surebet融合推荐
  */
-async function createV2ToV3Promote(odd: SurebetV2Odd, promoted: PromotedOdd) {
+async function createV2ToV3Promote(
+    odd: SurebetV2Odd,
+    promoted: PromotedOdd,
+    tournament_label_id: number,
+) {
     //判断surebet盘口的初始条件
     if (odd.promote_id > 0) return
 
@@ -627,6 +602,35 @@ async function createV2ToV3Promote(odd: SurebetV2Odd, promoted: PromotedOdd) {
             CONFIG.queues['send_promoted'],
             JSON.stringify({ id: promotedOdd.id, type: 'surebet_v2_promoted' }),
         )
+
+        //如果这个推荐是有标签的，那么还要按标签做推送
+        if (tournament_label_id > 0) {
+            //生成推送数据
+            const label_promoted = await LabelPromoted.create({
+                promote_id: promotedOdd.id,
+                label_id: tournament_label_id,
+                week_day: promoted.week_day,
+            })
+            const lastRow = await LabelPromoted.findOne({
+                where: {
+                    label_id: tournament_label_id,
+                    week_day: promoted.week_day,
+                    id: {
+                        [Op.lt]: label_promoted.id,
+                    },
+                },
+                order: [['id', 'desc']],
+                attributes: ['week_id'],
+            })
+            const week_id = lastRow ? lastRow.week_id + 1 : 1
+            label_promoted.week_id = week_id
+            await label_promoted.save()
+
+            await publish(
+                CONFIG.queues['send_promoted'],
+                JSON.stringify({ id: label_promoted.id, type: 'label_promoted' }),
+            )
+        }
     }
 }
 

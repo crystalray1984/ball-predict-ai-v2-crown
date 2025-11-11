@@ -21,32 +21,6 @@ export class VLabelPromoted extends Model<InferAttributes<VLabelPromoted>> {
     declare match_id: number
 
     /**
-     * 源数据类型
-     */
-    @Column(DataType.STRING)
-    declare source: string
-
-    /**
-     * 源数据ID
-     */
-
-    @Column(DataType.INTEGER)
-    declare source_id: number
-
-    /**
-     * 是否最终推荐给用户
-     */
-
-    @Column(DataType.TINYINT)
-    declare is_valid: number
-
-    /**
-     * 放弃该推荐的原因
-     */
-    @Column(DataType.STRING)
-    declare skip: string
-
-    /**
      * 投注目标
      */
 
@@ -68,12 +42,6 @@ export class VLabelPromoted extends Model<InferAttributes<VLabelPromoted>> {
     declare type: OddType
 
     /**
-     * 第二投注方向
-     */
-    @Column(DataType.STRING)
-    declare type2: OddType | null
-
-    /**
      * 盘口条件
      */
 
@@ -81,31 +49,13 @@ export class VLabelPromoted extends Model<InferAttributes<VLabelPromoted>> {
     declare condition: string
 
     /**
-     * 第二盘口条件
-     */
-    @Column(DataType.DECIMAL(5, 2))
-    declare condition2: string | null
-
-    /**
      * 是否反推
      */
     @Column(DataType.INTEGER)
     declare back: number
 
-    /**
-     * 正反推规则
-     */
-    @Column(DataType.STRING)
-    declare final_rule: string
-
     @Column(DataType.TINYINT)
     declare result: number | null
-
-    @Column(DataType.TINYINT)
-    declare result1: number | null
-
-    @Column(DataType.TINYINT)
-    declare result2: number | null
 
     @Column(DataType.STRING)
     declare score: string | null
@@ -124,12 +74,6 @@ export class VLabelPromoted extends Model<InferAttributes<VLabelPromoted>> {
 
     @Column(DataType.DECIMAL)
     declare value: string
-
-    @Column(DataType.JSONB)
-    declare start_odd_data: any
-
-    @Column(DataType.JSONB)
-    declare end_odd_data: any
 
     @Column(DataType.INTEGER)
     declare week_day: number
