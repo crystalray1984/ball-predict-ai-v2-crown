@@ -206,6 +206,70 @@ declare namespace Crown {
          * 上半场大球赔率
          */
         ior_HOUC: string
+        /**
+         * 滚球全场让球是否开启
+         */
+        sw_RE: 'Y' | 'N'
+        /**
+         * 滚球全场让球盘口
+         */
+        ratio_re: string
+        /**
+         * 滚球全场让球主队水位
+         */
+        ior_REH: string
+        /**
+         * 滚球全场让球客队水位
+         */
+        ior_REC: string
+        /**
+         * 滚球全场大小球是否开启
+         */
+        sw_ROU: 'Y' | 'N'
+        /**
+         * 滚球全场大小球临界点
+         */
+        ratio_rouo: string
+        /**
+         * 滚球全场小球水位
+         */
+        ior_ROUH: string
+        /**
+         * 滚球全场大球水位
+         */
+        ior_ROUC: string
+        /**
+         * 滚球半场让球是否开启
+         */
+        sw_HRE: 'Y' | 'N'
+        /**
+         * 滚球半场让球盘口
+         */
+        ratio_hre: string
+        /**
+         * 滚球半场让球主队水位
+         */
+        ior_HREH: string
+        /**
+         * 滚球半场让球客队水位
+         */
+        ior_HREC: string
+        /**
+         * 滚球半场大小球是否开启
+         */
+        sw_HROU: 'Y' | 'N'
+        /**
+         * 滚球半场大小球临界点
+         */
+        ratio_hrouo: string
+        /**
+         * 滚球半场大小球小球水位
+         */
+        ior_HROUH: string
+        /**
+         * 滚球半场大小球大球水位
+         */
+        ior_HROUC: string
     }
 
     /**
