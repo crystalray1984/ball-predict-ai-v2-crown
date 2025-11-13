@@ -111,4 +111,7 @@ export class RockballOdd extends Model<
     @UpdatedAt
     @Column(DataType.DATE)
     declare updated_at: CreationOptional<Date>
+
+    @Column(DataType.INTEGER)
+    declare is_open: CreationOptional<number>
 }

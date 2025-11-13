@@ -75,3 +75,7 @@ luffa:
   surebet_v2_to_v3:
     - type: 1
       uid: ''
+  #滚球推荐队列
+  rockball:
+    - type: 1
+      uid: ''

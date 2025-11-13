@@ -33,6 +33,12 @@ export class RockballPromoted extends Model<
     declare match_id: number
 
     /**
+     * 生成推荐的盘口id
+     */
+    @Column(DataType.INTEGER)
+    declare odd_id: number
+
+    /**
      * 是否最终推荐给用户
      */
 
