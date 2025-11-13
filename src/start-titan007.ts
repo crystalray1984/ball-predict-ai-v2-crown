@@ -1,5 +1,14 @@
 import { getOddResult, isNullOrUndefined, runLoop } from '@/common/helpers'
-import { db, Match, PromotedOdd, SurebetV2Promoted, Team, Titan007Odd, VMatch } from '@/db'
+import {
+    db,
+    Match,
+    PromotedOdd,
+    RockballPromoted,
+    SurebetV2Promoted,
+    Team,
+    Titan007Odd,
+    VMatch,
+} from '@/db'
 import {
     findMatch,
     FindMatchResult,
@@ -223,6 +232,21 @@ async function processFinalMatch(match: VMatch, period: Period): Promise<void> {
     })
 
     for (const odd of surebetV2Promotes) {
+        const result = getOddResult(odd, matchScore)
+        if (!result) continue
+        odd.result = result.result
+        odd.score = result.score
+        odd.score1 = result.score1
+        odd.score2 = result.score2
+
+        await odd.save()
+    }
+
+    const rockballPromotes = await RockballPromoted.findAll({
+        where,
+    })
+
+    for (const odd of rockballPromotes) {
         const result = getOddResult(odd, matchScore)
         if (!result) continue
         odd.result = result.result
