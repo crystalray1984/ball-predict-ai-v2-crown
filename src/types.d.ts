@@ -565,3 +565,23 @@ declare namespace CrownRobot {
         data?: Crown.OddData
     }
 }
+
+/**
+ * 滚球采集规则
+ */
+declare interface RockballConfig extends Required<SpecialPromoteRule> {
+    /**
+     * 水位条件
+     */
+    value: string
+
+    /**
+     * 需要监听的滚球盘口
+     */
+    odds: RockballOddInfo[]
+}
+
+declare interface RockballOddInfo extends OddInfo {
+    id: string | number
+    value: string
+}

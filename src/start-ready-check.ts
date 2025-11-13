@@ -2,10 +2,77 @@ import { getOddIdentification, isNullOrUndefined } from '@/common/helpers'
 import { close, consume } from '@/common/rabbitmq'
 import { getSetting } from '@/common/settings'
 import { findMatchedOdd } from '@/crown'
-import { Match, Odd, VMatch } from '@/db'
+import { Match, Odd, RockballOdd, VMatch } from '@/db'
 import Decimal from 'decimal.js'
 import { literal, UniqueConstraintError } from 'sequelize'
 import { CONFIG } from './config'
+
+/**
+ * 进行滚球规则判定
+ * @param config
+ * @param surebet
+ * @param match_id
+ * @param crown_match_id
+ */
+async function processRockball(
+    config: RockballConfig[],
+    surebet: Surebet.Output,
+    match_id: number,
+) {
+    for (const rule of config) {
+        //基础盘口判定
+        if (rule.variety !== surebet.type.variety) continue
+        if (rule.period !== surebet.type.period) continue
+        if (rule.type !== surebet.type.type) continue
+        if (rule.condition !== surebet.type.condition) continue
+
+        //水位判定
+        if (Decimal(surebet.surebet_value).lt(rule.value)) continue
+
+        //开始生成盘口
+        for (const oddRule of rule.odds) {
+            //尝试寻找相同的盘口
+            const odd = await RockballOdd.findOne({
+                where: {
+                    match_id,
+                    variety: oddRule.variety,
+                    period: oddRule.period,
+                    type: oddRule.type,
+                    condition: oddRule.condition,
+                },
+            })
+            if (odd) {
+                //如果盘口已存在，判断一下水位是否更低
+                if (Decimal(oddRule.value).lt(odd.value)) {
+                    //水位更低就按新的水位写入
+                    odd.value = oddRule.value
+                    odd.source_variety = rule.variety
+                    odd.source_period = rule.period
+                    odd.source_type = rule.type
+                    odd.source_condition = rule.condition
+                    odd.source_value = surebet.surebet_value
+                    await odd.save()
+                }
+            } else {
+                //盘口不存在就创建盘口
+                await RockballOdd.create({
+                    match_id,
+                    crown_match_id: surebet.crown_match_id,
+                    source_variety: rule.variety,
+                    source_period: rule.period,
+                    source_condition: rule.condition,
+                    source_type: rule.type,
+                    source_value: surebet.surebet_value,
+                    variety: oddRule.variety,
+                    period: oddRule.period,
+                    type: oddRule.type,
+                    condition: oddRule.condition,
+                    value: oddRule.value,
+                })
+            }
+        }
+    }
+}
 
 /**
  * 处理首次数据比对
@@ -20,6 +87,24 @@ async function processReadyCheck(content: string) {
     //缺少皇冠盘口数据也出去了
     if (!data) return
 
+    //读取配置
+    const { ready_condition, rockball_config } = await getSetting<string>(
+        'ready_condition',
+        'rockball_config',
+    )
+
+    //构建比赛数据
+    const [match_id] = await Match.prepare({
+        ...data.match,
+        match_time: extra.match_time,
+        ecid: extra.crown_match_id,
+    })
+
+    //尝试构建滚球盘口
+    if (rockball_config && Array.isArray(rockball_config) && rockball_config.length > 0) {
+        await processRockball(rockball_config, extra, match_id)
+    }
+
     //寻找与当前盘口相同的皇冠盘口
     const exists = findMatchedOdd(extra.type, data.odds).find((t) =>
         Decimal(extra.type.condition).eq(t.condition),
@@ -27,9 +112,6 @@ async function processReadyCheck(content: string) {
 
     //没有对应的皇冠盘口也出去了
     if (!exists) return
-
-    //读取配置
-    const ready_condition = await getSetting<string>('ready_condition')
 
     let odd = await Odd.findOne({
         where: {
@@ -77,12 +159,6 @@ async function processReadyCheck(content: string) {
         )
     } else {
         //原始盘口不存在
-        const [match_id] = await Match.prepare({
-            ...data.match,
-            match_time: extra.match_time,
-            ecid: extra.crown_match_id,
-        })
-
         //读取一下比赛数据，如果比赛状态不对那么也不要了
         const match = await VMatch.findOne({
             where: {

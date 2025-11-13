@@ -10,6 +10,8 @@ import { Match } from './models/Match'
 import { NotificationLog } from './models/NotificationLog'
 import { Odd } from './models/Odd'
 import { PromotedOdd } from './models/PromotedOdd'
+import { RockballOdd } from './models/RockballOdd'
+import { RockballPromoted } from './models/RockballPromoted'
 import { Setting } from './models/Setting'
 import { SurebetRecord } from './models/SurebetRecord'
 import { SurebetV2Odd } from './models/SurebetV2Odd'
@@ -22,6 +24,7 @@ import { VLabelPromoted } from './models/VLabelPromoted'
 import { VLuffaUser } from './models/VLuffaUser'
 import { VMatch } from './models/VMatch'
 import { VPromotedOdd } from './models/VPromotedOdd'
+import { VRockballPromoted } from './models/VRockballPromoted'
 import { VSurebetV2Promoted } from './models/VSurebetV2Promoted'
 
 /**
@@ -59,6 +62,9 @@ export const db = new Sequelize(
                 TournamentLabel,
                 LabelPromoted,
                 VLabelPromoted,
+                RockballOdd,
+                RockballPromoted,
+                VRockballPromoted,
             ],
         },
     ),
@@ -73,6 +79,8 @@ export { Match } from './models/Match'
 export { NotificationLog } from './models/NotificationLog'
 export { Odd } from './models/Odd'
 export { PromotedOdd } from './models/PromotedOdd'
+export { RockballOdd } from './models/RockballOdd'
+export { RockballPromoted } from './models/RockballPromoted'
 export { Setting } from './models/Setting'
 export { SurebetRecord } from './models/SurebetRecord'
 export { SurebetV2Odd } from './models/SurebetV2Odd'
@@ -85,4 +93,5 @@ export { VLabelPromoted } from './models/VLabelPromoted'
 export { VLuffaUser } from './models/VLuffaUser'
 export { VMatch } from './models/VMatch'
 export { VPromotedOdd } from './models/VPromotedOdd'
+export { VRockballPromoted } from './models/VRockballPromoted'
 export { VSurebetV2Promoted } from './models/VSurebetV2Promoted'
