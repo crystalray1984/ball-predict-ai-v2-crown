@@ -23,7 +23,7 @@ async function startRockballCheck() {
         FROM
             "match"
         WHERE
-            "match"."match_time" BETWEEN (? AND ?)
+            "match"."match_time" BETWEEN ? AND ?
             AND "match".id IN
             (
                 SELECT

@@ -14,6 +14,7 @@ queues:
   v3_check: 'v3_check'
   #从v2抛过来的满足条件的surebet盘口
   surebet_v2_to_v3: 'surebet_v2_to_v3'
+  rockball_check_after: 'v3:rockball_check_after'
 
 surebet:
   #surebet接口调用凭证
