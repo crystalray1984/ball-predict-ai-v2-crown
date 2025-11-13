@@ -28,5 +28,6 @@ module.exports = {
     'luffa-robot': createConfig('luffa-robot'),
     'luffa-message': createConfig('luffa-message'),
     'v3-check': createConfig('v3-check'),
+    'rockball-check': createConfig('rockball-check'),
     createConfig,
 }
