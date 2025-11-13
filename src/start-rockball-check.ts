@@ -18,23 +18,29 @@ async function startRockballCheck() {
         {
             query: `
         SELECT
-            id,
-            crown_match_id
+            DISTINCT
+            "match".id,
+            "match".crown_match_id
         FROM
-            "match"
+            rockball_odd
+        JOIN
+            "match" ON "match".id = rockball_odd.match_id
         WHERE
-            "match"."match_time" BETWEEN ? AND ?
-            AND "match".id IN
+            rockball_odd.status = ''
+            AND
             (
-                SELECT
-                    match_id
-                FROM
-                    "rockball_odd"
-                WHERE
-                    status = ?
+                (rockball_odd.period = 'regularTime' AND "match".match_time BETWEEN '' AND '')
+                OR
+                (rockball_odd.period = 'peroid1' AND "match".match_time BETWEEN '' AND '')
             )
         `,
-            values: [new Date(Date.now() - 7200000), new Date(), ''],
+            values: [
+                '', //盘口状态
+                new Date(Date.now() - 7200000),
+                new Date(), //全场盘口的时间范围
+                new Date(Date.now() - 3600000),
+                new Date(), //半场盘口的时间范围
+            ],
         },
         {
             type: QueryTypes.SELECT,
