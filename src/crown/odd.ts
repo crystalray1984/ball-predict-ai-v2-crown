@@ -13,7 +13,7 @@ import dayjs from 'dayjs'
  */
 export async function getCrownData(
     crown_match_id: string,
-    show_type: 'today' | 'early' = 'today',
+    show_type: 'today' | 'early' | 'live' = 'today',
 ): Promise<Crown.OddData | undefined> {
     return crownQueue.add(async () => {
         console.log('发起皇冠请求', crown_match_id, show_type)
@@ -26,7 +26,7 @@ export async function getCrownData(
     par += "&gtype=ft";
     par += "&showtype=" + ${JSON.stringify(show_type)};
     par += "&ltype=" + top["userData"].ltype;
-    par += "&isRB=N";
+    par += "&isRB=${show_type === 'live' ? 'Y' : 'N'}";
     par += "&specialClick=";
     par += "&mode=NORMAL";
     par += "&filter=All";
@@ -62,7 +62,7 @@ export async function getCrownData(
         }
 
         try {
-            return formatOddData(data)
+            return formatOddData(data, show_type === 'live')
         } catch (err) {
             console.error('解析响应体失败', resp)
             throw err
@@ -73,7 +73,7 @@ export async function getCrownData(
 /**
  * 整理盘口数据，只留下必要的参数
  */
-function formatOddData(input: Crown.Resp) {
+function formatOddData(input: Crown.Resp, rockball = false) {
     if (!Array.isArray(input.game)) return
 
     /**
@@ -98,158 +98,319 @@ function formatOddData(input: Crown.Resp) {
     //盘口数据
     const odds: Crown.OddInfo[] = []
     input.game.forEach((game) => {
-        //进球
-        if (game.ptype_id === '0') {
-            //全场让球
-            if (
-                game.sw_R === 'Y' &&
-                !isEmpty(game.ratio) &&
-                isDecimal(game.ior_RH) &&
-                isDecimal(game.ior_RC)
-            ) {
-                let condition = changeRatio(game.ratio)
-                if (game.strong === 'H') {
-                    //主队让球
-                    condition = Decimal(0).sub(condition).toString()
+        if (rockball) {
+            //滚球盘
+
+            //进球
+            if (game.ptype_id === '0') {
+                //全场让球
+                if (
+                    game.sw_RE === 'Y' &&
+                    !isEmpty(game.ratio_re) &&
+                    isDecimal(game.ior_REH) &&
+                    isDecimal(game.ior_REC)
+                ) {
+                    let condition = changeRatio(game.ratio_re)
+                    if (game.strong === 'H') {
+                        //主队让球
+                        condition = Decimal(0).sub(condition).toString()
+                    }
+                    const [value_h, value_c] = changeValue(game.ior_REH, game.ior_REC)
+                    odds.push({
+                        variety: 'goal',
+                        type: 'r',
+                        condition,
+                        value_h,
+                        value_c,
+                    })
                 }
-                const [value_h, value_c] = changeValue(game.ior_RH, game.ior_RC)
-                odds.push({
-                    variety: 'goal',
-                    type: 'r',
-                    condition,
-                    value_h,
-                    value_c,
-                })
-            }
-            //半场让球
-            if (
-                game.sw_HR === 'Y' &&
-                !isEmpty(game.hratio) &&
-                isDecimal(game.ior_HRH) &&
-                isDecimal(game.ior_HRC)
-            ) {
-                let condition = changeRatio(game.hratio)
-                if (game.hstrong === 'H') {
-                    //主队让球
-                    condition = Decimal(0).sub(condition).toString()
+                //半场让球
+                if (
+                    game.sw_HRE === 'Y' &&
+                    !isEmpty(game.ratio_hre) &&
+                    isDecimal(game.ior_HREH) &&
+                    isDecimal(game.ior_HREC)
+                ) {
+                    let condition = changeRatio(game.ratio_hre)
+                    if (game.hstrong === 'H') {
+                        //主队让球
+                        condition = Decimal(0).sub(condition).toString()
+                    }
+                    const [value_h, value_c] = changeValue(game.ior_HREH, game.ior_HREC)
+                    odds.push({
+                        variety: 'goal',
+                        type: 'hr',
+                        condition,
+                        value_h,
+                        value_c,
+                    })
                 }
-                const [value_h, value_c] = changeValue(game.ior_HRH, game.ior_HRC)
-                odds.push({
-                    variety: 'goal',
-                    type: 'hr',
-                    condition,
-                    value_h,
-                    value_c,
-                })
-            }
-            //全场大小球
-            if (
-                game.sw_OU === 'Y' &&
-                !isEmpty(game.ratio_o) &&
-                isDecimal(game.ior_OUH) &&
-                isDecimal(game.ior_OUC)
-            ) {
-                const [value_h, value_c] = changeValue(game.ior_OUH, game.ior_OUC)
-                odds.push({
-                    variety: 'goal',
-                    type: 'ou',
-                    condition: changeRatio(game.ratio_o),
-                    value_h,
-                    value_c,
-                })
-            }
-            //半场大小球
-            if (
-                game.sw_HOU === 'Y' &&
-                !isEmpty(game.ratio_ho) &&
-                isDecimal(game.ior_HOUH) &&
-                isDecimal(game.ior_HOUC)
-            ) {
-                const [value_h, value_c] = changeValue(game.ior_HOUH, game.ior_HOUC)
-                odds.push({
-                    variety: 'goal',
-                    type: 'hou',
-                    condition: changeRatio(game.ratio_ho),
-                    value_h,
-                    value_c,
-                })
-            }
-        }
-        //角球
-        else if (game.ptype_id === '146') {
-            //全场让球
-            if (
-                game.sw_R === 'Y' &&
-                !isEmpty(game.ratio) &&
-                isDecimal(game.ior_RH) &&
-                isDecimal(game.ior_RC)
-            ) {
-                let condition = changeRatio(game.ratio)
-                if (game.strong === 'H') {
-                    //主队让球
-                    condition = Decimal(0).sub(condition).toString()
+                //全场大小球
+                if (
+                    game.sw_ROU === 'Y' &&
+                    !isEmpty(game.ratio_rouo) &&
+                    isDecimal(game.ior_ROUH) &&
+                    isDecimal(game.ior_ROUC)
+                ) {
+                    const [value_h, value_c] = changeValue(game.ior_ROUH, game.ior_ROUC)
+                    odds.push({
+                        variety: 'goal',
+                        type: 'ou',
+                        condition: changeRatio(game.ratio_rouo),
+                        value_h,
+                        value_c,
+                    })
                 }
-                const [value_h, value_c] = changeValue(game.ior_RH, game.ior_RC)
-                odds.push({
-                    variety: 'corner',
-                    type: 'r',
-                    condition,
-                    value_h,
-                    value_c,
-                })
-            }
-            //半场让球
-            if (
-                game.sw_HR === 'Y' &&
-                !isEmpty(game.hratio) &&
-                isDecimal(game.ior_HRH) &&
-                isDecimal(game.ior_HRC)
-            ) {
-                let condition = changeRatio(game.hratio)
-                if (game.hstrong === 'H') {
-                    //主队让球
-                    condition = Decimal(0).sub(condition).toString()
+                //半场大小球
+                if (
+                    game.sw_HROU === 'Y' &&
+                    !isEmpty(game.ratio_hrouo) &&
+                    isDecimal(game.ior_HROUH) &&
+                    isDecimal(game.ior_HROUC)
+                ) {
+                    const [value_h, value_c] = changeValue(game.ior_HROUH, game.ior_HROUC)
+                    odds.push({
+                        variety: 'goal',
+                        type: 'hou',
+                        condition: changeRatio(game.ratio_hrouo),
+                        value_h,
+                        value_c,
+                    })
                 }
-                const [value_h, value_c] = changeValue(game.ior_HRH, game.ior_HRC)
-                odds.push({
-                    variety: 'corner',
-                    type: 'hr',
-                    condition,
-                    value_h,
-                    value_c,
-                })
             }
-            //全场大小球
-            if (
-                game.sw_OU === 'Y' &&
-                !isEmpty(game.ratio_o) &&
-                isDecimal(game.ior_OUH) &&
-                isDecimal(game.ior_OUC)
-            ) {
-                const [value_h, value_c] = changeValue(game.ior_OUH, game.ior_OUC)
-                odds.push({
-                    variety: 'corner',
-                    type: 'ou',
-                    condition: changeRatio(game.ratio_o),
-                    value_h,
-                    value_c,
-                })
+            //角球
+            else if (game.ptype_id === '146') {
+                //全场让球
+                if (
+                    game.sw_RE === 'Y' &&
+                    !isEmpty(game.ratio_re) &&
+                    isDecimal(game.ior_REH) &&
+                    isDecimal(game.ior_REC)
+                ) {
+                    let condition = changeRatio(game.ratio_re)
+                    if (game.strong === 'H') {
+                        //主队让球
+                        condition = Decimal(0).sub(condition).toString()
+                    }
+                    const [value_h, value_c] = changeValue(game.ior_REH, game.ior_REC)
+                    odds.push({
+                        variety: 'corner',
+                        type: 'r',
+                        condition,
+                        value_h,
+                        value_c,
+                    })
+                }
+                //半场让球
+                if (
+                    game.sw_HRE === 'Y' &&
+                    !isEmpty(game.ratio_hre) &&
+                    isDecimal(game.ior_HREH) &&
+                    isDecimal(game.ior_HREC)
+                ) {
+                    let condition = changeRatio(game.ratio_hre)
+                    if (game.hstrong === 'H') {
+                        //主队让球
+                        condition = Decimal(0).sub(condition).toString()
+                    }
+                    const [value_h, value_c] = changeValue(game.ior_HREH, game.ior_HREC)
+                    odds.push({
+                        variety: 'corner',
+                        type: 'hr',
+                        condition,
+                        value_h,
+                        value_c,
+                    })
+                }
+                //全场大小球
+                if (
+                    game.sw_ROU === 'Y' &&
+                    !isEmpty(game.ratio_rouo) &&
+                    isDecimal(game.ior_ROUH) &&
+                    isDecimal(game.ior_ROUC)
+                ) {
+                    const [value_h, value_c] = changeValue(game.ior_ROUH, game.ior_ROUC)
+                    odds.push({
+                        variety: 'corner',
+                        type: 'ou',
+                        condition: changeRatio(game.ratio_rouo),
+                        value_h,
+                        value_c,
+                    })
+                }
+                //半场大小球
+                if (
+                    game.sw_HROU === 'Y' &&
+                    !isEmpty(game.ratio_hrouo) &&
+                    isDecimal(game.ior_HROUH) &&
+                    isDecimal(game.ior_HROUC)
+                ) {
+                    const [value_h, value_c] = changeValue(game.ior_HROUH, game.ior_HROUC)
+                    odds.push({
+                        variety: 'corner',
+                        type: 'hou',
+                        condition: changeRatio(game.ratio_hrouo),
+                        value_h,
+                        value_c,
+                    })
+                }
             }
-            //半场大小球
-            if (
-                game.sw_HOU === 'Y' &&
-                !isEmpty(game.ratio_ho) &&
-                isDecimal(game.ior_HOUH) &&
-                isDecimal(game.ior_HOUC)
-            ) {
-                const [value_h, value_c] = changeValue(game.ior_HOUH, game.ior_HOUC)
-                odds.push({
-                    variety: 'corner',
-                    type: 'hou',
-                    condition: changeRatio(game.ratio_ho),
-                    value_h,
-                    value_c,
-                })
+        } else {
+            //常规盘
+
+            //进球
+            if (game.ptype_id === '0') {
+                //全场让球
+                if (
+                    game.sw_R === 'Y' &&
+                    !isEmpty(game.ratio) &&
+                    isDecimal(game.ior_RH) &&
+                    isDecimal(game.ior_RC)
+                ) {
+                    let condition = changeRatio(game.ratio)
+                    if (game.strong === 'H') {
+                        //主队让球
+                        condition = Decimal(0).sub(condition).toString()
+                    }
+                    const [value_h, value_c] = changeValue(game.ior_RH, game.ior_RC)
+                    odds.push({
+                        variety: 'goal',
+                        type: 'r',
+                        condition,
+                        value_h,
+                        value_c,
+                    })
+                }
+                //半场让球
+                if (
+                    game.sw_HR === 'Y' &&
+                    !isEmpty(game.hratio) &&
+                    isDecimal(game.ior_HRH) &&
+                    isDecimal(game.ior_HRC)
+                ) {
+                    let condition = changeRatio(game.hratio)
+                    if (game.hstrong === 'H') {
+                        //主队让球
+                        condition = Decimal(0).sub(condition).toString()
+                    }
+                    const [value_h, value_c] = changeValue(game.ior_HRH, game.ior_HRC)
+                    odds.push({
+                        variety: 'goal',
+                        type: 'hr',
+                        condition,
+                        value_h,
+                        value_c,
+                    })
+                }
+                //全场大小球
+                if (
+                    game.sw_OU === 'Y' &&
+                    !isEmpty(game.ratio_o) &&
+                    isDecimal(game.ior_OUH) &&
+                    isDecimal(game.ior_OUC)
+                ) {
+                    const [value_h, value_c] = changeValue(game.ior_OUH, game.ior_OUC)
+                    odds.push({
+                        variety: 'goal',
+                        type: 'ou',
+                        condition: changeRatio(game.ratio_o),
+                        value_h,
+                        value_c,
+                    })
+                }
+                //半场大小球
+                if (
+                    game.sw_HOU === 'Y' &&
+                    !isEmpty(game.ratio_ho) &&
+                    isDecimal(game.ior_HOUH) &&
+                    isDecimal(game.ior_HOUC)
+                ) {
+                    const [value_h, value_c] = changeValue(game.ior_HOUH, game.ior_HOUC)
+                    odds.push({
+                        variety: 'goal',
+                        type: 'hou',
+                        condition: changeRatio(game.ratio_ho),
+                        value_h,
+                        value_c,
+                    })
+                }
+            }
+            //角球
+            else if (game.ptype_id === '146') {
+                //全场让球
+                if (
+                    game.sw_R === 'Y' &&
+                    !isEmpty(game.ratio) &&
+                    isDecimal(game.ior_RH) &&
+                    isDecimal(game.ior_RC)
+                ) {
+                    let condition = changeRatio(game.ratio)
+                    if (game.strong === 'H') {
+                        //主队让球
+                        condition = Decimal(0).sub(condition).toString()
+                    }
+                    const [value_h, value_c] = changeValue(game.ior_RH, game.ior_RC)
+                    odds.push({
+                        variety: 'corner',
+                        type: 'r',
+                        condition,
+                        value_h,
+                        value_c,
+                    })
+                }
+                //半场让球
+                if (
+                    game.sw_HR === 'Y' &&
+                    !isEmpty(game.hratio) &&
+                    isDecimal(game.ior_HRH) &&
+                    isDecimal(game.ior_HRC)
+                ) {
+                    let condition = changeRatio(game.hratio)
+                    if (game.hstrong === 'H') {
+                        //主队让球
+                        condition = Decimal(0).sub(condition).toString()
+                    }
+                    const [value_h, value_c] = changeValue(game.ior_HRH, game.ior_HRC)
+                    odds.push({
+                        variety: 'corner',
+                        type: 'hr',
+                        condition,
+                        value_h,
+                        value_c,
+                    })
+                }
+                //全场大小球
+                if (
+                    game.sw_OU === 'Y' &&
+                    !isEmpty(game.ratio_o) &&
+                    isDecimal(game.ior_OUH) &&
+                    isDecimal(game.ior_OUC)
+                ) {
+                    const [value_h, value_c] = changeValue(game.ior_OUH, game.ior_OUC)
+                    odds.push({
+                        variety: 'corner',
+                        type: 'ou',
+                        condition: changeRatio(game.ratio_o),
+                        value_h,
+                        value_c,
+                    })
+                }
+                //半场大小球
+                if (
+                    game.sw_HOU === 'Y' &&
+                    !isEmpty(game.ratio_ho) &&
+                    isDecimal(game.ior_HOUH) &&
+                    isDecimal(game.ior_HOUC)
+                ) {
+                    const [value_h, value_c] = changeValue(game.ior_HOUH, game.ior_HOUC)
+                    odds.push({
+                        variety: 'corner',
+                        type: 'hou',
+                        condition: changeRatio(game.ratio_ho),
+                        value_h,
+                        value_c,
+                    })
+                }
             }
         }
     })

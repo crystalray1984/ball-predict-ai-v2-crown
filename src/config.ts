@@ -6,6 +6,7 @@ import { join, resolve } from 'node:path'
 import { type Options as DbOptions } from 'sequelize'
 import { RedisOptions } from 'ioredis'
 import { Options as PoolOptions } from 'generic-pool'
+import { CrownAccount } from './db'
 
 /**
  * 当前应用的根目录
@@ -79,6 +80,10 @@ export interface AppConfig {
      * 机器id
      */
     machine_id: string
+    /**
+     * 本机测试用的皇冠账号
+     */
+    test_crown_account?: CrownAccount
 }
 
 /**

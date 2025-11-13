@@ -94,7 +94,7 @@ async function doInit() {
             const args: string[] = ['--no-sandbox', '--disable-images', '--lang=zh-cn']
 
             browser = await launch({
-                // headless: false,
+                headless: CONFIG.test_crown_account ? false : undefined,
                 args,
                 executablePath: getBrowserExecutePath(),
             })
@@ -206,6 +206,10 @@ async function freeCrownAccount() {
  * 获取可用的皇冠账号
  */
 async function getCrownAccount() {
+    if (CONFIG.test_crown_account) {
+        return CONFIG.test_crown_account
+    }
+
     const acc = await db.transaction(async (transaction) => {
         //先尝试获取当前分配的账号
         let account = await CrownAccount.findOne({
