@@ -5,10 +5,10 @@ import { getCrownData, init, reset, setActiveInterval } from '@/crown'
  * 处理从消费队列中来的皇冠盘口抓取请求
  */
 export async function processCrownRequest(content: string) {
-    const { next, crown_match_id, extra } = JSON.parse(content) as CrownRobot.Input
+    const { next, crown_match_id, extra, show_type } = JSON.parse(content) as CrownRobot.Input
 
     //读取皇冠的盘口
-    const data = await getCrownData(crown_match_id, 'today')
+    const data = await getCrownData(crown_match_id, show_type === 'live' ? 'live' : 'today')
 
     //抛到下一个队列
     await rabbitmq.publish(

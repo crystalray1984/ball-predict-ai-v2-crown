@@ -537,6 +537,12 @@ declare namespace CrownRobot {
          * 皇冠比赛id
          */
         crown_match_id: string
+
+        /**
+         * 要抓的盘口类型
+         */
+        show_type?: 'today' | 'early' | 'live'
+
         /**
          * 处理完成后抛到下一个处理队列的名称
          */
