@@ -1,11 +1,11 @@
 import { isEmpty } from '@/common/helpers'
 import { close, consume, publish } from '@/common/rabbitmq'
-import { Match, Odd, SurebetRecord, VMatch } from '@/db'
+import { Match, Odd, RockballOdd, SurebetRecord, VMatch } from '@/db'
+import dayjs from 'dayjs'
 import Decimal from 'decimal.js'
 import { omit } from 'lodash'
 import { getSetting } from './common/settings'
 import { CONFIG } from './config'
-import dayjs from 'dayjs'
 
 /**
  * 解析surebet时间条件的时长
@@ -36,6 +36,81 @@ function parseTimeCondition(condition: string): number {
 }
 
 /**
+ * 进行滚球规则判定
+ * @param config
+ * @param surebet
+ * @param match_id
+ * @param crown_match_id
+ */
+async function processRockball(
+    config: RockballConfig[],
+    record: Surebet.OddsRecord,
+    surebet: Surebet.OddInfo,
+) {
+    for (const rule of config) {
+        //基础盘口判定
+        if (rule.variety !== surebet.type.variety) continue
+        if (rule.period !== surebet.type.period) continue
+        if (rule.type !== surebet.type.type) continue
+        if (rule.condition !== surebet.type.condition) continue
+
+        //水位判定
+        if (Decimal(surebet.value).lt(rule.value)) continue
+
+        const match = await Match.findOne({
+            where: {
+                crown_match_id: surebet.preferred_nav.markers.eventId,
+            },
+            attributes: ['id'],
+        })
+        if (!match) return
+
+        //开始生成盘口
+        for (const oddRule of rule.odds) {
+            //尝试寻找相同的盘口
+            const odd = await RockballOdd.findOne({
+                where: {
+                    match_id: match.id,
+                    variety: oddRule.variety,
+                    period: oddRule.period,
+                    type: oddRule.type,
+                    condition: oddRule.condition,
+                },
+            })
+            if (odd) {
+                //如果盘口已存在，判断一下水位是否更低
+                if (Decimal(oddRule.value).lt(odd.value)) {
+                    //水位更低就按新的水位写入
+                    odd.value = oddRule.value
+                    odd.source_variety = rule.variety
+                    odd.source_period = rule.period
+                    odd.source_type = rule.type
+                    odd.source_condition = rule.condition
+                    odd.source_value = String(surebet.value)
+                    await odd.save()
+                }
+            } else {
+                //盘口不存在就创建盘口
+                await RockballOdd.create({
+                    match_id: match.id,
+                    crown_match_id: surebet.preferred_nav.markers.eventId,
+                    source_variety: rule.variety,
+                    source_period: rule.period,
+                    source_condition: rule.condition,
+                    source_type: rule.type,
+                    source_value: String(surebet.value),
+                    variety: oddRule.variety,
+                    period: oddRule.period,
+                    type: oddRule.type,
+                    condition: oddRule.condition,
+                    value: oddRule.value,
+                })
+            }
+        }
+    }
+}
+
+/**
  * 执行surebet数据过滤
  * @param content
  */
@@ -51,6 +126,7 @@ async function processSurebetCheck(content: string) {
         'surebet_end_of',
         'min_surebet_value',
         'max_surebet_value',
+        'rockball_config',
     )
 
     const maxProfit = Decimal(settings.surebet_max_profit)
@@ -204,6 +280,16 @@ async function processSurebetCheck(content: string) {
         }
 
         if (!pass) continue
+
+        //滚球队列检查
+        //尝试构建滚球盘口
+        if (
+            settings.rockball_config &&
+            Array.isArray(settings.rockball_config) &&
+            settings.rockball_config.length > 0
+        ) {
+            await processRockball(settings.rockball_config, record, odd)
+        }
 
         //构建需要抛到后续队列的参数
         const output: Surebet.Output = {
