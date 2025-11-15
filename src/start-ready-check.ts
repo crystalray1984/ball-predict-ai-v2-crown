@@ -26,7 +26,7 @@ async function processReadyCheck(content: string) {
     //构建比赛数据
     const [match_id] = await Match.prepare({
         ...data.match,
-        match_time: extra.match_time,
+        match_time: data.match.match_time || extra.match_time,
         ecid: extra.crown_match_id,
     })
 

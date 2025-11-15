@@ -281,6 +281,20 @@ async function processSurebetCheck(content: string) {
 
         if (!pass) continue
 
+        //判断比赛，如果比赛存在且状态为已结算那么也跳过
+        const match = await VMatch.findOne({
+            where: {
+                crown_match_id: odd.preferred_nav.markers.eventId,
+            },
+            attributes: ['id', 'match_time', 'status', 'tournament_is_open'],
+        })
+        if (match) {
+            if (match.match_time.valueOf() !== odd.time) {
+                match.match_time = new Date(odd.time)
+                await match.save()
+            }
+        }
+
         //滚球队列检查
         //尝试构建滚球盘口
         if (
@@ -319,14 +333,6 @@ async function processSurebetCheck(content: string) {
                 continue
             }
         }
-
-        //判断比赛，如果比赛存在且状态为已结算那么也跳过
-        const match = await VMatch.findOne({
-            where: {
-                crown_match_id: output.crown_match_id,
-            },
-            attributes: ['id', 'status', 'tournament_is_open'],
-        })
 
         if (match) {
             //比赛状态不对的去掉
