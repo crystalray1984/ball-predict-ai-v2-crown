@@ -201,6 +201,21 @@ async function processSurebetCheck(content: string) {
             surebet_value: String(odd.value),
         }
 
+        //判断比赛，如果比赛存在且状态为已结算那么也跳过
+        const match = await Match.findOne({
+            where: {
+                crown_match_id: output.crown_match_id,
+            },
+            attributes: ['id', 'status'],
+        })
+        if (match) {
+            //如果比赛已经存在，那么尝试更新比赛时间
+            if (match.match_time.valueOf() !== output.match_time) {
+                match.match_time = new Date(output.match_time)
+                await match.save()
+            }
+        }
+
         //满足v2条件的全场盘口，抛到v3队列进行比对
         if (output.type.period === 'regularTime' && output.type.variety === 'goal') {
             toV3List.push(JSON.stringify(output))
@@ -227,13 +242,6 @@ async function processSurebetCheck(content: string) {
             }
         }
 
-        //判断比赛，如果比赛存在且状态为已结算那么也跳过
-        const match = await Match.findOne({
-            where: {
-                crown_match_id: output.crown_match_id,
-            },
-            attributes: ['id', 'status'],
-        })
         if (match && match.status !== '') {
             continue
         }

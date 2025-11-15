@@ -79,7 +79,7 @@ async function processReadyCheck(content: string) {
         //原始盘口不存在
         const [match_id] = await Match.prepare({
             ...data.match,
-            match_time: extra.match_time,
+            match_time: data.match.match_time || extra.match_time,
             ecid: extra.crown_match_id,
         })
         //先尝试插入
