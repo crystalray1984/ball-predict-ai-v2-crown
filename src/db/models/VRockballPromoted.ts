@@ -1,5 +1,13 @@
 import type { CreationOptional, InferAttributes } from 'sequelize'
-import { Column, DataType, Model, PrimaryKey, Table } from 'sequelize-typescript'
+import {
+    Column,
+    CreatedAt,
+    DataType,
+    Model,
+    PrimaryKey,
+    Table,
+    UpdatedAt,
+} from 'sequelize-typescript'
 
 /**
  * 滚球推荐视图
@@ -72,9 +80,11 @@ export class VRockballPromoted extends Model<InferAttributes<VRockballPromoted>>
     @Column(DataType.TINYINT)
     declare score2: CreationOptional<number | null>
 
+    @CreatedAt
     @Column(DataType.DATE)
     declare created_at: CreationOptional<Date>
 
+    @UpdatedAt
     @Column(DataType.DATE)
     declare updated_at: CreationOptional<Date>
 
