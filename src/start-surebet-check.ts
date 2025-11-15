@@ -291,7 +291,17 @@ async function processSurebetCheck(content: string) {
         if (match) {
             if (match.match_time.valueOf() !== odd.time) {
                 match.match_time = new Date(odd.time)
-                await match.save()
+
+                await Match.update(
+                    {
+                        match_time: match.match_time,
+                    },
+                    {
+                        where: {
+                            id: match.id,
+                        },
+                    },
+                )
             }
         }
 
