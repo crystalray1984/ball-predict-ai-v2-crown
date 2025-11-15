@@ -95,6 +95,8 @@ async function processRockballCheck(content: string) {
         },
     })
 
+    console.log('滚球盘盘口', data)
+
     //对每个滚球盘口进行处理
     for (const odd of odds) {
         //查询皇冠抓来的数据里有没有对应的盘口
