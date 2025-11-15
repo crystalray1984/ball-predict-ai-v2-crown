@@ -206,7 +206,7 @@ async function processSurebetCheck(content: string) {
             where: {
                 crown_match_id: output.crown_match_id,
             },
-            attributes: ['id', 'status'],
+            attributes: ['id', 'match_time', 'status'],
         })
         if (match) {
             //如果比赛已经存在，那么尝试更新比赛时间
