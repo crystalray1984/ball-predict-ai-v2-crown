@@ -17,6 +17,12 @@ export class VRockballPromoted extends Model<InferAttributes<VRockballPromoted>>
      * 比赛id
      */
     @Column(DataType.INTEGER)
+    declare odd_id: number
+
+    /**
+     * 比赛id
+     */
+    @Column(DataType.INTEGER)
     declare match_id: number
 
     /**
@@ -54,12 +60,6 @@ export class VRockballPromoted extends Model<InferAttributes<VRockballPromoted>>
     @Column(DataType.DECIMAL(5, 2))
     declare condition: string
 
-    /**
-     * 是否反推
-     */
-    @Column(DataType.INTEGER)
-    declare back: number
-
     @Column(DataType.TINYINT)
     declare result: CreationOptional<number | null>
 
@@ -80,9 +80,6 @@ export class VRockballPromoted extends Model<InferAttributes<VRockballPromoted>>
 
     @Column(DataType.DECIMAL)
     declare value: CreationOptional<string>
-
-    @Column(DataType.STRING)
-    declare odd_type: 'ah' | 'sum'
 
     @Column(DataType.DATE)
     declare match_time: Date
