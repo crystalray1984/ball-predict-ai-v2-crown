@@ -8,7 +8,14 @@ import { CONFIG } from './config'
 
 type VPromotedData = Pick<
     VPromotedOdd,
-    'type' | 'team1_name' | 'team2_name' | 'condition' | 'value' | 'match_time' | 'tournament_name'
+    | 'type'
+    | 'period'
+    | 'team1_name'
+    | 'team2_name'
+    | 'condition'
+    | 'value'
+    | 'match_time'
+    | 'tournament_name'
 > & { week_id?: number }
 
 /**
@@ -55,7 +62,7 @@ ${promoted.team1_name}
 
 ${promoted.team2_name}
 
-全场
+${promoted.period === 'period1' ? '半场' : '全场'}
 
 ${oddParts.join('')}
 `
