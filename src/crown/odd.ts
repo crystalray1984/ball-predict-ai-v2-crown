@@ -51,14 +51,16 @@ export async function getCrownData(
         const data = xmlParser.parse(resp).serverresponse
 
         //写入记录
-        try {
-            const now = dayjs()
-            const dirPath = resolve(__dirname, `../../runtime/crown/${now.format('YYYYMMDD')}`)
-            await prepareDir(dirPath)
-            const logFile = join(dirPath, `${crown_match_id}_${now.format('HHmmss')}.log`)
-            await writeFile(logFile, JSON.stringify(data, null, 4), 'utf-8')
-        } catch (err) {
-            console.error(err)
+        if (show_type === 'live') {
+            try {
+                const now = dayjs()
+                const dirPath = resolve(__dirname, `../../runtime/crown/${now.format('YYYYMMDD')}`)
+                await prepareDir(dirPath)
+                const logFile = join(dirPath, `${crown_match_id}_${now.format('HHmmss')}.log`)
+                await writeFile(logFile, JSON.stringify(data, null, 4), 'utf-8')
+            } catch (err) {
+                console.error(err)
+            }
         }
 
         try {
