@@ -58,6 +58,7 @@ async function startRockballCheck() {
                 crown_match_id: match.crown_match_id,
                 next: CONFIG.queues['rockball_check_after'],
                 extra: match,
+                show_type: 'live',
             }),
         ),
     )
