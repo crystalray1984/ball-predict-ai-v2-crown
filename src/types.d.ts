@@ -23,6 +23,8 @@ declare type Variety = 'goal' | 'corner'
  */
 declare type OddType = 'ah1' | 'ah2' | 'over' | 'under' | 'draw'
 
+declare type OddIdentification = 'ah' | 'sum'
+
 /**
  * 盘口状态
  */

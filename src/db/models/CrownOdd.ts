@@ -33,7 +33,7 @@ export class CrownOdd extends Model<InferAttributes<CrownOdd>, InferCreationAttr
     declare period: Period
 
     @Column(DataType.STRING)
-    declare type: string
+    declare type: OddIdentification
 
     @Column(DataType.DECIMAL(5, 2))
     declare condition: string

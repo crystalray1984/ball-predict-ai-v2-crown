@@ -9,12 +9,355 @@ import {
     db,
     LabelPromoted,
     Match,
-    Odd,
     PromotedOdd,
     SurebetV2Odd,
     SurebetV2Promoted,
     VMatch,
 } from './db'
+
+/**
+ * 处理赛事的最终结算
+ */
+async function processFinalMatches() {
+    //读取开赛时间配置
+    const final_check_time = await (async () => {
+        const final_check_time = await getSetting('final_check_time')
+        return typeof final_check_time === 'number' ? final_check_time : 20
+    })()
+
+    //先查询需要处理的比赛
+    const matches = await db.query(
+        {
+            query: `
+        SELECT
+            id,
+            crown_match_id
+        FROM
+            match
+        WHERE
+            match_time <= ?
+            AND status = ?
+            AND id IN (SELECT match_id FROM odd WHERE status = ?)
+        `,
+            values: [
+                new Date(Date.now() + final_check_time * 60000), //只抓取将在指定时间内开赛的比赛
+                '', //只选择还未结算的比赛
+                'ready', //有准备中的盘口的比赛
+            ],
+        },
+        {
+            type: QueryTypes.SELECT,
+            mapToModel: true,
+            model: VMatch,
+        },
+    )
+
+    if (matches.length === 0) return
+
+    //把这些比赛都标记为已结算
+    await Match.update(
+        { status: 'final' },
+        {
+            where: {
+                id: {
+                    [Op.in]: matches.map((t) => t.id),
+                },
+            },
+        },
+    )
+
+    for (const match of matches) {
+        console.log(
+            '最终结算判断',
+            `match_id=${match.id}`,
+            `crown_match_id=${match.crown_match_id}`,
+        )
+
+        //查询这几个端的指定盘口数据
+        await processFinalCheck(
+            match,
+            await CrownOdd.findAll({
+                where: {
+                    period: 'regularTime',
+                    variety: 'goal',
+                    type: 'ah',
+                },
+                order: ['id'],
+            }),
+        )
+        await processFinalCheck(
+            match,
+            await CrownOdd.findAll({
+                where: {
+                    period: 'regularTime',
+                    variety: 'goal',
+                    type: 'sum',
+                },
+                order: ['id'],
+            }),
+        )
+        // await processFinalCheck(
+        //     match,
+        //     await CrownOdd.findAll({
+        //         where: {
+        //             period: 'peroid1',
+        //             variety: 'goal',
+        //             type: 'ah',
+        //         },
+        //         order: ['id'],
+        //     }),
+        // )
+        // await processFinalCheck(
+        //     match,
+        //     await CrownOdd.findAll({
+        //         where: {
+        //             period: 'peroid1',
+        //             variety: 'goal',
+        //             type: 'sum',
+        //         },
+        //         order: ['id'],
+        //     }),
+        // )
+    }
+}
+
+/**
+ * 进行V3的最终判断
+ * @param match 比赛
+ */
+async function processFinalCheck(match: VMatch, crownOdds: CrownOdd[]) {
+    //不足3个直接出去
+    if (crownOdds.length < 3) return
+
+    //读取配置
+    const {
+        v3_check_max_duration,
+        v3_check_max_value,
+        v3_check_min_duration,
+        v3_check_min_value,
+        v3_check_min_promote_value,
+    } = await getSetting(
+        'v3_check_max_duration',
+        'v3_check_max_value',
+        'v3_check_min_duration',
+        'v3_check_min_value',
+        'v3_check_min_promote_value',
+    )
+
+    //首先根据盘口的变化，把抓取到的皇冠盘口分组
+    const groups: CrownOdd[][] = []
+    let lastGroup: CrownOdd[] = []
+    let lastCondition: string = ''
+    crownOdds.forEach((odd) => {
+        if (!lastCondition || !Decimal(odd.condition).eq(lastCondition)) {
+            lastGroup = [odd]
+            groups.push(lastGroup)
+        } else {
+            lastGroup.push(odd)
+        }
+    })
+
+    //把组倒过来，从最后产生的盘口组开始计算
+    groups.reverse()
+
+    //对每个组内的数据进行判断
+    for (const rows of groups) {
+        //如果这个组的数据不足3个，那么跳过
+        if (rows.length < 3) return
+
+        let current = 1
+        let lastDirection = '' as unknown as 'value1' | 'value2'
+        let stackRows: CrownOdd[] = [rows[0]]
+        let result: 'value1' | 'value2' | undefined = undefined
+        let resultRow: CrownOdd | undefined = undefined
+
+        while (current < rows.length) {
+            const currentRow = rows[current]
+
+            //stackRows的首行与currentRow的时间间隔不能超过v3_check_max_duration分钟，如果超过了就要从stackRows头部进行排除
+            while (stackRows.length > 0) {
+                if (
+                    currentRow.created_at.valueOf() - stackRows[0].created_at.valueOf() <=
+                    v3_check_max_duration * 6000
+                ) {
+                    break
+                }
+                stackRows.shift()
+            }
+            if (stackRows.length === 0) {
+                //堆栈池里没数据了，把当前行重新作为堆栈池的首个数据，从后面的行开始计算
+                stackRows = [currentRow]
+                current++
+                continue
+            }
+
+            let fromRow = stackRows[0]
+            let lastRow = stackRows[stackRows.length - 1]
+
+            //与上一条记录对比，判断是上盘降水还是下盘降水
+            const direction = Decimal(currentRow.value1).lt(lastRow.value1) ? 'value1' : 'value2'
+
+            if (lastDirection !== direction) {
+                //之前有判断出方向，但是这次的方向与之前的不同，那就表示水位发生了波动
+                //那么把最近的2次记录作为堆栈数据继续进行后续判断
+                stackRows = [lastRow]
+                fromRow = lastRow
+                lastDirection = direction
+            }
+
+            //先进行异常波动的判断，寻找满足异常时间段内的最早的记录
+            const minCheckFirstRow = stackRows.find(
+                (t) =>
+                    t.created_at.valueOf() >=
+                    currentRow.created_at.valueOf() - v3_check_min_duration * 60000,
+            )
+            //如果异常时间段内有记录，且水位下降超过限定值
+            if (
+                minCheckFirstRow &&
+                Decimal(minCheckFirstRow[direction])
+                    .sub(currentRow[direction])
+                    .gte(v3_check_min_value)
+            ) {
+                //把当前行作为最新的堆栈数据，跳过后续判断
+                stackRows = [currentRow]
+                current++
+                continue
+            }
+
+            //然后进行最大时段判断，因为查询出来的数据都是已经满足最大时段的数据，所以只需要判断水位下降得够不够就行了
+            if (
+                !Decimal(fromRow[direction]).sub(currentRow[direction]).gte(v3_check_max_value) ||
+                Decimal(currentRow[direction]).lt(v3_check_min_promote_value)
+            ) {
+                //水位下降不足，或者水位低于最低推荐水位，把当前行压入堆栈，继续进行循环判断
+                stackRows.push(currentRow)
+                current++
+                continue
+            }
+
+            //到这里就是水位下降够了，那么记录推荐信息，后面也不用循环了，直接出去了
+            result = direction
+            resultRow = currentRow
+            break
+        }
+
+        if (!result || !resultRow) {
+            //水位下降条件未达到，什么都不做，继续判断下一个组
+            continue
+        }
+
+        //各种判断都满足了
+        //先把最终计算获得的surebet盘口，标记为已使用
+        await CrownOdd.update(
+            {
+                promote_flag: result === 'value1' ? 1 : 2,
+            },
+            {
+                where: {
+                    id: {
+                        [Op.in]: stackRows.map((t) => t.id),
+                    },
+                },
+            },
+        )
+
+        //先判断是不是有相同类型的推荐已经产生
+        const promotedExists = await PromotedOdd.findOne({
+            where: {
+                match_id: match.id,
+                variety: resultRow.variety,
+                period: resultRow.period,
+                odd_type: resultRow.type,
+            },
+            attributes: ['id'],
+        })
+        if (promotedExists) break
+
+        //开始创建推荐
+        if (!match.tournament_is_open) return
+
+        const type = (() => {
+            if (resultRow.type === 'ah') {
+                return result === 'value1' ? 'ah1' : 'ah2'
+            } else {
+                return result === 'value1' ? 'under' : 'over'
+            }
+        })()
+        const condition = (() => {
+            switch (type) {
+                case 'ah1':
+                    return resultRow.condition
+                case 'ah2':
+                    return Decimal(0).sub(resultRow.condition).toString()
+                default:
+                    return resultRow.condition
+            }
+        })()
+        const week_day = getWeekDay()
+
+        //总台推荐
+        const promoted = await PromotedOdd.create({
+            match_id: match.id,
+            source: 'crown_odd',
+            source_id: resultRow.id,
+            variety: resultRow.variety,
+            period: resultRow.period,
+            odd_type: resultRow.type,
+            is_valid: 1,
+            type,
+            condition,
+            back: 0,
+            value: resultRow[result],
+            week_day,
+            start_odd_data: {
+                id: stackRows[0].id,
+                time: stackRows[0].created_at.valueOf(),
+                value: stackRows[0][result],
+                field: result,
+            },
+            end_odd_data: {
+                id: resultRow.id,
+                time: resultRow.created_at.valueOf(),
+                value: resultRow[result],
+                field: result,
+            },
+        })
+        //设置总台的周标记
+        const weekLast = await PromotedOdd.findOne({
+            where: {
+                week_day,
+                is_valid: 1,
+                id: {
+                    [Op.lt]: promoted.id,
+                },
+            },
+            order: [['id', 'desc']],
+            attributes: ['id', 'week_id'],
+        })
+        promoted.week_id = weekLast ? weekLast.week_id + 1 : 1
+        await promoted.save()
+        await publish(CONFIG.queues['send_promoted'], JSON.stringify({ id: promoted.id }))
+
+        //新老融合推荐
+        //查询是否存在对应的surebet数据
+        const surebetOdd = await SurebetV2Odd.findOne({
+            where: {
+                crown_match_id: match.crown_match_id,
+                variety: promoted.variety,
+                period: promoted.period,
+                type: promoted.type,
+                condition,
+            },
+        })
+
+        if (surebetOdd && !surebetOdd.promote_id) {
+            await createV2ToV3Promote(surebetOdd, promoted, match.tournament_label_id)
+        }
+
+        //这个组已经判断完了，不需要判断后续的组了，直接出去了
+        return
+    }
+}
 
 /**
  * v3检查进程
@@ -23,7 +366,7 @@ async function startV3Check() {
     //读取开赛时间配置
     const final_check_time = await (async () => {
         const final_check_time = await getSetting('final_check_time')
-        return typeof final_check_time === 'number' ? final_check_time : 5
+        return typeof final_check_time === 'number' ? final_check_time : 20
     })()
 
     //先查询需要处理的比赛
@@ -78,56 +421,34 @@ async function startV3Check() {
 }
 
 /**
- * V3的持续盘口判断
- * @param data
+ * 保存从皇冠持续采集来的盘口
  */
-async function processV3Check(
-    data: CrownRobot.Output<{
-        match_id: number
-    }>,
-) {
-    if (!data.data || !data.extra) return
+async function saveCrownOdd({
+    crown_match_id,
+    data,
+    extra,
+}: CrownRobot.Output<{
+    match_id: number
+}>) {
+    if (!data || !extra) return
 
-    //读取配置
-    const {
-        v3_check_max_duration,
-        v3_check_max_value,
-        v3_check_min_duration,
-        v3_check_min_value,
-        v3_check_min_promote_value,
-    } = await getSetting(
-        'v3_check_max_duration',
-        'v3_check_max_value',
-        'v3_check_min_duration',
-        'v3_check_min_value',
-        'v3_check_min_promote_value',
-    )
+    const { match_id } = extra
 
-    const match_id = data.extra.match_id
-    const crown_match_id = data.crown_match_id
-
-    //读取对应的比赛和盘口数据
-    const match = await VMatch.findOne({
+    //检查比赛的状态
+    const match = await Match.findOne({
         where: {
-            id: match_id,
+            id: extra.match_id,
         },
+        attributes: ['status'],
     })
 
-    //状态不对的比赛不需要处理
+    //没有找到比赛或者比赛状态不对就出去了
     if (!match || match.status !== '') return
 
-    const odds = await Odd.findAll({
-        where: {
-            match_id,
-            status: 'ready',
-        },
-    })
-
-    //没有需要处理的盘口也不处理
-    if (odds.length === 0) return
-
-    //写入主盘口数据
-    const updateOdd = async (oddInfo: Crown.OddInfo, period: Period, type: 'ah' | 'sum') => {
+    /**
+     * 保存盘口
+     */
+    const saveOdd = async (oddInfo: Crown.OddInfo, period: Period, type: OddIdentification) => {
         const lastOne = await CrownOdd.findOne({
             where: {
                 match_id,
@@ -150,7 +471,7 @@ async function processV3Check(
         }
 
         //插入新数据
-        const newOne = await CrownOdd.create(
+        await CrownOdd.create(
             {
                 match_id,
                 crown_match_id,
@@ -161,254 +482,27 @@ async function processV3Check(
                 value1: oddInfo.value_h,
                 value2: oddInfo.value_c,
             },
-            { returning: true },
+            { returning: false },
         )
-
-        //判断一下如果有变盘，那么之前的数据都不要了，也不需要返回
-        if (lastOne && !Decimal(lastOne.condition).eq(oddInfo.condition)) {
-            await CrownOdd.update(
-                {
-                    is_ignored: 1,
-                },
-                {
-                    where: {
-                        match_id,
-                        variety: oddInfo.variety,
-                        period,
-                        type,
-                        is_ignored: 0,
-                        id: {
-                            [Op.lt]: newOne.id,
-                        },
-                    },
-                },
-            )
-            return
-        }
-
-        return newOne
-    }
-
-    //处理某个盘口的数据
-    const processOdd = async (oddInfo: Crown.OddInfo, period: Period, type: 'ah' | 'sum') => {
-        //首先进行盘口写入
-        const newOne = await updateOdd(oddInfo, period, type)
-
-        //如果盘口写入之后没有返回，那么代表没有可以比较的数据，直接出去了
-        if (!newOne) return
-
-        //查看这个类型的盘口是否已经有了推荐，如果有了也不做后续的处理了
-        const exists = await PromotedOdd.findOne({
-            where: {
-                match_id,
-                variety: oddInfo.variety,
-                period,
-                odd_type: type,
-            },
-            attributes: ['id'],
-        })
-        if (exists) return
-
-        //读取相同类型的盘口追踪数据
-        const rows = await CrownOdd.findAll({
-            where: {
-                match_id,
-                variety: oddInfo.variety,
-                period,
-                type,
-                is_ignored: 0,
-                id: {
-                    [Op.lte]: newOne.id,
-                },
-                created_at: {
-                    [Op.gte]: new Date(newOne.created_at.valueOf() - v3_check_max_duration * 60000),
-                },
-            },
-            order: [['id', 'asc']],
-        })
-
-        //如果记录的总数都不够3条那也不处理了
-        if (rows.length < 3) return
-
-        let current = 1
-        let lastDirection = '' as unknown as 'value1' | 'value2'
-        let stackRows: CrownOdd[] = [rows[0]]
-        let result: 'value1' | 'value2' | undefined = undefined
-        let resultRow: CrownOdd | undefined = undefined
-
-        while (current < rows.length) {
-            const currentRow = rows[current]
-            let fromRow = stackRows[0]
-            let lastRow = stackRows[stackRows.length - 1]
-
-            //与上一条记录对比，判断是上盘降水还是下盘降水
-            const direction = Decimal(currentRow.value1).lt(lastRow.value1) ? 'value1' : 'value2'
-
-            if (lastDirection !== direction) {
-                //之前有判断出方向，但是这次的方向与之前的不同，那就表示水位发生了波动
-                //那么把最近的2次记录作为堆栈数据继续进行后续判断
-                stackRows = [lastRow]
-                fromRow = lastRow
-                lastDirection = direction
-            }
-
-            //先进行异常波动的判断，寻找满足异常时间段内的最早的记录
-            const minCheckFirstRow = rows.find(
-                (t) =>
-                    t.created_at.valueOf() >=
-                    currentRow.created_at.valueOf() - v3_check_min_duration * 60000,
-            )
-            //如果异常时间段内有记录，且水位下降超过限定值
-            if (
-                minCheckFirstRow &&
-                Decimal(minCheckFirstRow[direction])
-                    .sub(currentRow[direction])
-                    .gte(v3_check_min_value)
-            ) {
-                //把当前行作为最新的堆栈数据，跳过后续判断
-                stackRows = [currentRow]
-                current++
-                continue
-            }
-
-            //然后进行最大时段判断，因为查询出来的数据都是已经满足最大时段的数据，所以只需要判断水位下降得够不够就行了
-            if (
-                !Decimal(fromRow[direction]).sub(currentRow[direction]).gte(v3_check_max_value) ||
-                Decimal(currentRow[direction]).lt(v3_check_min_promote_value)
-            ) {
-                //水位下降不足，或者水位低于最低推荐水位，把当前行压入堆栈，继续进行循环判断
-                stackRows.push(currentRow)
-                current++
-                continue
-            }
-
-            //到这里就是水位下降够了，那么记录推荐信息，后面也不用循环了，直接出去了
-            result = direction
-            resultRow = currentRow
-            break
-        }
-
-        if (!result || !resultRow) {
-            //水位下降条件未达到，什么都不做，出去了
-            return
-        }
-
-        //更新盘口记录表中的数据，标记判定成功开始和结束区间
-        await CrownOdd.update(
-            {
-                promote_flag: result === 'value1' ? 1 : 2,
-            },
-            {
-                where: {
-                    id: {
-                        [Op.between]: [stackRows[0].id, resultRow.id],
-                    },
-                    match_id,
-                    variety: oddInfo.variety,
-                    period,
-                    type,
-                },
-            },
-        )
-
-        const is_valid = match.tournament_is_open
-        if (!is_valid) return
-
-        //创建满足条件的推荐数据
-        //计算推荐数据
-        const oddType = (() => {
-            if (type === 'ah') {
-                return result === 'value1' ? 'ah1' : 'ah2'
-            } else {
-                return result === 'value1' ? 'under' : 'over'
-            }
-        })()
-        //计算盘口
-        const condition = (() => {
-            switch (oddType) {
-                case 'ah1':
-                    return resultRow.condition
-                case 'ah2':
-                    return Decimal(0).sub(resultRow.condition).toString()
-                default:
-                    return resultRow.condition
-            }
-        })()
-
-        const week_day = getWeekDay()
-
-        const promoted = await PromotedOdd.create({
-            match_id,
-            source: 'crown_odd',
-            source_id: resultRow.id,
-            is_valid,
-            variety: oddInfo.variety,
-            period,
-            type: oddType,
-            condition,
-            back: 0,
-            value: resultRow[result],
-            start_odd_data: {
-                id: Number(stackRows[0].id),
-                field: result,
-                value: stackRows[0][result],
-                time: stackRows[0].created_at.valueOf(),
-            },
-            end_odd_data: {
-                id: Number(resultRow.id),
-                field: result,
-                value: resultRow[result],
-                time: resultRow.created_at.valueOf(),
-            },
-            week_day,
-            odd_type: getOddIdentification(oddType),
-        })
-
-        if (is_valid) {
-            const lastRow = await PromotedOdd.findOne({
-                where: {
-                    week_day,
-                    is_valid: 1,
-                    id: {
-                        [Op.lt]: promoted.id,
-                    },
-                },
-                order: [['id', 'desc']],
-                attributes: ['week_id'],
-            })
-            const week_id = lastRow ? lastRow.week_id + 1 : 1
-            promoted.week_id = week_id
-            await promoted.save()
-
-            await publish(CONFIG.queues['send_promoted'], JSON.stringify({ id: promoted.id }))
-
-            //调用与v2的surebet数据的融合判断
-            //查询是否存在对应的surebet数据
-            const surebetOdd = await SurebetV2Odd.findOne({
-                where: {
-                    crown_match_id,
-                    variety: oddInfo.variety,
-                    period,
-                    type: oddType,
-                    condition,
-                },
-            })
-
-            if (surebetOdd && !surebetOdd.promote_id) {
-                await createV2ToV3Promote(surebetOdd, promoted, match.tournament_label_id)
-            }
-        }
     }
 
     //读取各个类型的主盘口数据
-    const goalAh = data.data.odds.find((t) => t.variety === 'goal' && t.type === 'r')
-    const goalSum = data.data.odds.find((t) => t.variety === 'goal' && t.type === 'ou')
+    const ah = data.odds.find((t) => t.variety === 'goal' && t.type === 'r')
+    const sum = data.odds.find((t) => t.variety === 'goal' && t.type === 'ou')
+    const ahPeriod1 = data.odds.find((t) => t.variety === 'goal' && t.type === 'hr')
+    const sumPeriod1 = data.odds.find((t) => t.variety === 'goal' && t.type === 'hou')
 
-    if (goalAh) {
-        await processOdd(goalAh, 'regularTime', 'ah')
+    if (ah) {
+        await saveOdd(ah, 'regularTime', 'ah')
     }
-    if (goalSum) {
-        await processOdd(goalSum, 'regularTime', 'sum')
+    if (sum) {
+        await saveOdd(sum, 'regularTime', 'sum')
+    }
+    if (ahPeriod1) {
+        await saveOdd(ahPeriod1, 'period1', 'ah')
+    }
+    if (sumPeriod1) {
+        await saveOdd(sumPeriod1, 'period1', 'sum')
     }
 }
 
@@ -417,7 +511,7 @@ async function processV3Check(
  */
 async function startV3CheckProcessor() {
     const [promise] = consume(CONFIG.queues['v3_check'], async (content) => {
-        await processV3Check(JSON.parse(content))
+        await saveCrownOdd(JSON.parse(content))
     })
     await promise
 }
@@ -464,41 +558,6 @@ async function processSurebetV2ToV3Check(surebet: Surebet.Output) {
         await odd.save()
         return
     }
-
-    //只有新增数据的时候需要判断是否有匹配的盘口
-    //首先寻找盘口对应的比赛
-    const match = await VMatch.findOne({
-        where: {
-            crown_match_id: surebet.crown_match_id,
-        },
-        transaction: null,
-        attributes: ['id', 'status', 'tournament_label_id'],
-    })
-
-    //如果没有找到比赛，或者比赛状态不对，那么就出去了
-    if (!match || match.status !== '') {
-        return
-    }
-
-    //再根据比赛id，寻找有没有盘口相同的推荐
-    const promoted = await PromotedOdd.findOne({
-        where: {
-            match_id: match.id,
-            source: 'crown_odd',
-            variety: odd.variety,
-            period: odd.period,
-            type: odd.type,
-            condition: odd.condition,
-            is_valid: 1,
-        },
-    })
-
-    if (!promoted) {
-        //没有找到盘口，或者是找到的盘口标记为不推荐，那也出去了
-        return
-    }
-
-    await createV2ToV3Promote(odd, promoted, match.tournament_label_id)
 }
 
 /**
@@ -638,4 +697,5 @@ if (require.main === module) {
     runLoop(60000, startV3Check)
     startV3CheckProcessor()
     startSurebetV2ToV3Check()
+    runLoop(30000, processFinalMatches)
 }
