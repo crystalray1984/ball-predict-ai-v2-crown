@@ -7,6 +7,7 @@ crown_url: 'https://mos011.com'
 #队列名配置
 queues:
   surebet_check: 'v3:surebet_check'
+  surebet2_check: 'v3:surebet2_check'
   ready_check_after: 'v3:ready_check_after'
   ready_check_after2: 'v3:ready_check_after2'
   final_check: 'v3:final_check'
