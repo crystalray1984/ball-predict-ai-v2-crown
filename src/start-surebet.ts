@@ -53,4 +53,5 @@ export async function startSurebet2() {
 
 if (require.main === module) {
     runLoop(60000, startSurebet)
+    runLoop(60000, startSurebet2)
 }
