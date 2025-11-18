@@ -150,6 +150,7 @@ async function processFinalCheck(match: VMatch, crownOdds: CrownOdd[]) {
     let lastCondition: string = ''
     crownOdds.forEach((odd) => {
         if (!lastCondition || !Decimal(odd.condition).eq(lastCondition)) {
+            lastCondition = odd.condition
             lastGroup = [odd]
             groups.push(lastGroup)
         } else {
@@ -163,7 +164,7 @@ async function processFinalCheck(match: VMatch, crownOdds: CrownOdd[]) {
     //对每个组内的数据进行判断
     for (const rows of groups) {
         //如果这个组的数据不足3个，那么跳过
-        if (rows.length < 3) return
+        if (rows.length < 3) continue
 
         let current = 1
         let lastDirection = '' as unknown as 'value1' | 'value2'
@@ -177,7 +178,7 @@ async function processFinalCheck(match: VMatch, crownOdds: CrownOdd[]) {
             //stackRows的首行与currentRow的时间间隔不能超过v3_check_max_duration分钟，如果超过了就要从stackRows头部进行排除
             while (stackRows.length > 0) {
                 if (
-                    currentRow.created_at.valueOf() - stackRows[0].created_at.valueOf() <=
+                    currentRow.created_at.valueOf() - stackRows[0].created_at.valueOf() >
                     v3_check_max_duration * 6000
                 ) {
                     break
@@ -186,6 +187,7 @@ async function processFinalCheck(match: VMatch, crownOdds: CrownOdd[]) {
             }
             if (stackRows.length === 0) {
                 //堆栈池里没数据了，把当前行重新作为堆栈池的首个数据，从后面的行开始计算
+                console.log('堆栈池缺少数据')
                 stackRows = [currentRow]
                 current++
                 continue
