@@ -11,12 +11,12 @@ import {
 } from 'sequelize-typescript'
 
 /**
- * 最终推荐盘口表
+ * mansion最终推荐盘口表
  */
-@Table({ tableName: 'promoted_odd' })
-export class PromotedOdd extends Model<
-    InferAttributes<PromotedOdd>,
-    InferCreationAttributes<PromotedOdd>
+@Table({ tableName: 'promoted_odd_mansion' })
+export class PromotedOddMansion extends Model<
+    InferAttributes<PromotedOddMansion>,
+    InferCreationAttributes<PromotedOddMansion>
 > {
     /**
      * 盘口id
@@ -33,18 +33,11 @@ export class PromotedOdd extends Model<
     @Column(DataType.INTEGER)
     declare match_id: number
 
-    /**
-     * 源数据类型
-     */
-    @Column(DataType.STRING)
-    declare source: CreationOptional<string>
-
-    /**
-     * 源数据ID
-     */
+    @Column(DataType.INTEGER)
+    declare odd_id: number
 
     @Column(DataType.INTEGER)
-    declare source_id: CreationOptional<number>
+    declare odd_mansion_id: number
 
     /**
      * 是否最终推荐给用户
@@ -81,12 +74,6 @@ export class PromotedOdd extends Model<
     declare type: OddType
 
     /**
-     * 第二投注方向
-     */
-    @Column(DataType.STRING)
-    declare type2: CreationOptional<OddType | null>
-
-    /**
      * 盘口条件
      */
 
@@ -94,40 +81,16 @@ export class PromotedOdd extends Model<
     declare condition: string
 
     /**
-     * 第二盘口条件
-     */
-    @Column(DataType.DECIMAL(5, 2))
-    declare condition2: CreationOptional<string | null>
-
-    /**
      * 是否反推
      */
     @Column(DataType.INTEGER)
     declare back: number
 
-    /**
-     * 正反推规则
-     */
-    @Column(DataType.STRING)
-    declare final_rule: CreationOptional<string>
-
     @Column(DataType.TINYINT)
     declare result: CreationOptional<number | null>
 
-    @Column(DataType.TINYINT)
-    declare result1: CreationOptional<number | null>
-
-    @Column(DataType.TINYINT)
-    declare result2: CreationOptional<number | null>
-
     @Column(DataType.STRING)
     declare score: CreationOptional<string | null>
-
-    @Column(DataType.TINYINT)
-    declare score1: CreationOptional<number | null>
-
-    @Column(DataType.TINYINT)
-    declare score2: CreationOptional<number | null>
 
     @CreatedAt
     @Column(DataType.DATE)
@@ -139,22 +102,6 @@ export class PromotedOdd extends Model<
 
     @Column(DataType.DECIMAL)
     declare value: CreationOptional<string>
-
-    @Column(DataType.JSONB)
-    declare start_odd_data: CreationOptional<{
-        id: number
-        field: 'value1' | 'value2'
-        value: string
-        time: number
-    } | null>
-
-    @Column(DataType.JSONB)
-    declare end_odd_data: CreationOptional<{
-        id: number
-        field: 'value1' | 'value2'
-        value: string
-        time: number
-    } | null>
 
     @Column(DataType.INTEGER)
     declare week_day: CreationOptional<number>

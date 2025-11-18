@@ -114,7 +114,7 @@ async function processRockball(
  * 执行surebet数据过滤
  * @param content
  */
-async function processSurebetCheck(content: string) {
+async function processSurebetCheck(content: string, allowRockball: boolean, next: string) {
     //解析来自surebet的数据列表
     let records = JSON.parse(content) as Surebet.OddsRecord[]
 
@@ -308,6 +308,7 @@ async function processSurebetCheck(content: string) {
         //滚球队列检查
         //尝试构建滚球盘口
         if (
+            allowRockball &&
             settings.rockball_config &&
             Array.isArray(settings.rockball_config) &&
             settings.rockball_config.length > 0
@@ -355,7 +356,7 @@ async function processSurebetCheck(content: string) {
         nextDataList.push(
             JSON.stringify({
                 crown_match_id: output.crown_match_id,
-                next: CONFIG.queues['ready_check_after'],
+                next,
                 extra: output,
             }),
         )
@@ -372,7 +373,22 @@ async function processSurebetCheck(content: string) {
  */
 export async function startSurebetCheck() {
     while (true) {
-        const [promise] = consume(CONFIG.queues['surebet_check'], processSurebetCheck)
+        const [promise] = consume(CONFIG.queues['surebet_check'], (content) =>
+            processSurebetCheck(content, true, CONFIG.queues['ready_check_after']),
+        )
+        await promise
+        await close()
+    }
+}
+
+/**
+ * 开启surebet2检查
+ */
+export async function startSurebet2Check() {
+    while (true) {
+        const [promise] = consume(CONFIG.queues['surebet2_check'], (content) =>
+            processSurebetCheck(content, false, CONFIG.queues['ready_check_after2']),
+        )
         await promise
         await close()
     }
@@ -380,4 +396,5 @@ export async function startSurebetCheck() {
 
 if (require.main === module) {
     startSurebetCheck()
+    startSurebet2Check()
 }

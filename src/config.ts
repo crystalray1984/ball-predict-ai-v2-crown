@@ -68,6 +68,10 @@ export interface AppConfig {
      */
     surebet: SurebetConfig
     /**
+     * 第二surebet采集配置
+     */
+    surebet2: SurebetConfig
+    /**
      * 队列名称
      */
     queues: Record<string, string>
@@ -133,6 +137,7 @@ export interface LuffaConfig {
     notification_channel2: LuffaNotificationConfig[]
     surebet_v2_to_v3: LuffaNotificationConfig[]
     rockball: LuffaNotificationConfig[]
+    mansion: LuffaNotificationConfig[]
 }
 
 /**

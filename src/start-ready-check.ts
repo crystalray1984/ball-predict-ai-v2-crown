@@ -1,17 +1,22 @@
-import { getOddIdentification, isNullOrUndefined } from '@/common/helpers'
-import { close, consume } from '@/common/rabbitmq'
+import {
+    getOddIdentification,
+    getPromotedOddInfo,
+    getWeekDay,
+    isNullOrUndefined,
+} from '@/common/helpers'
+import { close, consume, publish } from '@/common/rabbitmq'
 import { getSetting } from '@/common/settings'
 import { findMatchedOdd } from '@/crown'
-import { Match, Odd, VMatch } from '@/db'
+import { Match, Odd, OddMansion, PromotedOddMansion, VMatch } from '@/db'
 import Decimal from 'decimal.js'
-import { literal, UniqueConstraintError } from 'sequelize'
+import { literal, Op, UniqueConstraintError } from 'sequelize'
 import { CONFIG } from './config'
 
 /**
  * 处理首次数据比对
  * @param content
  */
-async function processReadyCheck(content: string) {
+async function processReadyCheck(content: string, isMansion: boolean) {
     const { extra, data } = JSON.parse(content) as CrownRobot.Output<Surebet.Output>
 
     //缺少surebet原始数据就出去了
@@ -30,6 +35,19 @@ async function processReadyCheck(content: string) {
         ecid: extra.crown_match_id,
     })
 
+    //读取一下比赛数据，如果比赛状态不对那么也不要了
+    const match = await VMatch.findOne({
+        where: {
+            id: match_id,
+        },
+        attributes: ['id', 'status', 'tournament_is_open'],
+    })
+    if (!match) return
+    //比赛状态不对的去掉
+    if (match.status !== '') return
+    //联赛被过滤掉的也去掉
+    if (!match.tournament_is_open) return
+
     //寻找与当前盘口相同的皇冠盘口
     const exists = findMatchedOdd(extra.type, data.odds).find((t) =>
         Decimal(extra.type.condition).eq(t.condition),
@@ -38,7 +56,10 @@ async function processReadyCheck(content: string) {
     //没有对应的皇冠盘口也出去了
     if (!exists) return
 
-    let odd = await Odd.findOne({
+    const MainModel = isMansion ? OddMansion : Odd
+    const CompareModel = isMansion ? Odd : OddMansion
+
+    let odd = await MainModel.findOne({
         where: {
             crown_match_id: extra.crown_match_id,
             variety: extra.type.variety,
@@ -67,7 +88,7 @@ async function processReadyCheck(content: string) {
     //开始写入数据
     if (odd) {
         //原始盘口已存在
-        await Odd.update(
+        await MainModel.update(
             {
                 surebet_value: extra.surebet_value,
                 crown_value: exists.value,
@@ -84,24 +105,9 @@ async function processReadyCheck(content: string) {
         )
     } else {
         //原始盘口不存在
-        //读取一下比赛数据，如果比赛状态不对那么也不要了
-        const match = await VMatch.findOne({
-            where: {
-                id: match_id,
-            },
-            attributes: ['id', 'status', 'tournament_is_open'],
-        })
-
-        if (match) {
-            //比赛状态不对的去掉
-            if (match.status !== '') return
-            //联赛被过滤掉的也去掉
-            if (!match.tournament_is_open) return
-        }
-
         //先尝试插入
         try {
-            odd = await Odd.create({
+            odd = await MainModel.create({
                 match_id,
                 crown_match_id: extra.crown_match_id,
                 variety: extra.type.variety,
@@ -117,7 +123,7 @@ async function processReadyCheck(content: string) {
         } catch (err) {
             if (err instanceof UniqueConstraintError) {
                 //唯一索引冲突错误，再尝试修改
-                await Odd.update(
+                await MainModel.update(
                     {
                         surebet_value: extra.surebet_value,
                         crown_value: exists.condition,
@@ -137,7 +143,7 @@ async function processReadyCheck(content: string) {
                     },
                 )
 
-                odd = await Odd.findOne({
+                odd = await MainModel.findOne({
                     where: {
                         crown_match_id: extra.crown_match_id,
                         variety: extra.type.variety,
@@ -156,6 +162,94 @@ async function processReadyCheck(content: string) {
             }
         }
     }
+
+    //进行双surebet判断
+    if (odd.status === 'ready') {
+        const otherOdd = await CompareModel.findOne({
+            where: {
+                match_id: odd.match_id,
+                variety: odd.variety,
+                period: odd.period,
+                condition: odd.condition,
+                type: odd.type,
+                status: 'ready',
+            },
+        })
+        if (otherOdd) {
+            if (isMansion) {
+                await createMansionPromoted(otherOdd, odd)
+            } else {
+                await createMansionPromoted(odd, otherOdd)
+            }
+        }
+    }
+}
+
+async function createMansionPromoted(odd: Odd, mansion: OddMansion) {
+    let is_valid = 1,
+        skip = ''
+
+    //先检查同类推荐是否已存在
+    const exists = await PromotedOddMansion.findOne({
+        where: {
+            match_id: mansion.match_id,
+            variety: mansion.variety,
+            period: mansion.period,
+            odd_type: mansion.odd_type,
+        },
+        attributes: ['id'],
+    })
+    if (exists) {
+        is_valid = 0
+        skip = 'same_type'
+    }
+
+    //根据mansion的信息创建反推
+    const { condition, type } = getPromotedOddInfo(mansion, 1)
+
+    const week_day = getWeekDay()
+
+    //插入推荐数据
+    const promoted = await PromotedOddMansion.create({
+        match_id: mansion.match_id,
+        is_valid,
+        week_day,
+        skip,
+        variety: mansion.variety,
+        period: mansion.period,
+        type,
+        condition,
+        back: 1,
+        value:
+            odd.updated_at.valueOf() > mansion.updated_at.valueOf()
+                ? odd.surebet_value
+                : mansion.surebet_value,
+        odd_type: getOddIdentification(mansion.type),
+        odd_id: odd.id,
+        odd_mansion_id: mansion.id,
+    })
+
+    if (is_valid) {
+        //抛出推荐
+        //设置周标记
+        const weekLast = await PromotedOddMansion.findOne({
+            where: {
+                week_day,
+                is_valid: 1,
+                id: {
+                    [Op.lt]: promoted.id,
+                },
+            },
+            order: [['id', 'desc']],
+            attributes: ['id', 'week_id'],
+        })
+        promoted.week_id = weekLast ? weekLast.week_id + 1 : 1
+        await promoted.save()
+        await publish(
+            CONFIG.queues['send_promoted'],
+            JSON.stringify({ id: promoted.id, type: 'promoted_odd_mansion' }),
+        )
+    }
 }
 
 /**
@@ -163,7 +257,22 @@ async function processReadyCheck(content: string) {
  */
 export async function startReadyCheck() {
     while (true) {
-        const [promise] = consume(CONFIG.queues['ready_check_after'], processReadyCheck)
+        const [promise] = consume(CONFIG.queues['ready_check_after'], (content) =>
+            processReadyCheck(content, false),
+        )
+        await promise
+        await close()
+    }
+}
+
+/**
+ * 开启监听消息队列，处理抓取完皇冠盘口的数据
+ */
+export async function startReadyCheck2() {
+    while (true) {
+        const [promise] = consume(CONFIG.queues['ready_check_after2'], (content) =>
+            processReadyCheck(content, true),
+        )
         await promise
         await close()
     }

@@ -1,6 +1,12 @@
 import { getNumberWithSymbol, isEmpty } from '@/common/helpers'
 import { close, consume, publish } from '@/common/rabbitmq'
-import { VLabelPromoted, VPromotedOdd, VRockballPromoted, VSurebetV2Promoted } from '@/db'
+import {
+    VLabelPromoted,
+    VPromotedOdd,
+    VPromotedOddMansion,
+    VRockballPromoted,
+    VSurebetV2Promoted,
+} from '@/db'
 import dayjs from 'dayjs'
 import Decimal from 'decimal.js'
 import { getLabelInfo } from './common/label'
@@ -159,6 +165,35 @@ async function processSendPromoted(content: string) {
 
         //构建队列数据
         const queueData = channel2.map(({ uid, type }) =>
+            JSON.stringify({
+                uid,
+                is_group: type === 1,
+                msg_type: 1,
+                msg: { text },
+            }),
+        )
+
+        await publish('send_luffa_message', queueData)
+    } else if (type === 'promoted_odd_mansion') {
+        //双surebet匹配推荐
+        //查询推荐盘口信息
+        const promoted = await VPromotedOddMansion.findOne({
+            where: {
+                id,
+            },
+        })
+
+        if (!promoted) return
+
+        //构建抛入到下一个队列的数据
+        const text = createPromotionMessage(promoted)
+
+        const channel = CONFIG.luffa.mansion
+
+        if (!Array.isArray(channel) || channel.length === 0) return
+
+        //构建队列数据
+        const queueData = channel.map(({ uid, type }) =>
             JSON.stringify({
                 uid,
                 is_group: type === 1,

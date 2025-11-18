@@ -9,7 +9,9 @@ import { ManualPromoteOdd } from './models/ManualPromoteOdd'
 import { Match } from './models/Match'
 import { NotificationLog } from './models/NotificationLog'
 import { Odd } from './models/Odd'
+import { OddMansion } from './models/OddMansion'
 import { PromotedOdd } from './models/PromotedOdd'
+import { PromotedOddMansion } from './models/PromotedOddMansion'
 import { RockballOdd } from './models/RockballOdd'
 import { RockballPromoted } from './models/RockballPromoted'
 import { Setting } from './models/Setting'
@@ -24,6 +26,7 @@ import { VLabelPromoted } from './models/VLabelPromoted'
 import { VLuffaUser } from './models/VLuffaUser'
 import { VMatch } from './models/VMatch'
 import { VPromotedOdd } from './models/VPromotedOdd'
+import { VPromotedOddMansion } from './models/VPromotedOddMansion'
 import { VRockballPromoted } from './models/VRockballPromoted'
 import { VSurebetV2Promoted } from './models/VSurebetV2Promoted'
 
@@ -65,6 +68,9 @@ export const db = new Sequelize(
                 RockballOdd,
                 RockballPromoted,
                 VRockballPromoted,
+                OddMansion,
+                PromotedOddMansion,
+                VPromotedOddMansion,
             ],
         },
     ),
@@ -78,7 +84,9 @@ export { ManualPromoteOdd } from './models/ManualPromoteOdd'
 export { Match } from './models/Match'
 export { NotificationLog } from './models/NotificationLog'
 export { Odd } from './models/Odd'
+export { OddMansion } from './models/OddMansion'
 export { PromotedOdd } from './models/PromotedOdd'
+export { PromotedOddMansion } from './models/PromotedOddMansion'
 export { RockballOdd } from './models/RockballOdd'
 export { RockballPromoted } from './models/RockballPromoted'
 export { Setting } from './models/Setting'
@@ -93,5 +101,6 @@ export { VLabelPromoted } from './models/VLabelPromoted'
 export { VLuffaUser } from './models/VLuffaUser'
 export { VMatch } from './models/VMatch'
 export { VPromotedOdd } from './models/VPromotedOdd'
+export { VPromotedOddMansion } from './models/VPromotedOddMansion'
 export { VRockballPromoted } from './models/VRockballPromoted'
 export { VSurebetV2Promoted } from './models/VSurebetV2Promoted'

@@ -8,6 +8,7 @@ crown_url: 'https://mos011.com'
 queues:
   surebet_check: 'v3:surebet_check'
   ready_check_after: 'v3:ready_check_after'
+  ready_check_after2: 'v3:ready_check_after2'
   final_check: 'v3:final_check'
   crown_matches_data: 'v3:crown_matches_data'
   send_promoted: 'v3:send_promoted'
@@ -23,6 +24,12 @@ surebet:
   next_queues:
     - 'surebet_check'
     - 'v3:surebet_check'
+surebet2:
+  #surebet接口调用凭证
+  token: ''
+  #获取到数据后需要抛到的下一个队列
+  next_queues:
+    - 'v3:surebet2_check'
 
 #采集到皇冠比赛数据后要抛到的队列
 crown_matches_data_queues:
@@ -78,5 +85,9 @@ luffa:
       uid: ''
   #滚球推荐队列
   rockball:
+    - type: 1
+      uid: ''
+  #mansion对比推荐
+  mansion:
     - type: 1
       uid: ''
