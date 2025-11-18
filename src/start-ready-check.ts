@@ -280,4 +280,5 @@ export async function startReadyCheck2() {
 
 if (require.main === module) {
     startReadyCheck()
+    startReadyCheck2()
 }
