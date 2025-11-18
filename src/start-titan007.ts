@@ -3,6 +3,7 @@ import {
     db,
     Match,
     PromotedOdd,
+    PromotedOddMansion,
     RockballPromoted,
     SurebetV2Promoted,
     Team,
@@ -247,6 +248,21 @@ async function processFinalMatch(match: VMatch, period: Period): Promise<void> {
     })
 
     for (const odd of rockballPromotes) {
+        const result = getOddResult(odd, matchScore)
+        if (!result) continue
+        odd.result = result.result
+        odd.score = result.score
+        odd.score1 = result.score1
+        odd.score2 = result.score2
+
+        await odd.save()
+    }
+
+    const mansionPromotes = await PromotedOddMansion.findAll({
+        where,
+    })
+
+    for (const odd of mansionPromotes) {
         const result = getOddResult(odd, matchScore)
         if (!result) continue
         odd.result = result.result

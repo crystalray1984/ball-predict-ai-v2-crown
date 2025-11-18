@@ -92,6 +92,12 @@ export class PromotedOddMansion extends Model<
     @Column(DataType.STRING)
     declare score: CreationOptional<string | null>
 
+    @Column(DataType.INTEGER)
+    declare score1: CreationOptional<number | null>
+
+    @Column(DataType.INTEGER)
+    declare score2: CreationOptional<number | null>
+
     @CreatedAt
     @Column(DataType.DATE)
     declare created_at: CreationOptional<Date>
