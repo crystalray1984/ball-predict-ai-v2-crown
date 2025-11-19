@@ -370,7 +370,7 @@ async function processSurebetCheck(content: string, allowRockball: boolean, next
 
         if (match) {
             //比赛状态不对的去掉
-            if (match.status !== '' || match.tournament_is_open) {
+            if (match.status !== '' || !match.tournament_is_open) {
                 fails.match++
                 continue
             }
