@@ -44,7 +44,7 @@ async function getOdds(options: GetOddsOptions) {
  */
 export async function getAllOdds(options: GetOddsOptions) {
     //创建一个限制请求频率的限制器
-    const limiter = new RateLimiter(500)
+    const limiter = new RateLimiter(3000)
 
     let cursor: string | undefined = undefined
 
