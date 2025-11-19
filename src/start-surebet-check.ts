@@ -264,6 +264,9 @@ async function processSurebetCheck(content: string, allowRockball: boolean, next
             pass = true
         }
 
+        //角球过滤
+        if (odd.type.variety === 'corner') continue
+
         //赔率大于指定的值
         const surebet_value = Decimal(odd.value)
 
