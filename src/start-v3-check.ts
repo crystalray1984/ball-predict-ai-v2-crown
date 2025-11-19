@@ -77,6 +77,7 @@ async function processFinalMatches() {
             match,
             await CrownOdd.findAll({
                 where: {
+                    match_id: match.id,
                     period: 'regularTime',
                     variety: 'goal',
                     type: 'ah',
@@ -88,6 +89,7 @@ async function processFinalMatches() {
             match,
             await CrownOdd.findAll({
                 where: {
+                    match_id: match.id,
                     period: 'regularTime',
                     variety: 'goal',
                     type: 'sum',
