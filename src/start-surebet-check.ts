@@ -150,12 +150,16 @@ async function processSurebetCheck(content: string, allowRockball: boolean, next
         min_value: 0,
         max_value: 0,
         match: 0,
+        profit: 0,
+        exists: 0,
+        game: 0,
     }
     for (const record of records) {
         //收益率筛选
         const profit = Decimal(record.profit)
         if (profit.lt(minProfit) || profit.gt(maxProfit)) {
             // console.log('收益率不满足', record.profit)
+            fails.profit++
             continue
         }
 
@@ -292,6 +296,7 @@ async function processSurebetCheck(content: string, allowRockball: boolean, next
             if (!surebet_value.gte(settings.min_surebet_value)) {
                 pass = false
                 fails.min_value++
+                continue
             }
         }
 
@@ -299,10 +304,14 @@ async function processSurebetCheck(content: string, allowRockball: boolean, next
             if (!surebet_value.lte(settings.max_surebet_value)) {
                 pass = false
                 fails.max_value++
+                continue
             }
         }
 
-        if (!pass) continue
+        if (!pass) {
+            fails.game++
+            continue
+        }
 
         //判断比赛，如果比赛存在且状态为已结算那么也跳过
         const match = await VMatch.findOne({
@@ -364,6 +373,7 @@ async function processSurebetCheck(content: string, allowRockball: boolean, next
             await exists.save()
             if (exists.status !== '' && next !== CONFIG.queues['ready_check_after2']) {
                 //状态不为空表示已经经过处理了，那么跳过
+                fails.exists++
                 continue
             }
         }
