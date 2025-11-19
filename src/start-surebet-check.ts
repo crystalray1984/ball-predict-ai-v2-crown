@@ -142,6 +142,15 @@ async function processSurebetCheck(content: string, allowRockball: boolean, next
 
     const nextDataList: string[] = []
 
+    let fails = {
+        no_188: 0,
+        time: 0,
+        base: 0,
+        corner: 0,
+        min_value: 0,
+        max_value: 0,
+        match: 0,
+    }
     for (const record of records) {
         //收益率筛选
         const profit = Decimal(record.profit)
@@ -152,10 +161,14 @@ async function processSurebetCheck(content: string, allowRockball: boolean, next
 
         //只筛选188bet的数据
         const odd = record.prongs.find((t) => t.bk === '188bet')
-        if (!odd) continue
+        if (!odd) {
+            fails.no_188++
+            continue
+        }
 
         //比赛时间筛选
         if (odd.time < Date.now() + startOf || odd.time > Date.now() + endOf) {
+            fails.time++
             continue
         }
 
@@ -186,7 +199,10 @@ async function processSurebetCheck(content: string, allowRockball: boolean, next
             console.error(err)
         }
 
-        if (odd.type.game !== 'regular' || odd.type.base !== 'overall') continue
+        if (odd.type.game !== 'regular' || odd.type.base !== 'overall') {
+            fails.base++
+            continue
+        }
 
         //数据过滤，只留下需要的盘口
         let pass = false
@@ -264,7 +280,10 @@ async function processSurebetCheck(content: string, allowRockball: boolean, next
         }
 
         //角球过滤
-        if (odd.type.variety === 'corner') continue
+        if (odd.type.variety === 'corner') {
+            fails.corner++
+            continue
+        }
 
         //赔率大于指定的值
         const surebet_value = Decimal(odd.value)
@@ -272,12 +291,14 @@ async function processSurebetCheck(content: string, allowRockball: boolean, next
         if (!isEmpty(settings.min_surebet_value)) {
             if (!surebet_value.gte(settings.min_surebet_value)) {
                 pass = false
+                fails.min_value++
             }
         }
 
         if (!isEmpty(settings.max_surebet_value)) {
             if (!surebet_value.lte(settings.max_surebet_value)) {
                 pass = false
+                fails.max_value++
             }
         }
 
@@ -341,7 +362,7 @@ async function processSurebetCheck(content: string, allowRockball: boolean, next
             //已经有这个盘口了，那么更新一下surebet的推送时间
             exists.surebet_updated_at = new Date()
             await exists.save()
-            if (exists.status !== '') {
+            if (exists.status !== '' && next !== CONFIG.queues['ready_check_after2']) {
                 //状态不为空表示已经经过处理了，那么跳过
                 continue
             }
@@ -349,9 +370,10 @@ async function processSurebetCheck(content: string, allowRockball: boolean, next
 
         if (match) {
             //比赛状态不对的去掉
-            if (match.status !== '') continue
-            //联赛被过滤掉的也去掉
-            if (!match.tournament_is_open) continue
+            if (match.status !== '' || match.tournament_is_open) {
+                fails.match++
+                continue
+            }
         }
 
         //把盘口抛到消息队列进行第一次比对
