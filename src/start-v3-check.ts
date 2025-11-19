@@ -126,17 +126,22 @@ async function processFinalMatches() {
  * @param match 比赛
  */
 async function processFinalCheck(match: VMatch, crownOdds: CrownOdd[]) {
-    //不足3个直接出去
-    if (crownOdds.length < 3) return
+    //首先对皇冠盘口数据，按盘口进行分组
+    let groups: CrownOdd[][] = []
+    let group: CrownOdd[] = []
+    let lastCondition = ''
+    crownOdds.forEach((odd) => {
+        if (lastCondition === '' || !Decimal(odd.condition).eq(lastCondition)) {
+            lastCondition = odd.condition
+            group = [odd]
+            groups.push(group)
+        } else {
+            group.push(odd)
+        }
+    })
 
     //读取配置
-    const {
-        v3_check_max_duration,
-        v3_check_max_value,
-        v3_check_min_duration,
-        v3_check_min_value,
-        v3_check_min_promote_value,
-    } = await getSetting(
+    const settings = await getSetting(
         'v3_check_max_duration',
         'v3_check_max_value',
         'v3_check_min_duration',
@@ -144,109 +149,126 @@ async function processFinalCheck(match: VMatch, crownOdds: CrownOdd[]) {
         'v3_check_min_promote_value',
     )
 
-    //首先根据盘口的变化，把抓取到的皇冠盘口分组
-    const groups: CrownOdd[][] = []
-    let lastGroup: CrownOdd[] = []
-    let lastCondition: string = ''
-    crownOdds.forEach((odd) => {
-        if (!lastCondition || !Decimal(odd.condition).eq(lastCondition)) {
-            lastCondition = odd.condition
-            lastGroup = [odd]
-            groups.push(lastGroup)
-        } else {
-            lastGroup.push(odd)
-        }
-    })
+    const {
+        v3_check_max_duration,
+        v3_check_max_value,
+        v3_check_min_duration,
+        v3_check_min_value,
+        v3_check_min_promote_value,
+    } = settings
 
-    //把组倒过来，从最后产生的盘口组开始计算
+    //把分组倒过来，从最后的分组开始计算
     groups.reverse()
 
-    //对每个组内的数据进行判断
-    for (const rows of groups) {
-        //如果这个组的数据不足3个，那么跳过
-        if (rows.length < 3) continue
+    //对分组进行过滤，只保留与最终盘相同的盘口（因为最终盘是当前盘口，前面的盘口可能已经买不到了）
+    groups = groups.filter((group) => Decimal(group[0].condition).eq(groups[0][0].condition))
+
+    //对每个分组进行处理
+    for (const group of groups) {
+        // console.log('盘口', group[0].condition)
+        group.forEach((odd) => console.log(odd.created_at, odd.value1, odd.value2))
+
+        //如果这个分组的盘口数不足3个，那么跳过
+        if (group.length < 2) continue
 
         let current = 1
-        let lastDirection = '' as unknown as 'value1' | 'value2'
-        let stackRows: CrownOdd[] = [rows[0]]
+        let lastDirection = '' as '' | 'value1' | 'value2'
+        let stackRows: CrownOdd[] = [group[0]]
         let result: 'value1' | 'value2' | undefined = undefined
         let resultRow: CrownOdd | undefined = undefined
 
-        while (current < rows.length) {
-            const currentRow = rows[current]
+        while (current < group.length) {
+            const currentRow = group[current]
 
-            //stackRows的首行与currentRow的时间间隔不能超过v3_check_max_duration分钟，如果超过了就要从stackRows头部进行排除
+            //如果当前行与堆栈首行之间的时间差距超过了配置的限定值，那么从堆栈中把首行去掉，一直到满足条件为止
             while (stackRows.length > 0) {
-                if (
-                    currentRow.created_at.valueOf() - stackRows[0].created_at.valueOf() >
-                    v3_check_max_duration * 6000
-                ) {
+                const duration = currentRow.created_at.valueOf() - stackRows[0].created_at.valueOf()
+                if (duration <= v3_check_max_duration * 60000) {
                     break
                 }
                 stackRows.shift()
             }
+
+            //如果堆栈中已经没有数据了，那么说明当前行之前的所有数据，都不满足时间跨度条件，直接把当前行作为新的堆栈数据，重新进入循环
             if (stackRows.length === 0) {
-                //堆栈池里没数据了，把当前行重新作为堆栈池的首个数据，从后面的行开始计算
-                console.log('堆栈池缺少数据')
                 stackRows = [currentRow]
                 current++
+                lastDirection = ''
                 continue
             }
 
             let fromRow = stackRows[0]
             let lastRow = stackRows[stackRows.length - 1]
 
-            //与上一条记录对比，判断是上盘降水还是下盘降水
-            const direction = Decimal(currentRow.value1).lt(lastRow.value1) ? 'value1' : 'value2'
+            //判断当前的新行，与堆栈中最后一行的水位，是哪一边在下降
+            const direction = (() => {
+                if (Decimal(currentRow.value1).lt(lastRow.value1)) {
+                    return 'value1'
+                } else {
+                    return 'value2'
+                }
+            })()
 
-            if (lastDirection !== direction) {
-                //之前有判断出方向，但是这次的方向与之前的不同，那就表示水位发生了波动
-                //那么把最近的2次记录作为堆栈数据继续进行后续判断
-                stackRows = [lastRow]
-                fromRow = lastRow
+            if (lastDirection === '') {
+                //之前没有方向数据
                 lastDirection = direction
             }
 
-            //先进行异常波动的判断，寻找满足异常时间段内的最早的记录
+            if (lastDirection !== direction) {
+                //本次下降水位的一边，与之前下降的边不同，表示水位产生了波动
+                //那么之前的堆栈数据全都不要了，以最后的行作为堆栈数据
+                //再继续进行后续判断
+                stackRows = [lastRow]
+                lastDirection = direction
+                fromRow = lastRow
+            }
+
+            //异常判断，水位如果下降超过限定值，那么表示这一段是异常数据
+            //那么之前的堆栈数据全部不要了，以当前行作为堆栈数据，继续循环
             const minCheckFirstRow = stackRows.find(
                 (t) =>
-                    t.created_at.valueOf() >=
-                    currentRow.created_at.valueOf() - v3_check_min_duration * 60000,
+                    currentRow.created_at.valueOf() - t.created_at.valueOf() <=
+                    v3_check_min_duration * 60000,
             )
-            //如果异常时间段内有记录，且水位下降超过限定值
             if (
                 minCheckFirstRow &&
                 Decimal(minCheckFirstRow[direction])
                     .sub(currentRow[direction])
                     .gte(v3_check_min_value)
             ) {
-                //把当前行作为最新的堆栈数据，跳过后续判断
+                //数据异常了
                 stackRows = [currentRow]
                 current++
                 continue
             }
 
-            //然后进行最大时段判断，因为查询出来的数据都是已经满足最大时段的数据，所以只需要判断水位下降得够不够就行了
+            stackRows.push(currentRow)
+
+            // console.log('stackRows', direction)
+            // stackRows.forEach((row) => console.log(row.created_at, row[direction]))
+
+            //判断水位下降得是否足够，并且水位是否达到最小限定值
             if (
                 !Decimal(fromRow[direction]).sub(currentRow[direction]).gte(v3_check_max_value) ||
-                Decimal(currentRow[direction]).lt(v3_check_min_promote_value)
+                !Decimal(currentRow[direction]).gte(v3_check_min_promote_value)
             ) {
-                //水位下降不足，或者水位低于最低推荐水位，把当前行压入堆栈，继续进行循环判断
-                stackRows.push(currentRow)
+                //水位下降得不够，或者水位已经低于限定值了，那么继续走后续循环
                 current++
                 continue
             }
 
-            //到这里就是水位下降够了，那么记录推荐信息，后面也不用循环了，直接出去了
+            //到这里就是水位下降得足够，而且水位也已经达到最低要求，也就是可以推荐了
             result = direction
             resultRow = currentRow
             break
         }
 
-        if (!result || !resultRow) {
-            //水位下降条件未达到，什么都不做，继续判断下一个组
-            continue
-        }
+        //如果result和resultRow还没有值，那么表示当前分组不满足推荐条件，那么继续判断后续的分组
+        if (!result || !resultRow) continue
+
+        //到这里就是满足了条件的组
+        console.log('满足推荐', resultRow.created_at, resultRow.condition, resultRow[result])
+        stackRows.forEach((row) => console.log(row.created_at, row[result]))
 
         //各种判断都满足了
         //先把最终计算获得的surebet盘口，标记为已使用
@@ -273,7 +295,7 @@ async function processFinalCheck(match: VMatch, crownOdds: CrownOdd[]) {
             },
             attributes: ['id'],
         })
-        if (promotedExists) break
+        if (promotedExists) return
 
         //开始创建推荐
         if (!match.tournament_is_open) return
@@ -356,7 +378,6 @@ async function processFinalCheck(match: VMatch, crownOdds: CrownOdd[]) {
             await createV2ToV3Promote(surebetOdd, promoted, match.tournament_label_id)
         }
 
-        //这个组已经判断完了，不需要判断后续的组了，直接出去了
         return
     }
 }
@@ -451,7 +472,7 @@ async function saveCrownOdd({
      * 保存盘口
      */
     const saveOdd = async (oddInfo: Crown.OddInfo, period: Period, type: OddIdentification) => {
-        const lastOne = await CrownOdd.findOne({
+        const lastRows = await CrownOdd.findAll({
             where: {
                 match_id,
                 variety: oddInfo.variety,
@@ -459,16 +480,20 @@ async function saveCrownOdd({
                 type,
             },
             order: [['id', 'desc']],
+            limit: 2,
         })
 
-        //如果有数据，且这个数据的盘口水位完全相等，那么什么都不做，直接返回
-        if (lastOne) {
+        if (lastRows.length === 2) {
+            //如果获取到之前的数据有2条，那么确定一下本次数据是否与前两次数据都相同，如果相同，那就删掉之前的最后一条
             if (
-                Decimal(oddInfo.condition).eq(lastOne.condition) &&
-                Decimal(oddInfo.value_h).eq(lastOne.value1) &&
-                Decimal(oddInfo.value_c).eq(lastOne.value2)
+                Decimal(oddInfo.condition).eq(lastRows[0].condition) &&
+                Decimal(oddInfo.value_h).eq(lastRows[0].value1) &&
+                Decimal(oddInfo.value_c).eq(lastRows[0].value2) &&
+                Decimal(oddInfo.condition).eq(lastRows[1].condition) &&
+                Decimal(oddInfo.value_h).eq(lastRows[1].value1) &&
+                Decimal(oddInfo.value_c).eq(lastRows[1].value2)
             ) {
-                return
+                await lastRows[1].destroy()
             }
         }
 
