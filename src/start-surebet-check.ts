@@ -118,6 +118,8 @@ async function processSurebetCheck(content: string, allowRockball: boolean, next
     //解析来自surebet的数据列表
     let records = JSON.parse(content) as Surebet.OddsRecord[]
 
+    console.log('收到数据', next, records.length)
+
     //读取配置
     const settings = await getSetting(
         'surebet_max_profit',
