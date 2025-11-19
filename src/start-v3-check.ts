@@ -30,10 +30,9 @@ async function processFinalMatches() {
         {
             query: `
         SELECT
-            id,
-            crown_match_id
+            *
         FROM
-            match
+            v_match
         WHERE
             match_time <= ?
             AND status = ?
