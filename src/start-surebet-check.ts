@@ -390,6 +390,8 @@ async function processSurebetCheck(content: string, allowRockball: boolean, next
     if (nextDataList.length > 0) {
         await publish('crown_odd', nextDataList)
     }
+
+    console.log(next, fails, `success=` + nextDataList.length)
 }
 
 /**
