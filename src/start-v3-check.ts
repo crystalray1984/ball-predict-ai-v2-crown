@@ -126,6 +126,8 @@ async function processFinalMatches() {
  * @param match 比赛
  */
 async function processFinalCheck(match: VMatch, crownOdds: CrownOdd[]) {
+    if (crownOdds.length === 0) return
+
     //首先对皇冠盘口数据，按盘口进行分组
     let groups: CrownOdd[][] = []
     let group: CrownOdd[] = []
@@ -160,8 +162,13 @@ async function processFinalCheck(match: VMatch, crownOdds: CrownOdd[]) {
     //把分组倒过来，从最后的分组开始计算
     groups.reverse()
 
-    //对分组进行过滤，只保留与最终盘相同的盘口（因为最终盘是当前盘口，前面的盘口可能已经买不到了）
-    groups = groups.filter((group) => Decimal(group[0].condition).eq(groups[0][0].condition))
+    //对分组进行过滤，只保留与最终盘相同方向的盘口
+    if (crownOdds[0].type === 'ah') {
+        const lastGroupType = Decimal(groups[0][0].condition).comparedTo(0)
+        groups = groups.filter(
+            (group) => Decimal(group[0].condition).comparedTo(0) === lastGroupType,
+        )
+    }
 
     //对每个分组进行处理
     for (const group of groups) {
