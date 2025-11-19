@@ -154,9 +154,6 @@ async function processSurebetCheck(content: string, allowRockball: boolean, next
 
         //比赛时间筛选
         if (odd.time < Date.now() + startOf || odd.time > Date.now() + endOf) {
-            console.log({ startOf, endOf })
-            console.log({ startTime: Date.now() + startOf, endTime: Date.now() + endOf })
-            console.log('时间不满足', dayjs(odd.time).format('YYYY-MM-DD HH:mm'))
             continue
         }
 
@@ -363,7 +360,7 @@ async function processSurebetCheck(content: string, allowRockball: boolean, next
                 extra: output,
             }),
         )
-        console.log('抛到消息队列进行第一次比对', output.crown_match_id)
+        console.log('抛到消息队列进行第一次比对', output.crown_match_id, next)
     }
 
     if (nextDataList.length > 0) {
