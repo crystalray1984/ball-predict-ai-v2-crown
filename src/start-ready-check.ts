@@ -77,7 +77,6 @@ async function processReadyCheck(content: string, isMansion: boolean) {
     let status: OddStatus = 'ready'
 
     //数据比对
-
     if (!isNullOrUndefined(ready_condition)) {
         //判断水位是否满足配置的要求
         if (!Decimal(exists.value).sub(extra.surebet_value).gte(ready_condition)) {
@@ -176,16 +175,32 @@ async function processReadyCheck(content: string, isMansion: boolean) {
             },
         })
         if (otherOdd) {
+            //寻找反向盘口
+            const backOdd = {
+                ...getPromotedOddInfo(extra.type, 1),
+                variety: extra.type.variety,
+                period: extra.type.period,
+            }
+            const backMatched = findMatchedOdd(backOdd, data.odds).find((t) =>
+                Decimal(extra.type.condition).eq(t.condition),
+            )
+
             if (isMansion) {
-                await createMansionPromoted(otherOdd, odd)
+                await createMansionPromoted(otherOdd, odd, backMatched?.value ?? exists.value)
             } else {
-                await createMansionPromoted(odd, otherOdd)
+                await createMansionPromoted(odd, otherOdd, backMatched?.value ?? exists.value)
             }
         }
     }
 }
 
-async function createMansionPromoted(odd: Odd, mansion: OddMansion) {
+/**
+ * 创建mansion推荐
+ * @param odd 365对冲盘口
+ * @param mansion mansion对冲盘口
+ * @param value2 反向的水位
+ */
+async function createMansionPromoted(odd: Odd, mansion: OddMansion, value2: string) {
     let is_valid = 1,
         skip = ''
 
@@ -220,10 +235,7 @@ async function createMansionPromoted(odd: Odd, mansion: OddMansion) {
         type,
         condition,
         back: 1,
-        value:
-            odd.updated_at.valueOf() > mansion.updated_at.valueOf()
-                ? odd.surebet_value
-                : mansion.surebet_value,
+        value: value2,
         odd_type: getOddIdentification(mansion.type),
         odd_id: odd.id,
         odd_mansion_id: mansion.id,
