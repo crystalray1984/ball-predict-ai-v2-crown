@@ -729,7 +729,7 @@ async function createV2ToV3Promote(
 }
 
 if (require.main === module) {
-    runLoop(60000, startV3Check)
+    runLoop(180000, startV3Check)
     startV3CheckProcessor()
     startSurebetV2ToV3Check()
     runLoop(30000, processFinalMatches)
