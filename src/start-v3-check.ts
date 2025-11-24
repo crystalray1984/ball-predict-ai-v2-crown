@@ -8,12 +8,98 @@ import {
     CrownOdd,
     db,
     LabelPromoted,
+    ManualPromoteOdd,
     Match,
     PromotedOdd,
     SurebetV2Odd,
     SurebetV2Promoted,
     VMatch,
 } from './db'
+
+/**
+ * 处理手动推荐的盘口
+ */
+async function processManualPromote(final_check_time: number) {
+    //读取符合条件的手动推荐的盘口
+    const odds = await db.query<
+        {
+            id: number
+            match_id: number
+            condition2: string | null
+            type2: OddInfo['type'] | null
+        } & OddInfo
+    >(
+        {
+            query: `
+            SELECT
+                "manual_promote_odd".*
+            FROM
+                "manual_promote_odd"
+            INNER JOIN
+                "manual_promote_record" ON "manual_promote_odd"."record_id" = "manual_promote_record"."id"
+            INNER JOIN
+                "match" ON "match"."id" = "manual_promote_odd"."match_id"
+            WHERE
+                "manual_promote_odd"."deleted_at" IS NULL
+                AND "manual_promote_record"."deleted_at" IS NULL
+                AND "manual_promote_odd"."promoted_odd_id" = 0
+                AND "match"."match_time" BETWEEN ? AND ?`,
+            values: [
+                new Date(Date.now() + final_check_time * 60000),
+                new Date(Date.now() + (final_check_time + 2) * 60000),
+            ],
+        },
+        {
+            type: QueryTypes.SELECT,
+        },
+    )
+
+    if (odds.length === 0) {
+        return
+    }
+
+    //插入盘口
+    for (const odd of odds) {
+        await db.transaction(async (transaction) => {
+            const promoted = await PromotedOdd.create(
+                {
+                    match_id: odd.match_id,
+                    source: 'manual',
+                    source_id: odd.id,
+                    is_valid: 1,
+                    skip: '',
+                    variety: odd.variety,
+                    period: odd.period,
+                    condition: odd.condition,
+                    type: odd.type,
+                    back: 0,
+                    type2: odd.type2,
+                    condition2: odd.condition2,
+                    odd_type: getOddIdentification(odd.type),
+                },
+                {
+                    transaction,
+                    returning: ['id'],
+                },
+            )
+
+            await ManualPromoteOdd.update(
+                {
+                    promoted_odd_id: promoted.id,
+                },
+                {
+                    where: {
+                        id: odd.id,
+                    },
+                    transaction,
+                    returning: false,
+                },
+            )
+
+            await publish(CONFIG.queues['send_promoted'], JSON.stringify({ id: promoted.id }))
+        })
+    }
+}
 
 /**
  * 处理赛事的最终结算
@@ -24,6 +110,9 @@ async function processFinalMatches() {
         const final_check_time = await getSetting('final_check_time')
         return typeof final_check_time === 'number' ? final_check_time : 20
     })()
+
+    //处理手动推荐
+    processManualPromote(final_check_time)
 
     //先查询需要处理的比赛
     const matches = await db.query(
