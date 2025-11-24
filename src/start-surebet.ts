@@ -21,6 +21,7 @@ export async function startSurebet() {
     })
 
     //抛到后续的队列中
+    console.log('origin', records.length)
     const data = JSON.stringify(records)
     for (const queue of CONFIG.surebet.next_queues) {
         await publish(queue, data)
