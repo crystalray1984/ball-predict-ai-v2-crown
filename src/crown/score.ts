@@ -116,7 +116,7 @@ export function getCrownScore(date: string): Promise<Crown.ScoreInfo[]> {
 
             result.push({
                 league_id: id.split('_')[0],
-                match_time: match_dayjs.unix(),
+                match_time: match_dayjs.valueOf(),
                 team1,
                 team2,
                 score1,
