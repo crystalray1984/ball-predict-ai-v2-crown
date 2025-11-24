@@ -1,4 +1,4 @@
-import { close, consume } from '@/common/rabbitmq'
+import { consume } from '@/common/rabbitmq'
 import { CONFIG } from '@/config'
 import { db, Match, PromotedOdd } from '@/db'
 import { QueryTypes } from 'sequelize'
