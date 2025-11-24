@@ -90,11 +90,7 @@ export function getCrownScore(date: string): Promise<Crown.ScoreInfo[]> {
                 continue
             }
 
-            let match_dayjs = dayjs.tz(
-                `${date} ${timeMatch[1]}`,
-                'YYYY-MM-DD HH:mm',
-                'America/Los_Angeles',
-            )
+            let match_dayjs = dayjs.tz(`${date} ${timeMatch[1]}`, 'YYYY-MM-DD HH:mm', '-04:00')
             if (timeMatch[2] === 'p') {
                 match_dayjs = match_dayjs.add(12, 'hour')
             }
