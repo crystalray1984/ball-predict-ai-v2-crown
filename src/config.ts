@@ -71,11 +71,14 @@ export interface AppConfig {
      * 队列名称
      */
     queues: Record<string, string>
-
     /**
      * 采集到皇冠比赛数据后要抛到的队列
      */
     crown_matches_data_queues: string[]
+    /**
+     * 采集到皇冠赛果数据后要抛到的队列
+     */
+    crown_score_data_queues: string[]
     /**
      * 机器id
      */

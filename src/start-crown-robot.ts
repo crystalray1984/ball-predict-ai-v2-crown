@@ -1,5 +1,14 @@
 import * as rabbitmq from '@/common/rabbitmq'
-import { getCrownData, init, reset, setActiveInterval } from '@/crown'
+import {
+    getCrownData,
+    getCrownMatches,
+    getCrownScore,
+    init,
+    reset,
+    setActiveInterval,
+} from '@/crown'
+import dayjs from 'dayjs'
+import { CONFIG } from './config'
 
 /**
  * 处理从消费队列中来的皇冠盘口抓取请求
@@ -22,43 +31,108 @@ export async function processCrownRequest(content: string) {
 }
 
 /**
+ * 开启执行比赛列表抓取
+ */
+async function startCrownMatches() {
+    //每半个小时抓取一次
+    const matches = await getCrownMatches()
+
+    console.log('采集到比赛数据', matches.length)
+
+    //把数据抛到队列中
+    const data = JSON.stringify(matches)
+
+    for (const queue of CONFIG.crown_matches_data_queues) {
+        await rabbitmq.publish(queue, data)
+    }
+}
+
+/**
+ * 执行皇冠赛果抓取
+ */
+async function startCrownScore() {
+    if (
+        !Array.isArray(CONFIG.crown_score_data_queues) ||
+        CONFIG.crown_score_data_queues.length === 0
+    )
+        return
+
+    const today = dayjs().startOf('day')
+    const hour = dayjs().hour()
+
+    //读取今天的赛程列表
+    let scores: Crown.ScoreInfo[] = []
+    try {
+        const list = await getCrownScore(today.format('YYYY-MM-DD'))
+        if (list.length > 0) {
+            scores = scores.concat(list)
+        }
+    } catch {}
+
+    if (hour <= 14) {
+        //读取昨天的赛程列表
+        try {
+            const list = await getCrownScore(today.subtract(1, 'day').format('YYYY-MM-DD'))
+            if (list.length > 0) {
+                scores = scores.concat(list)
+            }
+        } catch {}
+    }
+
+    if (scores.length > 0) {
+        //抛到其他队列完成赛果更新
+        const data = JSON.stringify(scores)
+
+        for (const queue of CONFIG.crown_score_data_queues) {
+            await rabbitmq.publish(queue, data)
+        }
+    }
+}
+
+let matchTimer = undefined as any
+let scoreTimer = undefined as any
+
+/**
  * 开启皇冠盘口抓取
  */
 async function startCrownRobot() {
     //设置自动重启皇冠浏览器的时间为1天
     setActiveInterval(86400000)
 
-    try {
-        await init()
-        let isProcessing = false
-        let isRequestClose = false
-        const [promise, close] = rabbitmq.consume('crown_odd', async (content) => {
-            isProcessing = true
-            try {
-                await processCrownRequest(content)
-            } finally {
-                isProcessing = false
-                if (isRequestClose) {
-                    close()
-                }
-            }
-        })
+    while (true) {
+        try {
+            await init()
 
-        //15分钟后自动重启
-        setTimeout(() => {
-            if (isProcessing) {
-                isRequestClose = true
-            } else {
-                close()
+            if (process.env.CROWN_MATCHES) {
+                matchTimer = setInterval(startCrownMatches, 1800000)
             }
-        }, 900000)
-        await promise
-    } finally {
-        await reset()
-        await rabbitmq.close()
+            if (process.env.CROWN_SCORE) {
+                scoreTimer = setInterval(startCrownScore, 60000)
+            }
+
+            let errors = 0
+            const [promise, close] = rabbitmq.consume('crown_odd', async (content) => {
+                try {
+                    await processCrownRequest(content)
+                } catch {
+                    errors++
+                    if (errors > 10) {
+                        //累计失败10次后重启
+                        close()
+                    }
+                }
+            })
+            await promise
+        } finally {
+            clearInterval(matchTimer)
+            clearInterval(scoreTimer)
+
+            await reset()
+            await rabbitmq.close()
+        }
     }
 }
 
 if (require.main === module) {
-    startCrownRobot().then(() => process.exit())
+    startCrownRobot()
 }

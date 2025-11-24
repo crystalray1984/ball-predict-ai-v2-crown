@@ -297,6 +297,17 @@ declare namespace Crown {
         match: MatchInfo
         odds: OddInfo[]
     }
+
+    interface ScoreInfo {
+        league_id: string
+        match_time: number
+        team1: string
+        team2: string
+        score1: number
+        score2: number
+        score1_period1: number
+        score2_period1: number
+    }
 }
 
 declare namespace Titan007 {
