@@ -99,6 +99,9 @@ async function startCrownRobot() {
     //设置自动重启皇冠浏览器的时间为1天
     setActiveInterval(86400000)
 
+    console.log('采集皇冠比赛', process.env.CROWN_MATCHES)
+    console.log('采集皇冠赛果', process.env.CROWN_SCORE)
+
     while (true) {
         try {
             await init()

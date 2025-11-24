@@ -14,6 +14,7 @@ queues:
   send_promoted_channel2: 'send_promoted_channel2'
   #满足v2版surebet参数的盘口，抛到v3进行推荐比对
   surebet_v2_to_v3: 'surebet_v2_to_v3'
+  crown_score_data: 'crown_score_data'
 
 surebet:
   #surebet接口调用凭证
@@ -27,6 +28,11 @@ surebet:
 crown_matches_data_queues:
   - 'crown_matches_data'
   - 'v3:crown_matches_data'
+
+#采集到皇冠赛果数据后要抛到的队列
+crown_score_data_queues:
+  - 'crown_score_data'
+  - 'v3:crown_score_data'
 
 #数据库配置
 db:
