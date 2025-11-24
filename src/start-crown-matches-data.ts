@@ -1,6 +1,8 @@
-import { close, consume } from '@/common/rabbitmq'
+import { consume } from '@/common/rabbitmq'
 import { CONFIG } from '@/config'
-import { Match } from '@/db'
+import { db, Match, VMatch } from '@/db'
+import { QueryTypes } from 'sequelize'
+import { processFinalMatch } from './start-titan007'
 
 /**
  * 解析从队列中得到的皇冠比赛数据
@@ -27,10 +29,89 @@ async function startCrownMatchesData() {
     while (true) {
         const [promise] = consume(CONFIG.queues['crown_matches_data'], parseCrownMatchesData)
         await promise
-        await close()
+    }
+}
+
+async function parseCrownScoreData(content: string) {
+    const list = JSON.parse(content) as Crown.ScoreInfo[]
+
+    for (const score of list) {
+        //查询对应的比赛
+        const matches = await db.query<{ id: number }>(
+            {
+                query: `
+            SELECT
+                "match".id
+            FROM
+                "match"
+            INNER JOIN
+                tournament ON tournament.id = "match".tournament_id
+            INNER JOIN
+                team AS team1 ON team1.id = "match".team1_id
+            INNER JOIN
+                team AS team2 ON team2.id = "match".team2_id
+            WHERE
+                "match".match_time BETWEEN ? AND ?
+                AND "match".has_score = 0
+                AND tournament.crown_tournament_id = ?
+                AND team1.name = ?
+                AND team2.name = ?
+            LIMIT 1
+            `,
+                values: [
+                    new Date(score.match_time - 600000),
+                    new Date(score.match_time + 600000),
+                    score.league_id,
+                    score.team1,
+                    score.team2,
+                ],
+            },
+            {
+                type: QueryTypes.SELECT,
+            },
+        )
+
+        if (matches.length === 0) continue
+        const match = matches[0]
+
+        //写入完场比分数据
+        await Match.update(
+            {
+                score1: score.score1,
+                score2: score.score2,
+                score1_period1: score.score1_period1,
+                score2_period1: score.score2_period1,
+                has_score: 1,
+                has_period1_score: 1,
+            },
+            {
+                where: {
+                    id: match.id,
+                },
+            },
+        )
+
+        const v_match = await VMatch.findOne({
+            where: {
+                id: match.id,
+            },
+        })
+
+        await processFinalMatch(v_match!, 'regularTime')
+    }
+}
+
+/**
+ * 开启皇冠赛果数据写入队列
+ */
+async function startCrownScoreData() {
+    while (true) {
+        const [promise] = consume(CONFIG.queues['crown_score_data'], parseCrownScoreData)
+        await promise
     }
 }
 
 if (require.main === module) {
     startCrownMatchesData()
+    startCrownScoreData()
 }

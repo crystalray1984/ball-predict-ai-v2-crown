@@ -169,7 +169,7 @@ async function processTodayMatch(match: VMatch, todayMatches: Titan007.TodayMatc
  * @param match
  * @param period
  */
-async function processFinalMatch(match: VMatch, period: Period): Promise<void> {
+export async function processFinalMatch(match: VMatch, period: Period): Promise<void> {
     const matchScore = {
         score1: match.score1!,
         score2: match.score2!,
