@@ -42,6 +42,8 @@ async function processSurebetCheck(content: string) {
     //解析来自surebet的数据列表
     let records = JSON.parse(content) as Surebet.OddsRecord[]
 
+    console.log('收到数据', records.length)
+
     //读取配置
     const settings = await getSetting(
         'surebet_max_profit',
@@ -60,17 +62,39 @@ async function processSurebetCheck(content: string) {
     const nextDataList: string[] = []
     const toV3List: string[] = []
 
+    let fails = {
+        no_188: 0,
+        time: 0,
+        base: 0,
+        corner: 0,
+        min_value: 0,
+        max_value: 0,
+        match: 0,
+        profit: 0,
+        exists: 0,
+        game: 0,
+    }
+
     for (const record of records) {
         //收益率筛选
         const profit = Decimal(record.profit)
-        if (profit.lt(minProfit) || profit.gt(maxProfit)) continue
+        if (profit.lt(minProfit) || profit.gt(maxProfit)) {
+            fails.profit++
+            continue
+        }
 
         //只筛选188bet的数据
         const odd = record.prongs.find((t) => t.bk === '188bet')
-        if (!odd) continue
+        if (!odd) {
+            fails.no_188++
+            continue
+        }
 
         //比赛时间筛选
-        if (odd.time < Date.now() + startOf || odd.time > Date.now() + endOf) continue
+        if (odd.time < Date.now() + startOf || odd.time > Date.now() + endOf) {
+            fails.time++
+            continue
+        }
 
         //插入surebet抓取数据
         try {
@@ -99,7 +123,10 @@ async function processSurebetCheck(content: string) {
             console.error(err)
         }
 
-        if (odd.type.game !== 'regular' || odd.type.base !== 'overall') continue
+        if (odd.type.game !== 'regular' || odd.type.base !== 'overall') {
+            fails.base++
+            continue
+        }
 
         //数据过滤，只留下需要的盘口
         let pass = false
@@ -176,18 +203,27 @@ async function processSurebetCheck(content: string) {
             pass = true
         }
 
+        if (!pass) {
+            fails.game++
+            continue
+        }
+
         //赔率大于指定的值
         const surebet_value = Decimal(odd.value)
 
         if (!isEmpty(settings.min_surebet_value)) {
             if (!surebet_value.gte(settings.min_surebet_value)) {
                 pass = false
+                fails.min_value++
+                continue
             }
         }
 
         if (!isEmpty(settings.max_surebet_value)) {
             if (!surebet_value.lte(settings.max_surebet_value)) {
                 pass = false
+                fails.max_value++
+                continue
             }
         }
 
@@ -238,11 +274,13 @@ async function processSurebetCheck(content: string) {
             await exists.save()
             if (exists.status !== '') {
                 //状态不为空表示已经经过处理了，那么跳过
+                fails.exists++
                 continue
             }
         }
 
         if (match && match.status !== '') {
+            fails.match++
             continue
         }
 
@@ -256,6 +294,8 @@ async function processSurebetCheck(content: string) {
         )
         console.log('抛到消息队列进行第一次比对', output.crown_match_id)
     }
+
+    console.log(fails)
 
     if (nextDataList.length > 0) {
         await publish('crown_odd', nextDataList)
