@@ -34,46 +34,17 @@ export async function close() {
  * @param options
  * @param forceAssert
  */
-export function publish(
-    queue: string,
-    content: string | string[],
-    options?: Options.Publish,
-    forceAssert?: boolean,
-): Promise<void>
-/**
- * 发布数据到消息队列
- * @param queue
- * @param content
- * @param options
- * @param forceAssert
- */
-export function publish(
-    queue: string,
-    content: string | string[],
-    forceAssert?: boolean,
-): Promise<void>
-/**
- * 发布数据到消息队列
- * @param queue
- * @param content
- * @param options
- * @param forceAssert
- */
 export async function publish(
     queue: string,
     content: string | string[],
-    options?: Options.Publish | boolean,
-    forceAssert?: boolean,
+    options?: Options.Publish,
+    assertOptions?: Options.AssertQueue,
 ) {
-    if (typeof options === 'boolean') {
-        forceAssert = options
-        options = undefined
-    }
     await ready()
     const channel = await connection.createConfirmChannel()
     try {
-        if (!assertedQueues.includes(queue) || forceAssert) {
-            await channel.assertQueue(queue)
+        if (!assertedQueues.includes(queue)) {
+            await channel.assertQueue(queue, assertOptions)
         }
         if (!assertedQueues.includes(queue)) {
             assertedQueues.push(queue)
@@ -105,6 +76,7 @@ export function consume(
     queue: string,
     callback: (content: string) => any,
     options: ConsumeOptions = {},
+    assertOptions?: Options.AssertQueue,
 ): [Promise<void>, () => void] {
     const controller = new AbortController()
     const close = () => controller.abort()
@@ -118,7 +90,7 @@ export function consume(
             if (controller.signal.aborted) return
             await channel.prefetch(prefetchCount)
             if (controller.signal.aborted) return
-            await channel.assertQueue(queue)
+            await channel.assertQueue(queue, assertOptions)
             if (controller.signal.aborted) return
             await new Promise<void>(async (resolve, reject) => {
                 const { consumerTag } = await channel.consume(
