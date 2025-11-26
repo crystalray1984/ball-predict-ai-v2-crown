@@ -73,6 +73,7 @@ async function startRockballCheck() {
             'crown_odd',
             outputList.map((item) => JSON.stringify(item)),
             { priority: 10 },
+            { maxPriority: 20 },
         )
     }
 }

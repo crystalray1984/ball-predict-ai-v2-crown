@@ -133,17 +133,24 @@ async function startCrownRobot() {
             }
 
             let errors = 0
-            const [promise, close] = rabbitmq.consume('crown_odd', async (content) => {
-                try {
-                    await processCrownRequest(content)
-                } catch {
-                    errors++
-                    if (errors > 10) {
-                        //累计失败10次后重启
-                        close()
+            const [promise, close] = rabbitmq.consume(
+                'crown_odd',
+                async (content) => {
+                    try {
+                        await processCrownRequest(content)
+                    } catch {
+                        errors++
+                        if (errors > 10) {
+                            //累计失败10次后重启
+                            close()
+                        }
                     }
-                }
-            })
+                },
+                undefined,
+                {
+                    maxPriority: 20,
+                },
+            )
             await promise
         } finally {
             clearInterval(matchTimer)

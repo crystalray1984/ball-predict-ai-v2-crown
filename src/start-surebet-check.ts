@@ -398,7 +398,7 @@ async function processSurebetCheck(content: string, allowRockball: boolean, next
     }
 
     if (nextDataList.length > 0) {
-        await publish('crown_odd', nextDataList)
+        await publish('crown_odd', nextDataList, undefined, { maxPriority: 20 })
     }
 
     console.log(next, JSON.stringify(fails), `success=` + nextDataList.length)

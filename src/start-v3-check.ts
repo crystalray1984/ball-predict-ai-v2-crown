@@ -537,6 +537,8 @@ async function startV3Check() {
                 },
             })
         }),
+        undefined,
+        { maxPriority: 20 },
     )
 }
 
