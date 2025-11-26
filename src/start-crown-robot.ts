@@ -10,12 +10,19 @@ import {
 import * as socket from '@/common/socket'
 import dayjs from 'dayjs'
 import { CONFIG } from './config'
+import { redis } from './db'
+import { getMachineId } from './common/helpers'
 
 /**
  * 处理从消费队列中来的皇冠盘口抓取请求
  */
 export async function processCrownRequest(content: string) {
     const { next, crown_match_id, extra, show_type } = JSON.parse(content) as CrownRobot.Input
+
+    if (show_type === 'live') {
+        //如果是滚球盘，去掉redis里的标记，表示已经有进程在处理了
+        await redis.hdel('rockball:tasks', crown_match_id)
+    }
 
     //读取皇冠的盘口
     const data = await getCrownData(crown_match_id, show_type === 'live' ? 'live' : 'today')
@@ -108,6 +115,9 @@ async function startCrownRobot() {
     //监听滚球开启消息
     socket.registerSocketListener('rockball', () => {})
 
+    //重置redis里的滚球监听数
+    await redis.zadd('rockball_crown', getMachineId(), 0)
+
     while (true) {
         try {
             await init()
@@ -142,6 +152,7 @@ async function startCrownRobot() {
 
             await reset()
             await rabbitmq.close()
+            await redis.zrem('rockball_crown', getMachineId())
         }
     }
 }

@@ -3,6 +3,7 @@ import { machineIdSync } from 'node-machine-id'
 import { URL } from 'node:url'
 import { isArrayBuffer } from 'node:util/types'
 import { WebSocket } from 'ws'
+import { getMachineId } from './helpers'
 
 const listeners: Record<string, Function[]> = {}
 
@@ -77,7 +78,7 @@ function connect() {
     if (serviceType) {
         url.searchParams.append('service_type', serviceType)
     }
-    url.searchParams.append('service_id', CONFIG.machine_id || machineIdSync())
+    url.searchParams.append('service_id', getMachineId())
     socket = new WebSocket(url)
 
     socket.on('open', () => {

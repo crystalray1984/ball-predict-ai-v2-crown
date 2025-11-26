@@ -4,7 +4,7 @@ import { getOddIdentification, runLoop } from './common/helpers'
 import { consume, publish } from './common/rabbitmq'
 import { CONFIG } from './config'
 import { findMatchedOdd } from './crown'
-import { db, Match, RockballOdd, RockballPromoted } from './db'
+import { db, Match, redis, RockballOdd, RockballPromoted } from './db'
 
 /**
  * 开启滚球检查
@@ -50,18 +50,31 @@ async function startRockballCheck() {
     console.log('需要抓取滚球盘的比赛', matches.length)
     if (matches.length === 0) return
 
+    //构建数据
+    const list = matches.map((match) => ({
+        crown_match_id: match.crown_match_id,
+        next: CONFIG.queues['rockball_check_after'],
+        extra: match,
+        show_type: 'live',
+    }))
+
+    //循环写入redis
+    const outputList: typeof list = []
+    for (const item of list) {
+        const result = await redis.hsetnx('rockball:tasks', item.crown_match_id, 1)
+        if (result) {
+            outputList.push(item)
+        }
+    }
+
     //抛入到皇冠队列进行盘口抓取
-    await publish(
-        'crown_odd',
-        matches.map((match) =>
-            JSON.stringify({
-                crown_match_id: match.crown_match_id,
-                next: CONFIG.queues['rockball_check_after'],
-                extra: match,
-                show_type: 'live',
-            }),
-        ),
-    )
+    if (outputList.length > 0) {
+        await publish(
+            'crown_odd',
+            outputList.map((item) => JSON.stringify(item)),
+            { priority: 10 },
+        )
+    }
 }
 
 /**
@@ -163,5 +176,5 @@ async function startRockballConsume() {
 
 if (require.main === module) {
     startRockballConsume()
-    runLoop(60000, startRockballCheck)
+    runLoop(10000, startRockballCheck)
 }

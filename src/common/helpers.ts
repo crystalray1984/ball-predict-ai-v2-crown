@@ -5,6 +5,8 @@ import { stat } from 'node:fs'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { RateLimiter } from './rate-limiter'
+import { CONFIG } from '@/config'
+import { machineIdSync } from 'node-machine-id'
 
 /**
  * 返回一个等待指定时间的Promise
@@ -536,4 +538,12 @@ export function getWeekDay(input?: ConfigType): number {
         day = day.subtract(day.day() - 1, 'day')
     }
     return parseInt(day.format('YYYYMMDD'))
+}
+
+/**
+ * 获取机器id
+ * @returns
+ */
+export function getMachineId() {
+    return CONFIG.machine_id || machineIdSync()
 }

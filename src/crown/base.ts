@@ -1,18 +1,17 @@
-import { delay, isEmpty } from '@/common/helpers'
+import { delay, getMachineId } from '@/common/helpers'
 import { sendNotification } from '@/common/luffa'
 import { Queue } from '@/common/queue'
 import { singleton } from '@/common/singleton'
 import { CONFIG } from '@/config'
 import { CrownAccount, db } from '@/db'
 import { XMLParser } from 'fast-xml-parser'
-import { machineIdSync } from 'node-machine-id'
 import { Browser, launch, Page } from 'puppeteer-core'
 import { literal, Op } from 'sequelize'
+import { Browser as ChromeBrowser, computeExecutablePath } from '@puppeteer/browsers'
+import { homedir } from 'node:os'
+import { join } from 'node:path'
 // @ts-ignore
 import { PUPPETEER_REVISIONS } from 'puppeteer-core'
-import { computeExecutablePath, Browser as ChromeBrowser } from '@puppeteer/browsers'
-import { join } from 'node:path'
-import { homedir } from 'node:os'
 
 /**
  * 皇冠首页地址
@@ -21,12 +20,7 @@ const PAGE_URL = CONFIG.crown_url ?? 'https://mos011.com'
 /**
  * 设备号
  */
-const MACHINE_ID = (() => {
-    if (!isEmpty(CONFIG.machine_id)) {
-        return CONFIG.machine_id
-    }
-    return machineIdSync()
-})()
+const MACHINE_ID = getMachineId()
 
 let browser = undefined as unknown as Browser
 let mainPage = undefined as unknown as Page

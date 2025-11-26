@@ -617,6 +617,7 @@ declare namespace Socket {
     type RockballStartMessage = Message<
         'rockball_start',
         {
+            match_id: number
             crown_match_id: string
         }
     >
