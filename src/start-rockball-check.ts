@@ -61,10 +61,11 @@ async function startRockballCheck() {
     //循环写入redis
     const outputList: typeof list = []
     for (const item of list) {
-        const result = await redis.hsetnx('rockball:tasks', item.crown_match_id, 1)
-        if (result) {
-            outputList.push(item)
-        }
+        const result = await redis.hincrby('rockball:tasks', item.crown_match_id, 1)
+        // if (result) {
+        //     outputList.push(item)
+        // }
+        outputList.push(item)
     }
 
     //抛入到皇冠队列进行盘口抓取
