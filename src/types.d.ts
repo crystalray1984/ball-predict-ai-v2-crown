@@ -551,7 +551,7 @@ declare namespace CrownRobot {
          */
         crown_match_id: string
 
-        show_type?: 'today' | 'early' | 'show_type'
+        show_type?: 'today' | 'early' | 'live'
 
         /**
          * 处理完成后抛到下一个处理队列的名称

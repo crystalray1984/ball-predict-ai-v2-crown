@@ -81,6 +81,10 @@ export interface AppConfig {
      */
     crown_matches_data_queues: string[]
     /**
+     * 采集到皇冠赛果数据后要抛到的队列
+     */
+    crown_score_data_queues: string[]
+    /**
      * 机器id
      */
     machine_id: string

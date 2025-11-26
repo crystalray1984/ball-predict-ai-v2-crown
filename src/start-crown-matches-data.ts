@@ -1,8 +1,8 @@
 import { consume } from '@/common/rabbitmq'
 import { CONFIG } from '@/config'
-import { db, Match, VMatch } from '@/db'
+import { db, Match, PromotedOdd } from '@/db'
 import { QueryTypes } from 'sequelize'
-import { processFinalMatch } from './start-titan007'
+import { getOddResult } from './common/helpers'
 
 /**
  * 解析从队列中得到的皇冠比赛数据
@@ -91,13 +91,25 @@ async function parseCrownScoreData(content: string) {
             },
         )
 
-        const v_match = await VMatch.findOne({
+        //处理缺少赛果的比赛
+        const odds = await PromotedOdd.findAll({
             where: {
-                id: match.id,
+                match_id: match.id,
+                result: null,
+                variety: 'goal',
             },
         })
 
-        await processFinalMatch(v_match!, 'regularTime')
+        for (const odd of odds) {
+            const result = getOddResult(odd, score as any)
+            if (result) {
+                odd.result = odd.result1 = result.result
+                odd.score1 = result.score1
+                odd.score2 = result.score2
+                odd.score = result.score
+                await odd.save()
+            }
+        }
     }
 }
 
