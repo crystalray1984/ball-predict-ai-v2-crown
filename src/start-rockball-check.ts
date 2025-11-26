@@ -69,34 +69,33 @@ async function startRockballCheck() {
  * @param content
  */
 async function processRockballCheck(content: string) {
-    const { extra, data } = JSON.parse(content) as CrownRobot.Output<{
+    const { data, crown_match_id } = JSON.parse(content) as CrownRobot.Output<{
         id: number
         crown_match_id: string
     }>
 
-    if (!extra) return
     if (!data) return
 
     //读取比赛
     const match = await Match.findOne({
         where: {
-            id: extra.id,
+            crown_match_id,
         },
-        attributes: ['match_time', 'has_score'],
+        attributes: ['id', 'match_time', 'has_score'],
     })
     if (!match) return
     if (match.match_time.valueOf() <= Date.now() - 7200000) return
     if (match.has_score) return
 
+    console.log('滚球盘盘口', data)
+
     //读取这场比赛的滚球盘口
     const odds = await RockballOdd.findAll({
         where: {
-            match_id: extra.id,
+            match_id: match.id,
             status: '',
         },
     })
-
-    console.log('滚球盘盘口', data)
 
     //对每个滚球盘口进行处理
     for (const odd of odds) {
@@ -113,7 +112,7 @@ async function processRockballCheck(content: string) {
         //水位达到要求了，那就开始插入推荐
         let promoted = await RockballPromoted.findOne({
             where: {
-                match_id: extra.id,
+                match_id: match.id,
                 variety: odd.variety,
                 period: odd.period,
                 type: odd.type,
@@ -127,7 +126,7 @@ async function processRockballCheck(content: string) {
 
         //插入推荐
         promoted = await RockballPromoted.create({
-            match_id: extra.id,
+            match_id: match.id,
             odd_id: odd.id,
             variety: odd.variety,
             period: odd.period,

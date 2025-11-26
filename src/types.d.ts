@@ -601,3 +601,25 @@ declare interface RockballOddInfo extends OddInfo {
     id: string | number
     value: string
 }
+
+declare namespace Socket {
+    /**
+     * WS下发的消息
+     */
+    interface Message<T extends string, D = any> {
+        type: string
+        data: D
+    }
+
+    /**
+     * 需要开启滚球采集的消息
+     */
+    type RockballStartMessage = Message<
+        'rockball_start',
+        {
+            crown_match_id: string
+        }
+    >
+
+    type IncomingMessage = RockballStartMessage
+}

@@ -92,6 +92,11 @@ export interface AppConfig {
      * 本机测试用的皇冠账号
      */
     test_crown_account?: CrownAccount
+
+    /**
+     * WS连接地址
+     */
+    socket_url: string
 }
 
 /**

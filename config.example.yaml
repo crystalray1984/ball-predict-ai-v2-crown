@@ -93,3 +93,6 @@ luffa:
   mansion:
     - type: 1
       uid: ''
+
+#WS连接地址
+socket_url: ''

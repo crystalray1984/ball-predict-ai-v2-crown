@@ -29,7 +29,8 @@
         "reflect-metadata": "^0.2.2",
         "sequelize": "^6.37.7",
         "sequelize-typescript": "^2.1.6",
-        "tsconfig-paths": "^4.2.0"
+        "tsconfig-paths": "^4.2.0",
+        "ws": "^8.18.3"
     },
     "devDependencies": {
         "@tsconfig/node22": "^22.0.1",
@@ -39,6 +40,7 @@
         "@types/lodash": "^4.17.16",
         "@types/node": "^22.15.17",
         "@types/validator": "^13.15.0",
+        "@types/ws": "^8.18.1",
         "prettier": "^3.5.3",
         "rimraf": "^6.0.1",
         "ts-node": "^10.9.2",

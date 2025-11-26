@@ -7,6 +7,7 @@ import {
     reset,
     setActiveInterval,
 } from '@/crown'
+import * as socket from '@/common/socket'
 import dayjs from 'dayjs'
 import { CONFIG } from './config'
 
@@ -102,9 +103,17 @@ async function startCrownRobot() {
     console.log('采集皇冠比赛', !!process.env.CROWN_MATCHES)
     console.log('采集皇冠赛果', !!process.env.CROWN_SCORE)
 
+    //设置WS的相关信息
+    socket.setServiceType('crown')
+    //监听滚球开启消息
+    socket.registerSocketListener('rockball', () => {})
+
     while (true) {
         try {
             await init()
+
+            //开启WS连接
+            socket.start()
 
             if (process.env.CROWN_MATCHES) {
                 matchTimer = setInterval(startCrownMatches, 600000)
@@ -129,6 +138,7 @@ async function startCrownRobot() {
         } finally {
             clearInterval(matchTimer)
             clearInterval(scoreTimer)
+            socket.close()
 
             await reset()
             await rabbitmq.close()
