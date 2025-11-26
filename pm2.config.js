@@ -1,9 +1,10 @@
-function createConfig(name, script) {
+function createConfig(name, script, envs = {}) {
     return {
         name,
         script: script ?? `./dist/start-${name}.js`,
         interpreter_args: '-r tsconfig-paths/register',
         env: {
+            ...envs,
             NODE_ENV: 'production',
             TZ: 'Asia/Shanghai',
             TS_NODE_BASEURL: './dist',
