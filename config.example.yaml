@@ -96,3 +96,6 @@ luffa:
 
 #WS连接地址
 socket_url: ''
+
+#业务端接口地址
+api_url: 'https://v3.188zq.vip'
