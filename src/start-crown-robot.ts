@@ -93,21 +93,21 @@ let matchTimer = undefined as any
 let scoreTimer = undefined as any
 
 /**
- * 开启皇冠盘口抓取
+ * 开启皇冠采集进程
  */
 async function startCrownRobot() {
     //设置自动重启皇冠浏览器的时间为1天
     setActiveInterval(86400000)
 
-    console.log('采集皇冠比赛', process.env.CROWN_MATCHES)
-    console.log('采集皇冠赛果', process.env.CROWN_SCORE)
+    console.log('采集皇冠比赛', !!process.env.CROWN_MATCHES)
+    console.log('采集皇冠赛果', !!process.env.CROWN_SCORE)
 
     while (true) {
         try {
             await init()
 
             if (process.env.CROWN_MATCHES) {
-                matchTimer = setInterval(startCrownMatches, 1800000)
+                matchTimer = setInterval(startCrownMatches, 600000)
             }
             if (process.env.CROWN_SCORE) {
                 scoreTimer = setInterval(startCrownScore, 60000)
