@@ -498,6 +498,8 @@ async function processNearlyMatches() {
                 },
             })
         }),
+        undefined,
+        { maxPriority: 20 },
     )
 
     //把比赛标记为已完成

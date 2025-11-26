@@ -298,7 +298,7 @@ async function processSurebetCheck(content: string) {
     console.log(fails)
 
     if (nextDataList.length > 0) {
-        await publish('crown_odd', nextDataList)
+        await publish('crown_odd', nextDataList, undefined, { maxPriority: 20 })
     }
     if (toV3List.length > 0) {
         await publish(CONFIG.queues['surebet_v2_to_v3'], toV3List)
