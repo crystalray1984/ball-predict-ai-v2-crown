@@ -1,4 +1,5 @@
 import * as rabbitmq from '@/common/rabbitmq'
+import * as socket from '@/common/socket'
 import {
     getCrownData,
     getCrownMatches,
@@ -7,11 +8,9 @@ import {
     reset,
     setActiveInterval,
 } from '@/crown'
-import * as socket from '@/common/socket'
 import dayjs from 'dayjs'
 import { CONFIG } from './config'
 import { redis } from './db'
-import { getMachineId } from './common/helpers'
 
 /**
  * 处理从消费队列中来的皇冠盘口抓取请求
@@ -115,9 +114,6 @@ async function startCrownRobot() {
     //监听滚球开启消息
     socket.registerSocketListener('rockball', () => {})
 
-    //重置redis里的滚球监听数
-    await redis.zadd('rockball_crown', getMachineId(), 0)
-
     while (true) {
         try {
             await init()
@@ -159,7 +155,6 @@ async function startCrownRobot() {
 
             await reset()
             await rabbitmq.close()
-            await redis.zrem('rockball_crown', getMachineId())
         }
     }
 }
