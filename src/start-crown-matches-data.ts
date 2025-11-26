@@ -1,6 +1,6 @@
 import { consume } from '@/common/rabbitmq'
 import { CONFIG } from '@/config'
-import { db, Match, PromotedOdd } from '@/db'
+import { db, Match, PromotedOdd, PromotedOddMansion, RockballPromoted } from '@/db'
 import { QueryTypes } from 'sequelize'
 import { getOddResult } from './common/helpers'
 
@@ -104,6 +104,44 @@ async function parseCrownScoreData(content: string) {
             const result = getOddResult(odd, score as any)
             if (result) {
                 odd.result = odd.result1 = result.result
+                odd.score1 = result.score1
+                odd.score2 = result.score2
+                odd.score = result.score
+                await odd.save()
+            }
+        }
+
+        const odds2 = await PromotedOddMansion.findAll({
+            where: {
+                match_id: match.id,
+                result: null,
+                variety: 'goal',
+            },
+        })
+
+        for (const odd of odds2) {
+            const result = getOddResult(odd, score as any)
+            if (result) {
+                odd.result = result.result
+                odd.score1 = result.score1
+                odd.score2 = result.score2
+                odd.score = result.score
+                await odd.save()
+            }
+        }
+
+        const odds3 = await RockballPromoted.findAll({
+            where: {
+                match_id: match.id,
+                result: null,
+                variety: 'goal',
+            },
+        })
+
+        for (const odd of odds3) {
+            const result = getOddResult(odd, score as any)
+            if (result) {
+                odd.result = result.result
                 odd.score1 = result.score1
                 odd.score2 = result.score2
                 odd.score = result.score
