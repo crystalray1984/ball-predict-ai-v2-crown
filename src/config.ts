@@ -97,6 +97,11 @@ export interface AppConfig {
      * WS连接地址
      */
     socket_url: string
+
+    /**
+     * 接口调用地址
+     */
+    api_url: string
 }
 
 /**

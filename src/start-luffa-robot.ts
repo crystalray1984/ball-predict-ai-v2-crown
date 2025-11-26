@@ -11,6 +11,7 @@ import dayjs from 'dayjs'
 import Decimal from 'decimal.js'
 import { getLabelInfo } from './common/label'
 import { CONFIG } from './config'
+import { sendSocketMessage } from './common/api'
 
 type VPromotedData = Pick<
     VPromotedOdd,
@@ -156,6 +157,47 @@ async function processSendPromoted(content: string) {
 
         if (!promoted) return
 
+        //构建消息推送到WS
+        sendSocketMessage({
+            type: 'group',
+            target: 'vip',
+            message: {
+                type: 'promote',
+                sub_type: 'rockball',
+                data: {
+                    id: promoted.id,
+                    match_id: promoted.match_id,
+                    match_time: promoted.match_time,
+                    variety: promoted.variety,
+                    period: promoted.period,
+                    type: promoted.type,
+                    condition: promoted.condition,
+                    value: promoted.value,
+                    tournament: {
+                        id: promoted.tournament_id,
+                        name: promoted.tournament_name,
+                    },
+                    team1: {
+                        id: promoted.team1_id,
+                        name: promoted.team1_name,
+                    },
+                    team2: {
+                        id: promoted.team2_id,
+                        name: promoted.team2_name,
+                    },
+                    result:
+                        typeof promoted.result === 'number'
+                            ? {
+                                  result: promoted.result,
+                                  score1: promoted.score1,
+                                  score2: promoted.score2,
+                                  score: promoted.score,
+                              }
+                            : null,
+                },
+            },
+        }).catch((err) => console.error(err))
+
         //构建抛入到下一个队列的数据
         const text = createPromotionMessage(promoted)
 
@@ -184,6 +226,47 @@ async function processSendPromoted(content: string) {
         })
 
         if (!promoted) return
+
+        //构建消息推送到WS
+        sendSocketMessage({
+            type: 'group',
+            target: 'vip',
+            message: {
+                type: 'promote',
+                sub_type: 'compare',
+                data: {
+                    id: promoted.id,
+                    match_id: promoted.match_id,
+                    match_time: promoted.match_time,
+                    variety: promoted.variety,
+                    period: promoted.period,
+                    type: promoted.type,
+                    condition: promoted.condition,
+                    value: promoted.value,
+                    tournament: {
+                        id: promoted.tournament_id,
+                        name: promoted.tournament_name,
+                    },
+                    team1: {
+                        id: promoted.team1_id,
+                        name: promoted.team1_name,
+                    },
+                    team2: {
+                        id: promoted.team2_id,
+                        name: promoted.team2_name,
+                    },
+                    result:
+                        typeof promoted.result === 'number'
+                            ? {
+                                  result: promoted.result,
+                                  score1: promoted.score1,
+                                  score2: promoted.score2,
+                                  score: promoted.score,
+                              }
+                            : null,
+                },
+            },
+        }).catch((err) => console.error(err))
 
         //构建抛入到下一个队列的数据
         const text = createPromotionMessage(promoted)

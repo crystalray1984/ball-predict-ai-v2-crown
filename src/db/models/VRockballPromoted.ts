@@ -94,11 +94,20 @@ export class VRockballPromoted extends Model<InferAttributes<VRockballPromoted>>
     @Column(DataType.DATE)
     declare match_time: Date
 
+    @Column(DataType.INTEGER)
+    declare tournament_id: number
+
     @Column(DataType.STRING)
     declare tournament_name: string
 
+    @Column(DataType.INTEGER)
+    declare team1_id: number
+
     @Column(DataType.STRING)
     declare team1_name: string
+
+    @Column(DataType.INTEGER)
+    declare team2_id: number
 
     @Column(DataType.STRING)
     declare team2_name: string
