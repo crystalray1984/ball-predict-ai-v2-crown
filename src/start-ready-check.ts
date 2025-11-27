@@ -186,9 +186,9 @@ async function processReadyCheck(content: string, isMansion: boolean) {
             )
 
             if (isMansion) {
-                await createMansionPromoted(otherOdd, odd, backMatched?.value ?? exists.value)
+                await createMansionPromoted(otherOdd, odd, exists.value, backMatched!.value)
             } else {
-                await createMansionPromoted(odd, otherOdd, backMatched?.value ?? exists.value)
+                await createMansionPromoted(odd, otherOdd, exists.value, backMatched!.value)
             }
         }
     }
@@ -198,29 +198,71 @@ async function processReadyCheck(content: string, isMansion: boolean) {
  * 创建mansion推荐
  * @param odd 365对冲盘口
  * @param mansion mansion对冲盘口
- * @param value2 反向的水位
+ * @param value0 正推水位
+ * @param value1 反推水位
  */
-async function createMansionPromoted(odd: Odd, mansion: OddMansion, value2: string) {
+async function createMansionPromoted(
+    odd: Odd,
+    mansion: OddMansion,
+    value0: string,
+    value1: string,
+) {
     let is_valid = 1,
         skip = ''
 
-    //先检查同类推荐是否已存在
-    const exists = await PromotedOddMansion.findOne({
-        where: {
-            match_id: mansion.match_id,
-            variety: mansion.variety,
-            period: mansion.period,
-            odd_type: mansion.odd_type,
-        },
-        attributes: ['id'],
-    })
-    if (exists) {
+    //读取配置，根据水位区间确定是用正推还是反推
+    const {
+        mansion_promote_reverse,
+        mansion_promote_min_value,
+        mansion_promote_middle_value,
+        mansion_promote_max_value,
+    } = await getSetting(
+        'mansion_promote_reverse',
+        'mansion_promote_min_value',
+        'mansion_promote_middle_value',
+        'mansion_promote_max_value',
+    )
+
+    //根据反推水位和中间点水位来判定正推还是反推
+    const back = (() => {
+        if (Decimal(value1).gt(mansion_promote_middle_value)) {
+            //高水位
+            return mansion_promote_reverse ? 0 : 1
+        } else {
+            //低水位
+            return mansion_promote_reverse ? 1 : 0
+        }
+    })()
+
+    //检查水位是否越过了上下限
+    if (
+        Decimal(value1).lt(mansion_promote_min_value) ||
+        Decimal(value1).gt(mansion_promote_max_value)
+    ) {
         is_valid = 0
-        skip = 'same_type'
+        skip = 'setting'
     }
 
-    //根据mansion的信息创建反推
-    const { condition, type } = getPromotedOddInfo(mansion, 1)
+    //如果水位满足条件，再判断有没有同类推送
+    if (is_valid) {
+        const exists = await PromotedOddMansion.findOne({
+            where: {
+                match_id: mansion.match_id,
+                variety: mansion.variety,
+                period: mansion.period,
+                odd_type: mansion.odd_type,
+                is_valid: 1,
+            },
+            attributes: ['id'],
+        })
+        if (exists) {
+            is_valid = 0
+            skip = 'same_type'
+        }
+    }
+
+    //创建推荐盘口
+    const { condition, type } = getPromotedOddInfo(mansion, back)
 
     const week_day = getWeekDay()
 
@@ -234,8 +276,10 @@ async function createMansionPromoted(odd: Odd, mansion: OddMansion, value2: stri
         period: mansion.period,
         type,
         condition,
-        back: 1,
-        value: value2,
+        back,
+        value: back ? value1 : value0,
+        value0,
+        value1,
         odd_type: getOddIdentification(mansion.type),
         odd_id: odd.id,
         odd_mansion_id: mansion.id,

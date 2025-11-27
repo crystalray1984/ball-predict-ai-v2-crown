@@ -1,4 +1,4 @@
-import type { InferAttributes } from 'sequelize'
+import type { CreationOptional, InferAttributes } from 'sequelize'
 import { Column, DataType, Model, PrimaryKey, Table } from 'sequelize-typescript'
 
 /**
@@ -85,8 +85,23 @@ export class VPromotedOddMansion extends Model<InferAttributes<VPromotedOddMansi
     @Column(DataType.DATE)
     declare updated_at: Date
 
+    /**
+     * 推荐水位
+     */
     @Column(DataType.DECIMAL)
     declare value: string
+
+    /**
+     * 推荐产生时的正推水位
+     */
+    @Column(DataType.DECIMAL)
+    declare value0: string
+
+    /**
+     * 推荐产生时的反推水位
+     */
+    @Column(DataType.DECIMAL)
+    declare value1: string
 
     @Column(DataType.INTEGER)
     declare week_day: number

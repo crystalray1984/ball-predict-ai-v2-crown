@@ -106,8 +106,23 @@ export class PromotedOddMansion extends Model<
     @Column(DataType.DATE)
     declare updated_at: CreationOptional<Date>
 
+    /**
+     * 推荐水位
+     */
     @Column(DataType.DECIMAL)
     declare value: CreationOptional<string>
+
+    /**
+     * 推荐产生时的正推水位
+     */
+    @Column(DataType.DECIMAL)
+    declare value0: CreationOptional<string>
+
+    /**
+     * 推荐产生时的反推水位
+     */
+    @Column(DataType.DECIMAL)
+    declare value1: CreationOptional<string>
 
     @Column(DataType.INTEGER)
     declare week_day: CreationOptional<number>
