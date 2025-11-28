@@ -208,6 +208,12 @@ async function processSurebetCheck(content: string, allowRockball: boolean, next
             continue
         }
 
+        if (!allowRockball && odd.type.period !== 'regularTime') {
+            //对比推荐只要全场数据
+            fails.base++
+            continue
+        }
+
         //数据过滤，只留下需要的盘口
         let pass = false
 
