@@ -35,20 +35,25 @@ async function createDirectPromoted(
     //进行变盘
     condition = Decimal(condition).add(rule.adjust).toString()
 
-    //检查一下是不是已经存在了这个推荐
+    let is_valid = 1
+    let skip = ''
+
+    //检查一下是不是已经存在了同类推荐
     const exists = await Promoted.findOne({
         where: {
             match_id,
             variety: surebet.type.variety,
             period: surebet.type.period,
-            condition,
-            type,
+            odd_type,
             channel,
         },
         attributes: ['id'],
     })
+
     if (exists) {
-        //推荐已经存在了就不创建数据了
+        //推荐已经存在了，那就只创建数据，不推送
+        is_valid = 0
+        skip = ''
         return
     }
 
@@ -78,7 +83,8 @@ async function createDirectPromoted(
             source_type: 'direct',
             source_id: 0,
             channel,
-            is_valid: 1,
+            is_valid,
+            skip,
             week_day,
             variety: surebet.type.variety,
             period: surebet.type.period,
@@ -96,7 +102,10 @@ async function createDirectPromoted(
     }
 
     //抛到推荐队列
-    await publish(CONFIG.queues['send_promoted'], JSON.stringify({ id: promoted.id }))
+    await publish(
+        CONFIG.queues['send_promoted'],
+        JSON.stringify({ id: promoted.id, type: 'direct' }),
+    )
 }
 
 /**

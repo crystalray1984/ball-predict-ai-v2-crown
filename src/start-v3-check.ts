@@ -4,16 +4,7 @@ import { getOddIdentification, getPromotedOddInfo, getWeekDay, runLoop } from '.
 import { consume, publish } from './common/rabbitmq'
 import { getSetting } from './common/settings'
 import { CONFIG } from './config'
-import {
-    CrownOdd,
-    db,
-    LabelPromoted,
-    Match,
-    PromotedOdd,
-    SurebetV2Odd,
-    SurebetV2Promoted,
-    VMatch,
-} from './db'
+import { CrownOdd, db, LabelPromoted, Match, Promoted, SurebetV2Odd, VMatch } from './db'
 
 /**
  * 处理赛事的最终结算
@@ -293,20 +284,22 @@ async function processFinalCheck(match: VMatch, crownOdds: CrownOdd[]) {
             },
         )
 
+        //开始创建推荐
+        if (!match.tournament_is_open) return
+
         //先判断是不是有相同类型的推荐已经产生
-        const promotedExists = await PromotedOdd.findOne({
+        const promotedExists = await Promoted.findOne({
             where: {
                 match_id: match.id,
                 variety: resultRow.variety,
                 period: resultRow.period,
                 odd_type: resultRow.type,
+                channel: 'generic',
             },
             attributes: ['id'],
         })
-        if (promotedExists) return
 
-        //开始创建推荐
-        if (!match.tournament_is_open) return
+        if (promotedExists) return
 
         const type = (() => {
             if (resultRow.type === 'ah') {
@@ -328,9 +321,9 @@ async function processFinalCheck(match: VMatch, crownOdds: CrownOdd[]) {
         const week_day = getWeekDay()
 
         //总台推荐
-        const promoted = await PromotedOdd.create({
+        const promoted = await Promoted.create({
             match_id: match.id,
-            source: 'crown_odd',
+            source_type: 'crown_odd',
             source_id: resultRow.id,
             variety: resultRow.variety,
             period: resultRow.period,
@@ -338,37 +331,43 @@ async function processFinalCheck(match: VMatch, crownOdds: CrownOdd[]) {
             is_valid: 1,
             type,
             condition,
-            back: 0,
             value: resultRow[result],
             week_day,
-            start_odd_data: {
-                id: stackRows[0].id,
-                time: stackRows[0].created_at.valueOf(),
-                value: stackRows[0][result],
-                field: result,
-            },
-            end_odd_data: {
-                id: resultRow.id,
-                time: resultRow.created_at.valueOf(),
-                value: resultRow[result],
-                field: result,
+            channel: 'generic',
+            extra: {
+                start_odd_data: {
+                    id: stackRows[0].id,
+                    time: stackRows[0].created_at.valueOf(),
+                    value: stackRows[0][result],
+                    field: result,
+                },
+                end_odd_data: {
+                    id: resultRow.id,
+                    time: resultRow.created_at.valueOf(),
+                    value: resultRow[result],
+                    field: result,
+                },
             },
         })
         //设置总台的周标记
-        const weekLast = await PromotedOdd.findOne({
+        const weekLast = await Promoted.findOne({
             where: {
                 week_day,
                 is_valid: 1,
                 id: {
                     [Op.lt]: promoted.id,
                 },
+                channel: 'generic',
             },
             order: [['id', 'desc']],
             attributes: ['id', 'week_id'],
         })
         promoted.week_id = weekLast ? weekLast.week_id + 1 : 1
         await promoted.save()
-        await publish(CONFIG.queues['send_promoted'], JSON.stringify({ id: promoted.id }))
+        await publish(
+            CONFIG.queues['send_promoted'],
+            JSON.stringify({ id: promoted.id, type: 'generic' }),
+        )
 
         //新老融合推荐
         //查询是否存在对应的surebet数据
@@ -602,14 +601,14 @@ async function processSurebetV2ToV3Check(surebet: Surebet.Output) {
  */
 async function createV2ToV3Promote(
     odd: SurebetV2Odd,
-    promoted: PromotedOdd,
+    promoted: Promoted,
     tournament_label_id: number,
 ) {
     //判断surebet盘口的初始条件
     if (odd.promote_id > 0) return
 
     //判断v3推荐的初始条件
-    if (!promoted.is_valid || !promoted.end_odd_data) return
+    if (!promoted.is_valid || !promoted.extra?.end_odd_data) return
 
     //读取系统配置
     const { surebet_v2_to_v3_back, surebet_v2_to_v3_min_value } = await getSetting(
@@ -624,12 +623,13 @@ async function createV2ToV3Promote(
     const oddType = getOddIdentification(oddInfo.type)
 
     //检查是否已经存在了推荐
-    const exists = await SurebetV2Promoted.findOne({
+    const exists = await Promoted.findOne({
         where: {
             match_id: promoted.match_id,
             variety: promoted.variety,
             period: promoted.period,
             odd_type: oddType,
+            channel: 'v2_to_v3',
         },
         attributes: ['id'],
     })
@@ -639,14 +639,14 @@ async function createV2ToV3Promote(
     const value = await (async () => {
         if (!surebet_v2_to_v3_back) {
             //不是反推，就直接取原始水位就行
-            return promoted.end_odd_data!.value
+            return promoted.extra.end_odd_data.value
         }
 
         //反推就需要读取原始数据
-        const field = promoted.end_odd_data!.field === 'value1' ? 'value2' : 'value1'
+        const field = promoted.extra.end_odd_data.field === 'value1' ? 'value2' : 'value1'
         const origin_odd = await CrownOdd.findOne({
             where: {
-                id: promoted.end_odd_data!.id,
+                id: promoted.extra.end_odd_data.id,
             },
         })
         if (!origin_odd) return '0'
@@ -656,18 +656,24 @@ async function createV2ToV3Promote(
     const is_valid = Decimal(value).gte(surebet_v2_to_v3_min_value) ? 1 : 0
 
     //插入数据
-    const promotedOdd = await SurebetV2Promoted.create({
+    const promotedOdd = await Promoted.create({
         match_id: promoted.match_id,
+        source_type: 'v2_to_v3',
+        source_id: odd.id,
+        channel: 'v2_to_v3',
         is_valid,
-        week_day: promoted.week_day,
         skip: is_valid ? '' : 'value',
+        week_day: promoted.week_day,
         variety: promoted.variety,
         period: promoted.period,
         type: oddInfo.type,
         condition: oddInfo.condition,
-        back: surebet_v2_to_v3_back ? 1 : 0,
         odd_type: oddType,
         value,
+        extra: {
+            back: surebet_v2_to_v3_back ? 1 : 0,
+            v3_promoted_id: promoted.id,
+        },
     })
 
     //更新原始表的数据
@@ -678,13 +684,14 @@ async function createV2ToV3Promote(
 
     if (is_valid) {
         //计算排序
-        const lastRow = await SurebetV2Promoted.findOne({
+        const lastRow = await Promoted.findOne({
             where: {
                 week_day: promoted.week_day,
                 is_valid: 1,
                 id: {
                     [Op.lt]: promotedOdd.id,
                 },
+                channel: 'v2_to_v3',
             },
             order: [['id', 'desc']],
             attributes: ['week_id'],
@@ -696,7 +703,7 @@ async function createV2ToV3Promote(
         //发出推荐
         await publish(
             CONFIG.queues['send_promoted'],
-            JSON.stringify({ id: promotedOdd.id, type: 'surebet_v2_promoted' }),
+            JSON.stringify({ id: promotedOdd.id, type: 'v2_to_v3' }),
         )
 
         //如果这个推荐是有标签的，那么还要按标签做推送

@@ -1,28 +1,17 @@
-import { getOddResult, isNullOrUndefined, runLoop } from '@/common/helpers'
-import {
-    db,
-    Match,
-    PromotedOdd,
-    PromotedOddMansion,
-    RockballPromoted,
-    SurebetV2Promoted,
-    Team,
-    Titan007Odd,
-    VMatch,
-} from '@/db'
+import { getOddResult, runLoop } from './common/helpers'
+import { Match, Promoted, Team, VMatch } from './db'
 import {
     findMatch,
     FindMatchResult,
     getFinalMatches,
-    getMatchOdd,
     getMatchScore,
     getTodayMatches,
-} from '@/titan007'
+} from './titan007'
 import dayjs from 'dayjs'
 import { intersection } from 'lodash'
 import { writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
-import { InferAttributes, Op, QueryTypes, WhereOptions } from 'sequelize'
+import { InferAttributes, Op, WhereOptions } from 'sequelize'
 
 /**
  * 处理今日抓到的单场比赛数据
@@ -181,96 +170,27 @@ export async function processFinalMatch(match: VMatch, period: Period): Promise<
         corner2_period1: match.corner2_period1!,
     }
 
-    const where: WhereOptions<InferAttributes<PromotedOdd>> = {
+    const where: WhereOptions<InferAttributes<Promoted>> = {
         match_id: match.id,
         result: null,
     }
     if (period === 'period1') {
         where.period = 'period1'
     }
-    const odds = await PromotedOdd.findAll({
+
+    const promotes = await Promoted.findAll({
         where,
     })
 
-    for (const odd of odds) {
-        const result1 = getOddResult(odd, matchScore)
-        if (!result1) continue
-        odd.result1 = result1.result
-        odd.score = result1.score
-        odd.score1 = result1.score1
-        odd.score2 = result1.score2
-
-        //有第二盘口
-        if (!isNullOrUndefined(odd.type2) && !isNullOrUndefined(odd.condition2)) {
-            const result2 = getOddResult(
-                {
-                    variety: odd.variety,
-                    period: odd.period,
-                    type: odd.type2,
-                    condition: odd.condition2,
-                },
-                matchScore,
-            )
-            if (result2) {
-                odd.result2 = result2.result
-            }
-        }
-
-        if (isNullOrUndefined(odd.result2)) {
-            odd.result = odd.result1
-        } else if (odd.result1 === 1 || odd.result2 === 1) {
-            odd.result = 1
-        } else if (odd.result1 === 0 && odd.result2 === 0) {
-            odd.result = 0
-        } else {
-            odd.result = -1
-        }
-        await odd.save()
-    }
-
-    const surebetV2Promotes = await SurebetV2Promoted.findAll({
-        where,
-    })
-
-    for (const odd of surebetV2Promotes) {
-        const result = getOddResult(odd, matchScore)
+    for (const promoted of promotes) {
+        const result = getOddResult(promoted, matchScore)
         if (!result) continue
-        odd.result = result.result
-        odd.score = result.score
-        odd.score1 = result.score1
-        odd.score2 = result.score2
+        promoted.result = result.result
+        promoted.score = result.score
+        promoted.score1 = result.score1
+        promoted.score2 = result.score2
 
-        await odd.save()
-    }
-
-    const rockballPromotes = await RockballPromoted.findAll({
-        where,
-    })
-
-    for (const odd of rockballPromotes) {
-        const result = getOddResult(odd, matchScore)
-        if (!result) continue
-        odd.result = result.result
-        odd.score = result.score
-        odd.score1 = result.score1
-        odd.score2 = result.score2
-
-        await odd.save()
-    }
-
-    const mansionPromotes = await PromotedOddMansion.findAll({
-        where,
-    })
-
-    for (const odd of mansionPromotes) {
-        const result = getOddResult(odd, matchScore)
-        if (!result) continue
-        odd.result = result.result
-        odd.score = result.score
-        odd.score1 = result.score1
-        odd.score2 = result.score2
-
-        await odd.save()
+        await promoted.save()
     }
 }
 
@@ -491,107 +411,6 @@ async function processYesterdayMatches() {
 }
 
 /**
- * 盘口抓取
- */
-async function processOdds() {
-    //获取需要计算盘口的比赛
-    const matches = await db.query<{
-        id: number
-        titan007_match_id: string
-        titan007_swap: number
-    }>(
-        {
-            query: `
-        SELECT
-            DISTINCT
-            a.id,
-            a.titan007_match_id,
-            a.titan007_swap
-        FROM
-            match AS a
-        INNER JOIN
-            odd ON odd.match_id = a.id AND odd.status = ?
-        WHERE
-            a.match_time >= ?
-            AND a.match_time <= ?
-            AND a.titan007_match_id != ?
-        `,
-            values: [
-                'ready',
-                new Date(Date.now() + 120000), //2分钟内开赛的比赛不抓取
-                new Date(Date.now() + 600000), //只抓取10分内开赛的比赛
-                '', //不抓取没有匹配到球探网id的比赛
-            ],
-        },
-        {
-            type: QueryTypes.SELECT,
-        },
-    )
-    console.log('需要抓取盘口的比赛', matches.length)
-    if (matches.length === 0) return
-
-    for (const match of matches) {
-        //读取盘口
-        const odd = await getMatchOdd(match.titan007_match_id, match.titan007_swap)
-        //更新数据
-        const exists = await Titan007Odd.findOne({
-            where: {
-                match_id: match.id,
-            },
-        })
-        if (exists) {
-            //更新数据
-            if (odd.ah) {
-                exists.ah_start = odd.ah.start
-                exists.ah_end = odd.ah.end
-            }
-            if (odd.goal) {
-                exists.goal_start = odd.goal.start
-                exists.goal_end = odd.goal.end
-            }
-            if (odd.ah_period1) {
-                exists.ah_period1_start = odd.ah_period1.start
-                exists.ah_period1_end = odd.ah_period1.end
-            }
-            if (odd.goal_period1) {
-                exists.goal_period1_start = odd.goal_period1.start
-                exists.goal_period1_end = odd.goal_period1.end
-            }
-            if (odd.corner) {
-                if (odd.corner.ah) {
-                    exists.corner_ah_start = odd.corner.ah.start
-                    exists.corner_ah_end = odd.corner.ah.end
-                }
-                if (odd.corner.goal) {
-                    exists.corner_goal_start = odd.corner.goal.start
-                    exists.corner_goal_end = odd.corner.goal.end
-                }
-            }
-
-            await exists.save()
-        } else {
-            //写入新数据
-            await Titan007Odd.create({
-                match_id: match.id,
-                titan007_match_id: match.titan007_match_id,
-                ah_start: odd.ah?.start ?? null,
-                ah_end: odd.ah?.end ?? null,
-                goal_start: odd.goal?.start ?? null,
-                goal_end: odd.goal?.end ?? null,
-                ah_period1_start: odd.ah_period1?.start ?? null,
-                ah_period1_end: odd.ah_period1?.end ?? null,
-                goal_period1_start: odd.goal_period1?.start ?? null,
-                goal_period1_end: odd.goal_period1?.end ?? null,
-                corner_ah_start: odd.corner?.ah?.start ?? null,
-                corner_ah_end: odd.corner?.ah?.end ?? null,
-                corner_goal_start: odd.corner?.goal?.start ?? null,
-                corner_goal_end: odd.corner?.goal?.end ?? null,
-            })
-        }
-    }
-}
-
-/**
  * 开始球探网数据抓取
  */
 export function startTitan007() {
@@ -600,7 +419,7 @@ export function startTitan007() {
     //每2分钟执行一次昨日比赛数据抓取
     runLoop(120000, processYesterdayMatches)
     //每分钟执行一次盘口抓取
-    runLoop(60000, processOdds)
+    // runLoop(60000, processOdds)
 }
 
 if (require.main === module) {

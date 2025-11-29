@@ -1,4 +1,4 @@
-import { CreationOptional, InferAttributes, InferCreationAttributes } from 'sequelize'
+import type { CreationOptional, InferAttributes, InferCreationAttributes } from 'sequelize'
 import {
     AutoIncrement,
     Column,

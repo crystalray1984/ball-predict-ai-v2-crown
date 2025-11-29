@@ -1,8 +1,8 @@
-import { Match, Promoted, VMatch } from '@/db'
 import { Op } from 'sequelize'
 import { getOddResult } from './common/helpers'
 import { consume } from './common/rabbitmq'
 import { CONFIG } from './config'
+import { Match, Promoted, VMatch } from './db'
 
 /**
  * 解析从队列中得到的皇冠比赛数据

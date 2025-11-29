@@ -1,6 +1,5 @@
 import type { CreationOptional, InferAttributes, InferCreationAttributes } from 'sequelize'
 import {
-    AllowNull,
     AutoIncrement,
     Column,
     CreatedAt,

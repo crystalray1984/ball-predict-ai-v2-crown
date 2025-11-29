@@ -1,12 +1,12 @@
-import { PromotedOdd, Titan007Odd } from '@/db'
-import dayjs, { ConfigType, Dayjs } from 'dayjs'
+import { CONFIG } from '@/config'
+import { Titan007Odd } from '@/db'
+import dayjs, { ConfigType } from 'dayjs'
 import Decimal from 'decimal.js'
+import { machineIdSync } from 'node-machine-id'
 import { stat } from 'node:fs'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { RateLimiter } from './rate-limiter'
-import { CONFIG } from '@/config'
-import { machineIdSync } from 'node-machine-id'
 
 /**
  * 返回一个等待指定时间的Promise
@@ -272,64 +272,6 @@ function isUseTitan007Odd(odd: OddInfo, titan007_odd: Titan007Odd): number | und
                 return odd.type !== 'under' ? 1 : 0
         }
     }
-}
-
-/**
- * 根据原始盘口和系统配置，计算推荐盘口的数据
- * @param odd
- * @param settings
- */
-export async function getPromotedOddInfoBySetting(
-    match_id: number,
-    odd: OddInfo,
-    settings: Record<string, any>,
-): Promise<Pick<PromotedOdd, 'condition' | 'type' | 'back' | 'final_rule'>> {
-    //输出结果
-    const output = (
-        back: number | boolean,
-        final_rule: PromotedOdd['final_rule'],
-    ): Pick<PromotedOdd, 'condition' | 'type' | 'back' | 'final_rule'> => {
-        return {
-            ...getPromotedOddInfo(odd, back),
-            back: back ? 1 : 0,
-            final_rule,
-        }
-    }
-
-    //先看有没有特殊的正反推规则
-    const specialRule = findRule<SpecialReverseRule>(settings.special_reverse, odd)
-    if (specialRule) {
-        return output(specialRule.back, 'special')
-    }
-
-    //再看能否通过球探网做趋势判断
-    if (settings.titan007_promote_enable === 1 || settings.titan007_promote_enable === -1) {
-        const titan007_odd = await Titan007Odd.findOne({
-            where: {
-                match_id,
-            },
-        })
-        if (titan007_odd) {
-            let back = isUseTitan007Odd(odd, titan007_odd)
-            if (typeof back === 'number') {
-                //球探网有趋势，根据配置确定是跟随还是反向
-                if (settings.titan007_promote_enable === -1) {
-                    //反向
-                    back = 1 - back
-                }
-
-                return output(back, 'titan007')
-            }
-        }
-    }
-
-    //看看是否为角球，走角球正反推判断
-    if (odd.variety === 'corner' && !isNullOrUndefined(settings.corner_reverse)) {
-        return output(!!settings.corner_reverse, 'corner')
-    }
-
-    //走全局的正反推判断
-    return output(!!settings.promote_reverse, '')
 }
 
 /**

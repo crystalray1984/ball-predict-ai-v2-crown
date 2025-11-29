@@ -1,4 +1,4 @@
-import { InferAttributes } from 'sequelize'
+import type { InferAttributes } from 'sequelize'
 import { Column, DataType, Model, PrimaryKey, Table } from 'sequelize-typescript'
 
 /**

@@ -1,10 +1,10 @@
 import Decimal from 'decimal.js'
 import { QueryTypes } from 'sequelize'
-import { getOddIdentification, runLoop } from './common/helpers'
+import { getOddIdentification, getWeekDay, runLoop } from './common/helpers'
 import { consume, publish } from './common/rabbitmq'
 import { CONFIG } from './config'
 import { findMatchedOdd } from './crown'
-import { db, Match, redis, RockballOdd, RockballPromoted } from './db'
+import { db, Match, Promoted, redis, RockballOdd } from './db'
 
 /**
  * 开启滚球检查
@@ -125,31 +125,34 @@ async function processRockballCheck(content: string) {
         if (Decimal(exists.value).lt(odd.value)) continue
 
         //水位达到要求了，那就开始插入推荐
-        let promoted = await RockballPromoted.findOne({
+        let promoted = await Promoted.findOne({
             where: {
                 match_id: match.id,
                 variety: odd.variety,
                 period: odd.period,
                 type: odd.type,
                 condition: odd.condition,
+                channel: 'rockball',
             },
-            attributes: ['id'],
         })
 
         //已经创建过推荐了就不要了
         if (promoted) continue
 
-        //插入推荐
-        promoted = await RockballPromoted.create({
+        promoted = await Promoted.create({
             match_id: match.id,
-            odd_id: odd.id,
+            source_type: 'rockball',
+            source_id: odd.id,
+            channel: 'rockball',
+            is_valid: odd.is_open,
+            skip: odd.is_open ? '' : 'manual_close',
+            week_day: getWeekDay(),
             variety: odd.variety,
             period: odd.period,
             type: odd.type,
             condition: odd.condition,
-            value: exists.value,
             odd_type: getOddIdentification(odd.type),
-            is_valid: odd.is_open,
+            value: exists.value,
         })
 
         //标记这个盘口已经得到推荐
@@ -160,7 +163,7 @@ async function processRockballCheck(content: string) {
             //如果打开了推荐，就抛到推荐队列
             await publish(
                 CONFIG.queues['send_promoted'],
-                JSON.stringify({ id: promoted.id, type: 'rockball_promoted' }),
+                JSON.stringify({ id: promoted.id, type: 'rockball' }),
             )
         }
     }

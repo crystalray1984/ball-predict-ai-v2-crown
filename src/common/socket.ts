@@ -1,5 +1,4 @@
 import { CONFIG } from '@/config'
-import { machineIdSync } from 'node-machine-id'
 import { URL } from 'node:url'
 import { isArrayBuffer } from 'node:util/types'
 import { WebSocket } from 'ws'
