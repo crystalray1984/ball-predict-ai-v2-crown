@@ -1,16 +1,103 @@
+import Decimal from 'decimal.js'
+import { literal, Op, UniqueConstraintError } from 'sequelize'
 import {
+    findRule,
     getOddIdentification,
     getPromotedOddInfo,
     getWeekDay,
     isNullOrUndefined,
-} from '@/common/helpers'
-import { close, consume, publish } from '@/common/rabbitmq'
-import { getSetting } from '@/common/settings'
-import { findMatchedOdd } from '@/crown'
-import { Match, Odd, OddMansion, PromotedOddMansion, VMatch } from '@/db'
-import Decimal from 'decimal.js'
-import { literal, Op, UniqueConstraintError } from 'sequelize'
+} from './common/helpers'
+import { close, consume, publish } from './common/rabbitmq'
+import { getSetting } from './common/settings'
 import { CONFIG } from './config'
+import { findMatchedOdd } from './crown'
+import { findMainOdd } from './crown/odd'
+import { Match, Odd, OddMansion, Promoted, VMatch } from './db'
+
+/**
+ * 创建直通推荐盘口
+ * @param rule
+ * @param match_id
+ * @param odd
+ */
+async function createDirectPromoted(
+    rule: DirectConfig,
+    match_id: number,
+    surebet: Surebet.Output,
+    crownOdd: Crown.OddInfo,
+) {
+    const channel = 'direct'
+
+    //根据规则创建对应的盘口
+    let { condition, type } = getPromotedOddInfo(surebet.type, rule.back)
+    const odd_type = getOddIdentification(type)
+
+    //进行变盘
+    condition = Decimal(condition).add(rule.adjust).toString()
+
+    //检查一下是不是已经存在了这个推荐
+    const exists = await Promoted.findOne({
+        where: {
+            match_id,
+            variety: surebet.type.variety,
+            period: surebet.type.period,
+            condition,
+            type,
+            channel,
+        },
+        attributes: ['id'],
+    })
+    if (exists) {
+        //推荐已经存在了就不创建数据了
+        return
+    }
+
+    /**
+     * 直推推荐的扩展数据
+     */
+    const extra = {
+        surebet: {
+            ...surebet.type,
+            value: surebet.surebet_value,
+        },
+        crown_main: {
+            condition: crownOdd.condition,
+            value1: crownOdd.value_h,
+            value2: crownOdd.value_c,
+        },
+        back: rule.back ? 1 : 0,
+    }
+
+    const week_day = getWeekDay()
+
+    //创建推荐数据
+    let promoted: Promoted
+    try {
+        promoted = await Promoted.create({
+            match_id,
+            source_type: 'direct',
+            source_id: 0,
+            channel,
+            is_valid: 1,
+            week_day,
+            variety: surebet.type.variety,
+            period: surebet.type.period,
+            type,
+            odd_type,
+            condition,
+            extra,
+        })
+    } catch (err: unknown) {
+        if (err instanceof UniqueConstraintError) {
+            //如果是主键冲突那就不管了
+            return
+        }
+        throw err
+    }
+
+    //抛到推荐队列
+    await publish(CONFIG.queues['send_promoted'], JSON.stringify({ id: promoted.id }))
+}
 
 /**
  * 处理首次数据比对
@@ -26,7 +113,10 @@ async function processReadyCheck(content: string, isMansion: boolean) {
     if (!data) return
 
     //读取配置
-    const ready_condition = await getSetting<string>('ready_condition')
+    const { ready_condition, direct_config } = await getSetting<string>(
+        'ready_condition',
+        'direct_config',
+    )
 
     //构建比赛数据
     const [match_id] = await Match.prepare({
@@ -49,12 +139,23 @@ async function processReadyCheck(content: string, isMansion: boolean) {
     if (!match.tournament_is_open) return
 
     //寻找与当前盘口相同的皇冠盘口
-    const exists = findMatchedOdd(extra.type, data.odds).find((t) =>
-        Decimal(extra.type.condition).eq(t.condition),
-    )
+    const matchedOdds = findMatchedOdd(extra.type, data.odds)
+    const exists = matchedOdds.find((t) => Decimal(extra.type.condition).eq(t.condition))
 
     //没有对应的皇冠盘口也出去了
     if (!exists) return
+
+    //直通推荐规则1-二次比对前
+    if (!isMansion && Array.isArray(direct_config) && direct_config.length > 0) {
+        const rule = findRule<DirectConfig>(
+            (direct_config as DirectConfig[]).filter((t) => !t.first_check),
+            extra.type,
+        )
+        if (rule) {
+            //有满足条件的直通推荐规则
+            await createDirectPromoted(rule, match.id, extra, findMainOdd(extra.type, data.odds)!)
+        }
+    }
 
     const MainModel = isMansion ? OddMansion : Odd
     const CompareModel = isMansion ? Odd : OddMansion
@@ -162,6 +263,23 @@ async function processReadyCheck(content: string, isMansion: boolean) {
         }
     }
 
+    //直通推荐规则2-二次比对后
+    if (
+        !isMansion &&
+        odd.status === 'ready' &&
+        Array.isArray(direct_config) &&
+        direct_config.length > 0
+    ) {
+        const rule = findRule<DirectConfig>(
+            (direct_config as DirectConfig[]).filter((t) => t.first_check),
+            extra.type,
+        )
+        if (rule) {
+            //有满足条件的直通推荐规则
+            await createDirectPromoted(rule, match.id, extra, findMainOdd(extra.type, data.odds)!)
+        }
+    }
+
     //进行双surebet判断
     if (odd.status === 'ready') {
         const otherOdd = await CompareModel.findOne({
@@ -245,13 +363,14 @@ async function createMansionPromoted(
 
     //如果水位满足条件，再判断有没有同类推送
     if (is_valid) {
-        const exists = await PromotedOddMansion.findOne({
+        const exists = await Promoted.findOne({
             where: {
                 match_id: mansion.match_id,
                 variety: mansion.variety,
                 period: mansion.period,
                 odd_type: mansion.odd_type,
                 is_valid: 1,
+                channel: 'mansion',
             },
             attributes: ['id'],
         })
@@ -266,35 +385,39 @@ async function createMansionPromoted(
 
     const week_day = getWeekDay()
 
-    //插入推荐数据
-    const promoted = await PromotedOddMansion.create({
+    const promoted = await Promoted.create({
         match_id: mansion.match_id,
+        source_type: 'mansion',
+        source_id: mansion.id,
+        channel: 'mansion',
         is_valid,
-        week_day,
         skip,
+        week_day,
         variety: mansion.variety,
         period: mansion.period,
         type,
         condition,
-        back,
-        value: back ? value1 : value0,
-        value0,
-        value1,
         odd_type: getOddIdentification(mansion.type),
-        odd_id: odd.id,
-        odd_mansion_id: mansion.id,
+        value: back ? value1 : value0,
+        extra: {
+            value0,
+            value1,
+            odd_id: odd.id,
+            mansion_id: mansion.id,
+        },
     })
 
     if (is_valid) {
         //抛出推荐
         //设置周标记
-        const weekLast = await PromotedOddMansion.findOne({
+        const weekLast = await Promoted.findOne({
             where: {
                 week_day,
                 is_valid: 1,
                 id: {
                     [Op.lt]: promoted.id,
                 },
+                channel: 'mansion',
             },
             order: [['id', 'desc']],
             attributes: ['id', 'week_id'],
@@ -303,7 +426,7 @@ async function createMansionPromoted(
         await promoted.save()
         await publish(
             CONFIG.queues['send_promoted'],
-            JSON.stringify({ id: promoted.id, type: 'promoted_odd_mansion' }),
+            JSON.stringify({ id: promoted.id, type: 'mansion' }),
         )
     }
 }

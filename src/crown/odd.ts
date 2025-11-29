@@ -589,3 +589,25 @@ export function findMatchedOdd(info: OddInfo, odds: Crown.OddInfo[]) {
             return []
     }
 }
+
+/**
+ * 寻找与盘口类型匹配的的主盘
+ * @param info
+ * @param odds
+ */
+export function findMainOdd(info: OddInfo, odds: Crown.OddInfo[]) {
+    //类型筛选
+    return odds.find((odd) => {
+        if (odd.variety !== info.variety) return false
+        switch (odd.type) {
+            case 'r':
+                return ['ah1', 'ah2'].includes(info.type) && info.period === 'regularTime'
+            case 'hr':
+                return ['ah1', 'ah2'].includes(info.type) && info.period === 'period1'
+            case 'ou':
+                return ['over', 'under'].includes(info.type) && info.period === 'regularTime'
+            case 'hou':
+                return ['over', 'under'].includes(info.type) && info.period === 'period1'
+        }
+    })
+}
