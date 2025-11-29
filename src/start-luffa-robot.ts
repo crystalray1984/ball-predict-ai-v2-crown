@@ -1,17 +1,18 @@
-import { getNumberWithSymbol, isEmpty } from '@/common/helpers'
-import { close, consume, publish } from '@/common/rabbitmq'
+import dayjs from 'dayjs'
+import Decimal from 'decimal.js'
+import { sendSocketMessage } from './common/api'
+import { getNumberWithSymbol, isEmpty } from './common/helpers'
+import { getLabelInfo } from './common/label'
+import { close, consume, publish } from './common/rabbitmq'
+import { CONFIG } from './config'
 import {
     VLabelPromoted,
+    VPromoted,
     VPromotedOdd,
     VPromotedOddMansion,
     VRockballPromoted,
     VSurebetV2Promoted,
-} from '@/db'
-import dayjs from 'dayjs'
-import Decimal from 'decimal.js'
-import { getLabelInfo } from './common/label'
-import { CONFIG } from './config'
-import { sendSocketMessage } from './common/api'
+} from './db'
 
 type VPromotedData = Pick<
     VPromotedOdd,
@@ -88,6 +89,254 @@ ${text}`
  * @param content
  */
 async function processSendPromoted(content: string) {
+    const { id, type } = JSON.parse(content) as { id: number; type: string }
+    console.log('推送推荐信息', id, type)
+
+    if (type === 'label_promoted') {
+        //标签推荐
+    } else {
+        //其他常规推荐
+    }
+
+    //读取推荐信息
+    const promoted = await VPromoted.findOne({
+        where: {
+            id,
+        },
+    })
+    if (!promoted || !promoted.is_valid) return
+
+    if (type === 'surebet_v2_promoted') {
+        //新老系统surebet数据推荐
+        const promoted = await VSurebetV2Promoted.findOne({
+            where: {
+                id,
+            },
+        })
+
+        if (!promoted) return
+
+        //构建抛入到下一个队列的数据
+        const text = createPromotionMessage(promoted)
+
+        const target = CONFIG.luffa.surebet_v2_to_v3
+
+        if (!Array.isArray(target) || target.length === 0) return
+
+        //构建队列数据
+        const queueData = target.map(({ uid, type }) =>
+            JSON.stringify({
+                uid,
+                is_group: type === 1,
+                msg_type: 1,
+                msg: { text },
+            }),
+        )
+
+        await publish('send_luffa_message', queueData)
+    } else if (type === 'label_promoted') {
+        //有标签的赛事推荐
+
+        //查询推荐盘口信息
+        const promoted = await VLabelPromoted.findOne({
+            where: {
+                id,
+            },
+        })
+
+        if (!promoted) return
+
+        //查询标签推送信息
+        const label = await getLabelInfo(promoted.label_id)
+        if (!label) return
+
+        //构建抛入到下一个队列的数据
+        const text = createPromotionMessage(promoted)
+
+        //构建队列数据
+        const queueData = JSON.stringify({
+            uid: label.luffa_uid,
+            is_group: label.luffa_type === 1,
+            msg_type: 1,
+            msg: { text },
+        })
+
+        await publish('send_luffa_message', queueData)
+    } else if (type === 'rockball_promoted') {
+        //滚球推荐
+        const promoted = await VRockballPromoted.findOne({
+            where: {
+                id,
+            },
+        })
+
+        if (!promoted) return
+
+        //构建消息推送到WS
+        sendSocketMessage({
+            type: 'group',
+            target: 'vip',
+            message: {
+                type: 'promote',
+                sub_type: 'rockball',
+                data: {
+                    id: promoted.id,
+                    match_id: promoted.match_id,
+                    match_time: promoted.match_time,
+                    variety: promoted.variety,
+                    period: promoted.period,
+                    type: promoted.type,
+                    condition: promoted.condition,
+                    value: promoted.value,
+                    tournament: {
+                        id: promoted.tournament_id,
+                        name: promoted.tournament_name,
+                    },
+                    team1: {
+                        id: promoted.team1_id,
+                        name: promoted.team1_name,
+                    },
+                    team2: {
+                        id: promoted.team2_id,
+                        name: promoted.team2_name,
+                    },
+                    result:
+                        typeof promoted.result === 'number'
+                            ? {
+                                  result: promoted.result,
+                                  score1: promoted.score1,
+                                  score2: promoted.score2,
+                                  score: promoted.score,
+                              }
+                            : null,
+                },
+            },
+        }).catch((err) => console.error(err))
+
+        //构建抛入到下一个队列的数据
+        const text = createPromotionMessage(promoted)
+
+        const channel2 = CONFIG.luffa.rockball
+
+        if (!Array.isArray(channel2) || channel2.length === 0) return
+
+        //构建队列数据
+        const queueData = channel2.map(({ uid, type }) =>
+            JSON.stringify({
+                uid,
+                is_group: type === 1,
+                msg_type: 1,
+                msg: { text },
+            }),
+        )
+
+        await publish('send_luffa_message', queueData)
+    } else if (type === 'promoted_odd_mansion') {
+        //双surebet匹配推荐
+        //查询推荐盘口信息
+        const promoted = await VPromotedOddMansion.findOne({
+            where: {
+                id,
+            },
+        })
+
+        if (!promoted) return
+
+        //构建消息推送到WS
+        sendSocketMessage({
+            type: 'group',
+            target: 'vip',
+            message: {
+                type: 'promote',
+                sub_type: 'compare',
+                data: {
+                    id: promoted.id,
+                    match_id: promoted.match_id,
+                    match_time: promoted.match_time,
+                    variety: promoted.variety,
+                    period: promoted.period,
+                    type: promoted.type,
+                    condition: promoted.condition,
+                    value: promoted.value,
+                    tournament: {
+                        id: promoted.tournament_id,
+                        name: promoted.tournament_name,
+                    },
+                    team1: {
+                        id: promoted.team1_id,
+                        name: promoted.team1_name,
+                    },
+                    team2: {
+                        id: promoted.team2_id,
+                        name: promoted.team2_name,
+                    },
+                    result:
+                        typeof promoted.result === 'number'
+                            ? {
+                                  result: promoted.result,
+                                  score1: promoted.score1,
+                                  score2: promoted.score2,
+                                  score: promoted.score,
+                              }
+                            : null,
+                },
+            },
+        }).catch((err) => console.error(err))
+
+        //构建抛入到下一个队列的数据
+        const text = createPromotionMessage(promoted)
+
+        const channel = CONFIG.luffa.mansion
+
+        if (!Array.isArray(channel) || channel.length === 0) return
+
+        //构建队列数据
+        const queueData = channel.map(({ uid, type }) =>
+            JSON.stringify({
+                uid,
+                is_group: type === 1,
+                msg_type: 1,
+                msg: { text },
+            }),
+        )
+
+        await publish('send_luffa_message', queueData)
+    } else {
+        //查询推荐盘口信息
+        const promoted = await VPromotedOdd.findOne({
+            where: {
+                id,
+            },
+        })
+
+        if (!promoted) return
+
+        //构建抛入到下一个队列的数据
+        const text = createPromotionMessage(promoted)
+
+        const channel2 = CONFIG.luffa.notification_channel2
+
+        if (!Array.isArray(channel2) || channel2.length === 0) return
+
+        //构建队列数据
+        const queueData = channel2.map(({ uid, type }) =>
+            JSON.stringify({
+                uid,
+                is_group: type === 1,
+                msg_type: 1,
+                msg: { text },
+            }),
+        )
+
+        await publish('send_luffa_message', queueData)
+    }
+}
+
+/**
+ * 处理推送到群和用户的推荐消息
+ * @param content
+ */
+async function processSendPromoted2(content: string) {
     const { id, type } = JSON.parse(content) as { id: number; type?: string }
     console.log('推送推荐信息', id, type)
 
