@@ -1,11 +1,10 @@
-import { isEmpty } from '@/common/helpers'
-import { close, consume, publish } from '@/common/rabbitmq'
-import { Match, Odd, RockballOdd, SurebetRecord, VMatch } from '@/db'
-import dayjs from 'dayjs'
 import Decimal from 'decimal.js'
 import { omit } from 'lodash'
+import { isEmpty } from './common/helpers'
+import { close, consume, publish } from './common/rabbitmq'
 import { getSetting } from './common/settings'
 import { CONFIG } from './config'
+import { Match, Odd, RockballOdd, SurebetRecord, VMatch } from './db'
 
 /**
  * 解析surebet时间条件的时长
@@ -44,8 +43,8 @@ function parseTimeCondition(condition: string): number {
  */
 async function processRockball(
     config: RockballConfig[],
-    record: Surebet.OddsRecord,
     surebet: Surebet.OddInfo,
+    match_id: number,
 ) {
     for (const rule of config) {
         //基础盘口判定
@@ -57,20 +56,12 @@ async function processRockball(
         //水位判定
         if (Decimal(surebet.value).lt(rule.value)) continue
 
-        const match = await Match.findOne({
-            where: {
-                crown_match_id: surebet.preferred_nav.markers.eventId,
-            },
-            attributes: ['id'],
-        })
-        if (!match) return
-
         //开始生成盘口
         for (const oddRule of rule.odds) {
             //尝试寻找相同的盘口
             const odd = await RockballOdd.findOne({
                 where: {
-                    match_id: match.id,
+                    match_id,
                     variety: oddRule.variety,
                     period: oddRule.period,
                     type: oddRule.type,
@@ -92,7 +83,7 @@ async function processRockball(
             } else {
                 //盘口不存在就创建盘口
                 await RockballOdd.create({
-                    match_id: match.id,
+                    match_id,
                     crown_match_id: surebet.preferred_nav.markers.eventId,
                     source_variety: rule.variety,
                     source_period: rule.period,
@@ -158,7 +149,6 @@ async function processSurebetCheck(content: string, allowRockball: boolean, next
         //收益率筛选
         const profit = Decimal(record.profit)
         if (profit.lt(minProfit) || profit.gt(maxProfit)) {
-            // console.log('收益率不满足', record.profit)
             fails.profit++
             continue
         }
@@ -324,7 +314,13 @@ async function processSurebetCheck(content: string, allowRockball: boolean, next
             where: {
                 crown_match_id: odd.preferred_nav.markers.eventId,
             },
-            attributes: ['id', 'match_time', 'status', 'tournament_is_open'],
+            attributes: [
+                'id',
+                'match_time',
+                'status',
+                'tournament_is_open',
+                'tournament_is_rockball_open',
+            ],
         })
         if (match) {
             if (match.match_time.valueOf() !== odd.time) {
@@ -347,11 +343,13 @@ async function processSurebetCheck(content: string, allowRockball: boolean, next
         //尝试构建滚球盘口
         if (
             allowRockball &&
+            match &&
+            match.tournament_is_rockball_open &&
             settings.rockball_config &&
             Array.isArray(settings.rockball_config) &&
             settings.rockball_config.length > 0
         ) {
-            await processRockball(settings.rockball_config, record, odd)
+            await processRockball(settings.rockball_config, odd, match.id)
         }
 
         //构建需要抛到后续队列的参数

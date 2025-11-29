@@ -1,8 +1,8 @@
-import { consume } from '@/common/rabbitmq'
-import { CONFIG } from '@/config'
-import { db, Match, PromotedOdd, PromotedOddMansion, RockballPromoted } from '@/db'
-import { QueryTypes } from 'sequelize'
+import { Match, Promoted, VMatch } from '@/db'
+import { Op } from 'sequelize'
 import { getOddResult } from './common/helpers'
+import { consume } from './common/rabbitmq'
+import { CONFIG } from './config'
 
 /**
  * 解析从队列中得到的皇冠比赛数据
@@ -37,42 +37,21 @@ async function parseCrownScoreData(content: string) {
 
     for (const score of list) {
         //查询对应的比赛
-        const matches = await db.query<{ id: number }>(
-            {
-                query: `
-            SELECT
-                "match".id
-            FROM
-                "match"
-            INNER JOIN
-                tournament ON tournament.id = "match".tournament_id
-            INNER JOIN
-                team AS team1 ON team1.id = "match".team1_id
-            INNER JOIN
-                team AS team2 ON team2.id = "match".team2_id
-            WHERE
-                "match".match_time BETWEEN ? AND ?
-                AND "match".has_score = 0
-                AND tournament.crown_tournament_id = ?
-                AND team1.name = ?
-                AND team2.name = ?
-            LIMIT 1
-            `,
-                values: [
-                    new Date(score.match_time - 600000),
-                    new Date(score.match_time + 600000),
-                    score.league_id,
-                    score.team1,
-                    score.team2,
-                ],
+        const match = await VMatch.findOne({
+            where: {
+                match_time: {
+                    [Op.between]: [
+                        new Date(score.match_time - 600000),
+                        new Date(score.match_time + 600000),
+                    ],
+                },
+                crown_match_id: score.league_id,
+                team1_name: score.team1,
+                team2_name: score.team2,
             },
-            {
-                type: QueryTypes.SELECT,
-            },
-        )
+        })
 
-        if (matches.length === 0) continue
-        const match = matches[0]
+        if (!match) continue
 
         //写入完场比分数据
         await Match.update(
@@ -92,7 +71,7 @@ async function parseCrownScoreData(content: string) {
         )
 
         //处理缺少赛果的比赛
-        const odds = await PromotedOdd.findAll({
+        const promotes = await Promoted.findAll({
             where: {
                 match_id: match.id,
                 result: null,
@@ -100,52 +79,14 @@ async function parseCrownScoreData(content: string) {
             },
         })
 
-        for (const odd of odds) {
-            const result = getOddResult(odd, score as any)
+        for (const promoted of promotes) {
+            const result = getOddResult(promoted, score as any)
             if (result) {
-                odd.result = odd.result1 = result.result
-                odd.score1 = result.score1
-                odd.score2 = result.score2
-                odd.score = result.score
-                await odd.save()
-            }
-        }
-
-        const odds2 = await PromotedOddMansion.findAll({
-            where: {
-                match_id: match.id,
-                result: null,
-                variety: 'goal',
-            },
-        })
-
-        for (const odd of odds2) {
-            const result = getOddResult(odd, score as any)
-            if (result) {
-                odd.result = result.result
-                odd.score1 = result.score1
-                odd.score2 = result.score2
-                odd.score = result.score
-                await odd.save()
-            }
-        }
-
-        const odds3 = await RockballPromoted.findAll({
-            where: {
-                match_id: match.id,
-                result: null,
-                variety: 'goal',
-            },
-        })
-
-        for (const odd of odds3) {
-            const result = getOddResult(odd, score as any)
-            if (result) {
-                odd.result = result.result
-                odd.score1 = result.score1
-                odd.score2 = result.score2
-                odd.score = result.score
-                await odd.save()
+                promoted.result = result.result
+                promoted.score1 = result.score1
+                promoted.score2 = result.score2
+                promoted.score = result.score
+                await promoted.save()
             }
         }
     }

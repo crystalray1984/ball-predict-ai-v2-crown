@@ -1,7 +1,7 @@
-import { runLoop } from '@/common/helpers'
-import { publish } from '@/common/rabbitmq'
-import { getAllOdds } from '@/surebet'
+import { runLoop } from './common/helpers'
+import { publish } from './common/rabbitmq'
 import { CONFIG } from './config'
+import { getAllOdds } from './surebet'
 
 /**
  * 开启surebet数据抓取

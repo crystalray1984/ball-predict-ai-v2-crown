@@ -4,12 +4,12 @@ import { Queue } from '@/common/queue'
 import { singleton } from '@/common/singleton'
 import { CONFIG } from '@/config'
 import { CrownAccount, db } from '@/db'
-import { XMLParser } from 'fast-xml-parser'
-import { Browser, launch, Page } from 'puppeteer-core'
-import { literal, Op } from 'sequelize'
 import { Browser as ChromeBrowser, computeExecutablePath } from '@puppeteer/browsers'
+import { XMLParser } from 'fast-xml-parser'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
+import { Browser, launch, Page } from 'puppeteer-core'
+import { literal, Op } from 'sequelize'
 // @ts-ignore
 import { PUPPETEER_REVISIONS } from 'puppeteer-core'
 
@@ -26,12 +26,6 @@ let browser = undefined as unknown as Browser
 let mainPage = undefined as unknown as Page
 let accountTimer = undefined as unknown as NodeJS.Timeout
 let account = undefined as unknown as CrownAccount
-let lastActiveTime = 0
-
-let activeInterval = 900000
-export function setActiveInterval(interval: number) {
-    activeInterval = interval
-}
 
 /**
  * 等待页面的元素出现
@@ -153,7 +147,6 @@ async function doInit() {
     }
 
     console.log('home page ready')
-    lastActiveTime = Date.now()
 }
 
 /**
@@ -269,7 +262,7 @@ async function getCrownAccount() {
  * 等待浏览器环境准备完毕
  */
 export async function ready() {
-    if (!mainPage || Date.now() - lastActiveTime >= activeInterval) {
+    if (!mainPage) {
         await init()
     }
     return mainPage

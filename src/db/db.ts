@@ -10,6 +10,7 @@ import { Match } from './models/Match'
 import { NotificationLog } from './models/NotificationLog'
 import { Odd } from './models/Odd'
 import { OddMansion } from './models/OddMansion'
+import { Promoted } from './models/Promoted'
 import { PromotedOdd } from './models/PromotedOdd'
 import { PromotedOddMansion } from './models/PromotedOddMansion'
 import { RockballOdd } from './models/RockballOdd'
@@ -25,6 +26,7 @@ import { TournamentLabel } from './models/TournamentLabel'
 import { VLabelPromoted } from './models/VLabelPromoted'
 import { VLuffaUser } from './models/VLuffaUser'
 import { VMatch } from './models/VMatch'
+import { VPromoted } from './models/VPromoted'
 import { VPromotedOdd } from './models/VPromotedOdd'
 import { VPromotedOddMansion } from './models/VPromotedOddMansion'
 import { VRockballPromoted } from './models/VRockballPromoted'
@@ -71,6 +73,8 @@ export const db = new Sequelize(
                 OddMansion,
                 PromotedOddMansion,
                 VPromotedOddMansion,
+                Promoted,
+                VPromoted,
             ],
         },
     ),
@@ -85,6 +89,7 @@ export { Match } from './models/Match'
 export { NotificationLog } from './models/NotificationLog'
 export { Odd } from './models/Odd'
 export { OddMansion } from './models/OddMansion'
+export { Promoted } from './models/Promoted'
 export { PromotedOdd } from './models/PromotedOdd'
 export { PromotedOddMansion } from './models/PromotedOddMansion'
 export { RockballOdd } from './models/RockballOdd'
@@ -100,6 +105,7 @@ export { TournamentLabel } from './models/TournamentLabel'
 export { VLabelPromoted } from './models/VLabelPromoted'
 export { VLuffaUser } from './models/VLuffaUser'
 export { VMatch } from './models/VMatch'
+export { VPromoted } from './models/VPromoted'
 export { VPromotedOdd } from './models/VPromotedOdd'
 export { VPromotedOddMansion } from './models/VPromotedOddMansion'
 export { VRockballPromoted } from './models/VRockballPromoted'

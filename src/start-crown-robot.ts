@@ -1,15 +1,8 @@
-import * as rabbitmq from '@/common/rabbitmq'
-import * as socket from '@/common/socket'
-import {
-    getCrownData,
-    getCrownMatches,
-    getCrownScore,
-    init,
-    reset,
-    setActiveInterval,
-} from '@/crown'
 import dayjs from 'dayjs'
+import * as rabbitmq from './common/rabbitmq'
+import * as socket from './common/socket'
 import { CONFIG } from './config'
+import { getCrownData, getCrownMatches, getCrownScore, init, reset } from './crown'
 import { redis } from './db'
 
 /**
@@ -103,9 +96,6 @@ let scoreTimer = undefined as any
  * 开启皇冠采集进程
  */
 async function startCrownRobot() {
-    //设置自动重启皇冠浏览器的时间为1天
-    setActiveInterval(86400000)
-
     console.log('采集皇冠比赛', !!process.env.CROWN_MATCHES)
     console.log('采集皇冠赛果', !!process.env.CROWN_SCORE)
 

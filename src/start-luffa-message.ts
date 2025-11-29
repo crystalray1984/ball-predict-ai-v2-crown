@@ -1,13 +1,13 @@
-import { runLoop } from '@/common/helpers'
+import { runLoop } from './common/helpers'
 import {
     LuffaMessage,
     LuffaMessageGroup,
     receiveMsg,
     sendGroupMsg,
     sendSingleMsg,
-} from '@/common/luffa'
-import { close, consume, publish } from '@/common/rabbitmq'
-import { LuffaUser } from '@/db'
+} from './common/luffa'
+import { close, consume, publish } from './common/rabbitmq'
+import { LuffaUser } from './db'
 
 /**
  * 接收来自Luffa的消息
