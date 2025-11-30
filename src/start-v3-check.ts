@@ -4,7 +4,7 @@ import { getOddIdentification, getPromotedOddInfo, getWeekDay, runLoop } from '.
 import { consume, publish } from './common/rabbitmq'
 import { getSetting } from './common/settings'
 import { CONFIG } from './config'
-import { CrownOdd, db, LabelPromoted, Match, Promoted, SurebetV2Odd, VMatch } from './db'
+import { CrownOdd, db, LabelPromoted, Match, Odd, Promoted, VMatch } from './db'
 
 /**
  * 处理赛事的最终结算
@@ -369,20 +369,24 @@ async function processFinalCheck(match: VMatch, crownOdds: CrownOdd[]) {
             JSON.stringify({ id: promoted.id, type: 'generic' }),
         )
 
-        //新老融合推荐
-        //查询是否存在对应的surebet数据
-        const surebetOdd = await SurebetV2Odd.findOne({
-            where: {
-                crown_match_id: match.crown_match_id,
-                variety: promoted.variety,
-                period: promoted.period,
-                type: promoted.type,
-                condition,
-            },
-        })
+        //融合推荐判断，把当前盘口做一个反推，然后去看看surebet原始推送盘口中有没有对应的盘口
+        if (promoted.period === 'regularTime' && promoted.variety === 'goal') {
+            const surebetOddInfo = getPromotedOddInfo(promoted, 1)
 
-        if (surebetOdd && !surebetOdd.promote_id) {
-            await createV2ToV3Promote(surebetOdd, promoted, match.tournament_label_id)
+            //看看是否存在原始的surebet推荐盘口，如果有的话就创建融合推荐
+            const surebetOdd = await Odd.findOne({
+                where: {
+                    match_id: match.id,
+                    variety: promoted.variety,
+                    period: promoted.period,
+                    type: surebetOddInfo.type,
+                    condition: surebetOddInfo.condition,
+                },
+            })
+
+            if (surebetOdd) {
+                await createV2ToV3Promote(surebetOdd, promoted, match.tournament_label_id)
+            }
         }
 
         return
@@ -553,62 +557,23 @@ async function startV3CheckProcessor() {
 }
 
 /**
- * 拿到v2系统抛过来的surebet数据之后的检查进程
- */
-async function startSurebetV2ToV3Check() {
-    const [promise] = consume(CONFIG.queues['surebet_v2_to_v3'], async (content) => {
-        await processSurebetV2ToV3Check(JSON.parse(content))
-    })
-    await promise
-}
-
-/**
- * 处理v2系统抛过来的surebet数据
- * @param surebet
- */
-async function processSurebetV2ToV3Check(surebet: Surebet.Output) {
-    //需要对surebet数据做一次反推
-    const oddInfo = getPromotedOddInfo(surebet.type, 1)
-
-    const [odd, created] = await SurebetV2Odd.findOrCreate({
-        where: {
-            crown_match_id: surebet.crown_match_id,
-            variety: surebet.type.variety,
-            period: surebet.type.period,
-            type: oddInfo.type,
-            condition: oddInfo.condition,
-        },
-        defaults: {
-            crown_match_id: surebet.crown_match_id,
-            variety: surebet.type.variety,
-            period: surebet.type.period,
-            type: oddInfo.type,
-            condition: oddInfo.condition,
-            value: surebet.surebet_value,
-        },
-    })
-
-    if (!created) {
-        //如果不是新增的数据，仅仅更新一下水位就可以出去了
-        odd.value = surebet.surebet_value
-        await odd.save()
-        return
-    }
-}
-
-/**
  * 创建V2和V3的surebet融合推荐
  */
-async function createV2ToV3Promote(
-    odd: SurebetV2Odd,
-    promoted: Promoted,
-    tournament_label_id: number,
-) {
-    //判断surebet盘口的初始条件
-    if (odd.promote_id > 0) return
-
+async function createV2ToV3Promote(odd: Odd, promoted: Promoted, tournament_label_id: number) {
     //判断v3推荐的初始条件
     if (!promoted.is_valid || !promoted.extra?.end_odd_data) return
+
+    //确认一下这个surebet盘口没有创建过融合推荐盘口
+    const isPromoted = await Promoted.findOne({
+        where: {
+            source_type: 'v2_to_v3',
+            source_id: odd.id,
+        },
+        attributes: ['id'],
+    })
+
+    //判断surebet盘口的初始条件
+    if (isPromoted) return
 
     //读取系统配置
     const { surebet_v2_to_v3_back, surebet_v2_to_v3_min_value } = await getSetting(
@@ -676,12 +641,6 @@ async function createV2ToV3Promote(
         },
     })
 
-    //更新原始表的数据
-    await SurebetV2Odd.update(
-        { promote_id: promotedOdd.id },
-        { where: { id: odd.id }, returning: false },
-    )
-
     if (is_valid) {
         //计算排序
         const lastRow = await Promoted.findOne({
@@ -740,6 +699,5 @@ async function createV2ToV3Promote(
 if (require.main === module) {
     runLoop(180000, startV3Check)
     startV3CheckProcessor()
-    startSurebetV2ToV3Check()
     runLoop(30000, processFinalMatches)
 }

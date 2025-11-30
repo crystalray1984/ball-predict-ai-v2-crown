@@ -14,8 +14,6 @@ queues:
   crown_matches_data: 'v3:crown_matches_data'
   send_promoted: 'v3:send_promoted'
   v3_check: 'v3_check'
-  #从v2抛过来的满足条件的surebet盘口
-  surebet_v2_to_v3: 'surebet_v2_to_v3'
   rockball_check_after: 'v3:rockball_check_after'
   crown_score_data: 'v3:crown_score_data'
 

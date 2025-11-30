@@ -13,7 +13,6 @@ import { Promoted } from './models/Promoted'
 import { RockballOdd } from './models/RockballOdd'
 import { Setting } from './models/Setting'
 import { SurebetRecord } from './models/SurebetRecord'
-import { SurebetV2Odd } from './models/SurebetV2Odd'
 import { Team } from './models/Team'
 import { Titan007Odd } from './models/Titan007Odd'
 import { Tournament } from './models/Tournament'
@@ -49,7 +48,6 @@ export const db = new Sequelize(
                 VLuffaUser,
                 NotificationLog,
                 CrownOdd,
-                SurebetV2Odd,
                 TournamentLabel,
                 LabelPromoted,
                 VLabelPromoted,
@@ -74,7 +72,6 @@ export { Promoted } from './models/Promoted'
 export { RockballOdd } from './models/RockballOdd'
 export { Setting } from './models/Setting'
 export { SurebetRecord } from './models/SurebetRecord'
-export { SurebetV2Odd } from './models/SurebetV2Odd'
 export { Team } from './models/Team'
 export { Titan007Odd } from './models/Titan007Odd'
 export { Tournament } from './models/Tournament'
