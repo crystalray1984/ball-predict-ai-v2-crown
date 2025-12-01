@@ -44,6 +44,7 @@ export class Promoted extends Model<InferAttributes<Promoted>, InferCreationAttr
     /**
      * 推荐频道
      */
+    @AllowNull(false)
     @Column(DataType.STRING)
     declare channel: string
 
@@ -64,6 +65,7 @@ export class Promoted extends Model<InferAttributes<Promoted>, InferCreationAttr
     /**
      * 周起点日期标记
      */
+    @AllowNull(false)
     @Column(DataType.INTEGER)
     declare week_day: number
 
