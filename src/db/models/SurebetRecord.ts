@@ -1,9 +1,11 @@
 import type { CreationOptional, InferAttributes, InferCreationAttributes } from 'sequelize'
 import {
+    AllowNull,
     AutoIncrement,
     Column,
     CreatedAt,
     DataType,
+    Default,
     Model,
     PrimaryKey,
     Table,
@@ -61,4 +63,9 @@ export class SurebetRecord extends Model<
     @CreatedAt
     @Column(DataType.DATE)
     declare created_at: CreationOptional<Date>
+
+    @Default('')
+    @AllowNull(false)
+    @Column(DataType.STRING)
+    declare source: CreationOptional<string>
 }

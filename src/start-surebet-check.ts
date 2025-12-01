@@ -176,6 +176,7 @@ async function processSurebetCheck(content: string, allowRockball: boolean, next
                     variety: odd.type.variety,
                     period: odd.type.period,
                     type: odd.type.type,
+                    source: next,
                 },
                 defaults: {
                     crown_match_id: odd.preferred_nav.markers.eventId,
@@ -187,6 +188,7 @@ async function processSurebetCheck(content: string, allowRockball: boolean, next
                     type: odd.type.type,
                     condition: odd.type.condition ?? null,
                     value: String(odd.value),
+                    source: next,
                 },
             })
         } catch (err) {
