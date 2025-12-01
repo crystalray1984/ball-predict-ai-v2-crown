@@ -582,7 +582,7 @@ async function createV2ToV3Promote(odd: Odd, promoted: Promoted, tournament_labe
     )
 
     //先创建要推送的盘口数据
-    const oddInfo = getPromotedOddInfo(promoted, surebet_v2_to_v3_back)
+    const oddInfo = getPromotedOddInfo(promoted, surebet_v2_to_v3_back ? 0 : 1)
 
     //创建标识
     const oddType = getOddIdentification(oddInfo.type)
@@ -602,7 +602,7 @@ async function createV2ToV3Promote(odd: Odd, promoted: Promoted, tournament_labe
 
     //计算水位是否满足要求
     const value = await (async () => {
-        if (!surebet_v2_to_v3_back) {
+        if (surebet_v2_to_v3_back) {
             //不是反推，就直接取原始水位就行
             return promoted.extra.end_odd_data.value
         }
@@ -636,7 +636,7 @@ async function createV2ToV3Promote(odd: Odd, promoted: Promoted, tournament_labe
         odd_type: oddType,
         value,
         extra: {
-            back: surebet_v2_to_v3_back ? 1 : 0,
+            back: surebet_v2_to_v3_back ? 0 : 1,
             promoted_id: promoted.id,
         },
     })
@@ -650,7 +650,7 @@ async function createV2ToV3Promote(odd: Odd, promoted: Promoted, tournament_labe
                 id: {
                     [Op.lt]: promotedOdd.id,
                 },
-                channel: 'v2_to_v3',
+                channel: 'optimized',
             },
             order: [['id', 'desc']],
             attributes: ['week_id'],
