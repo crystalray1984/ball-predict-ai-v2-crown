@@ -1,5 +1,6 @@
 import type { CreationOptional, InferAttributes, InferCreationAttributes } from 'sequelize'
 import {
+    AllowNull,
     AutoIncrement,
     Column,
     CreatedAt,
@@ -49,12 +50,14 @@ export class Promoted extends Model<InferAttributes<Promoted>, InferCreationAttr
     /**
      * 是否为有效推荐
      */
+    @AllowNull(false)
     @Column(DataType.SMALLINT)
     declare is_valid: CreationOptional<number>
 
     /**
      * 推荐无效的原因
      */
+    @AllowNull(false)
     @Column(DataType.STRING)
     declare skip: CreationOptional<string>
 
@@ -67,6 +70,7 @@ export class Promoted extends Model<InferAttributes<Promoted>, InferCreationAttr
     /**
      * 周推荐序号
      */
+    @AllowNull(false)
     @Column(DataType.INTEGER)
     declare week_id: CreationOptional<number>
 
