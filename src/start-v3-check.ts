@@ -594,7 +594,7 @@ async function createV2ToV3Promote(odd: Odd, promoted: Promoted, tournament_labe
             variety: promoted.variety,
             period: promoted.period,
             odd_type: oddType,
-            channel: 'v2_to_v3',
+            channel: 'optimized',
         },
         attributes: ['id'],
     })
