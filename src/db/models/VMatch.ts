@@ -4,7 +4,7 @@ import { Column, DataType, Model, PrimaryKey, Table } from 'sequelize-typescript
 /**
  * 比赛视图
  */
-@Table({ tableName: 'v_match' })
+@Table({ tableName: 'v_match', timestamps: false })
 export class VMatch extends Model<InferAttributes<VMatch>> {
     /**
      * 比赛id
