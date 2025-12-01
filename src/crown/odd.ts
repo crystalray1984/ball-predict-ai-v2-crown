@@ -562,6 +562,7 @@ export function findMatchedOdd(info: OddInfo, odds: Crown.OddInfo[]) {
             return odds.map((odd) => {
                 return {
                     value: odd.value_h,
+                    value_reverse: odd.value_c,
                     condition: odd.condition,
                 }
             })
@@ -570,6 +571,7 @@ export function findMatchedOdd(info: OddInfo, odds: Crown.OddInfo[]) {
             return odds.map((odd) => {
                 return {
                     value: odd.value_c,
+                    value_reverse: odd.value_h,
                     condition: Decimal(0).sub(odd.condition).toString(),
                 }
             })
@@ -577,12 +579,14 @@ export function findMatchedOdd(info: OddInfo, odds: Crown.OddInfo[]) {
             //小球
             return odds.map((odd) => ({
                 value: odd.value_h,
+                value_reverse: odd.value_c,
                 condition: odd.condition,
             }))
         case 'over':
             //大球
             return odds.map((odd) => ({
                 value: odd.value_c,
+                value_reverse: odd.value_h,
                 condition: odd.condition,
             }))
         default:

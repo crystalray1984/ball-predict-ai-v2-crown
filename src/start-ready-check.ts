@@ -148,8 +148,9 @@ async function processReadyCheck(content: string, isMansion: boolean) {
     if (!match.tournament_is_open) return
 
     //寻找与当前盘口相同的皇冠盘口
-    const matchedOdds = findMatchedOdd(extra.type, data.odds)
-    const exists = matchedOdds.find((t) => Decimal(extra.type.condition).eq(t.condition))
+    const exists = findMatchedOdd(extra.type, data.odds).find((t) =>
+        Decimal(extra.type.condition).eq(t.condition),
+    )
 
     //没有对应的皇冠盘口也出去了
     if (!exists) return
@@ -302,20 +303,10 @@ async function processReadyCheck(content: string, isMansion: boolean) {
             },
         })
         if (otherOdd) {
-            //寻找反向盘口
-            const backOdd = {
-                ...getPromotedOddInfo(extra.type, 1),
-                variety: extra.type.variety,
-                period: extra.type.period,
-            }
-            const backMatched = findMatchedOdd(backOdd, data.odds).find((t) =>
-                Decimal(extra.type.condition).eq(t.condition),
-            )
-
             if (isMansion) {
-                await createMansionPromoted(otherOdd, odd, exists.value, backMatched!.value)
+                await createMansionPromoted(otherOdd, odd, exists.value, exists.value_reverse)
             } else {
-                await createMansionPromoted(odd, otherOdd, exists.value, backMatched!.value)
+                await createMansionPromoted(odd, otherOdd, exists.value, exists.value_reverse)
             }
         }
     }
