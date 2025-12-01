@@ -623,9 +623,9 @@ async function createV2ToV3Promote(odd: Odd, promoted: Promoted, tournament_labe
     //插入数据
     const promotedOdd = await Promoted.create({
         match_id: promoted.match_id,
-        source_type: 'v2_to_v3',
+        source_type: 'optimized',
         source_id: odd.id,
-        channel: 'v2_to_v3',
+        channel: 'optimized',
         is_valid,
         skip: is_valid ? '' : 'value',
         week_day: promoted.week_day,
@@ -637,7 +637,7 @@ async function createV2ToV3Promote(odd: Odd, promoted: Promoted, tournament_labe
         value,
         extra: {
             back: surebet_v2_to_v3_back ? 1 : 0,
-            v3_promoted_id: promoted.id,
+            promoted_id: promoted.id,
         },
     })
 

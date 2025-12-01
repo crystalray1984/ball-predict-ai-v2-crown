@@ -413,6 +413,7 @@ async function createMansionPromoted(
             value1,
             odd_id: odd.id,
             mansion_id: mansion.id,
+            back,
         },
     })
 
