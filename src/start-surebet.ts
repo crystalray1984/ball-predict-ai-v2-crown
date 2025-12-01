@@ -30,10 +30,10 @@ export async function startSurebet() {
 /**
  * 开启surebet第二API数据抓取
  */
-export async function startSurebet2() {
+export async function startSurebetMansion() {
     //获取所有的surebet数据
     const records = await getAllOdds({
-        token: CONFIG.surebet2.token,
+        token: CONFIG.surebet_mansion.token,
         product: 'surebets',
         source: '188bet|mansion88_bti',
         sport: 'Football',
@@ -47,12 +47,12 @@ export async function startSurebet2() {
     //抛到后续的队列中
     console.log('mansion', records.length)
     const data = JSON.stringify(records)
-    for (const queue of CONFIG.surebet2.next_queues) {
+    for (const queue of CONFIG.surebet_mansion.next_queues) {
         await publish(queue, data)
     }
 }
 
 if (require.main === module) {
     runLoop(60000, startSurebet)
-    runLoop(60000, startSurebet2)
+    runLoop(60000, startSurebetMansion)
 }

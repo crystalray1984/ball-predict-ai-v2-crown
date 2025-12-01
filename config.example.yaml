@@ -24,7 +24,8 @@ surebet:
   next_queues:
     - 'surebet_check'
     - 'v3:surebet_check'
-surebet2:
+
+surebet_mansion:
   #surebet接口调用凭证
   token: ''
   #获取到数据后需要抛到的下一个队列

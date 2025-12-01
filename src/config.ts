@@ -68,9 +68,9 @@ export interface AppConfig {
      */
     surebet: SurebetConfig
     /**
-     * 第二surebet采集配置
+     * mansion采集配置
      */
-    surebet2: SurebetConfig
+    surebet_mansion: SurebetConfig
     /**
      * 队列名称
      */
