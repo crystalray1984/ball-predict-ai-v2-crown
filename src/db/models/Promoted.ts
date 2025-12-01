@@ -74,7 +74,7 @@ export class Promoted extends Model<InferAttributes<Promoted>, InferCreationAttr
      */
     @AllowNull(false)
     @Column(DataType.INTEGER)
-    declare week_id: CreationOptional<number>
+    declare week_id: number
 
     /**
      * 投注目标

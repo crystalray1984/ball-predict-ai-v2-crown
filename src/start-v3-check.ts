@@ -333,6 +333,7 @@ async function processFinalCheck(match: VMatch, crownOdds: CrownOdd[]) {
             condition,
             value: resultRow[result],
             week_day,
+            week_id: 0,
             channel: 'generic',
             extra: {
                 start_odd_data: {
@@ -629,6 +630,7 @@ async function createV2ToV3Promote(odd: Odd, promoted: Promoted, tournament_labe
         is_valid,
         skip: is_valid ? '' : 'value',
         week_day: promoted.week_day,
+        week_id: 0,
         variety: promoted.variety,
         period: promoted.period,
         type: oddInfo.type,

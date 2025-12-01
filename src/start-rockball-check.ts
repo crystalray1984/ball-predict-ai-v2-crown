@@ -147,6 +147,7 @@ async function processRockballCheck(content: string) {
             is_valid: odd.is_open,
             skip: odd.is_open ? '' : 'manual_close',
             week_day: getWeekDay(),
+            week_id: 0,
             variety: odd.variety,
             period: odd.period,
             type: odd.type,
