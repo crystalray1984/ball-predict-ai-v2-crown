@@ -59,7 +59,6 @@ export function getCrownScore(date: string): Promise<Crown.ScoreInfo[]> {
 
         //解析比赛id列表
         const match = /var myleg = new Array\((.+?)\)/.exec(respHtml.data)
-        console.log('match', match)
         if (!match) return []
         const ids = match[1]
             .split(',')
