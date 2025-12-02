@@ -329,6 +329,7 @@ async function processFinalCheck(match: VMatch, crownOdds: CrownOdd[]) {
             period: resultRow.period,
             odd_type: resultRow.type,
             is_valid: 1,
+            skip: '',
             type,
             condition,
             value: resultRow[result],
