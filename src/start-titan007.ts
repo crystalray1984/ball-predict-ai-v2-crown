@@ -113,7 +113,7 @@ async function processTodayMatch(match: VMatch, todayMatches: Titan007.TodayMatc
     let scoreResult = undefined as Period | undefined
 
     //找到了比赛，开始判断比赛数据
-    if (found.state === -1) {
+    if (found.state === -1 || found.state === 4) {
         //比赛已完场
         if (!match.has_score) {
             //数据库中的比赛没有结果，那么就抓取赛果来更新
