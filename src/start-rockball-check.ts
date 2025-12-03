@@ -58,21 +58,11 @@ async function startRockballCheck() {
         show_type: 'live',
     }))
 
-    //循环写入redis
-    const outputList: typeof list = []
-    for (const item of list) {
-        const result = await redis.hincrby('rockball:tasks', item.crown_match_id, 1)
-        // if (result) {
-        //     outputList.push(item)
-        // }
-        outputList.push(item)
-    }
-
     //抛入到皇冠队列进行盘口抓取
-    if (outputList.length > 0) {
+    if (list.length > 0) {
         await publish(
             'crown_odd',
-            outputList.map((item) => JSON.stringify(item)),
+            list.map((item) => JSON.stringify(item)),
             { priority: 10 },
             { maxPriority: 20 },
         )
@@ -122,7 +112,7 @@ async function processRockballCheck(content: string) {
         if (!exists) continue
 
         //判断一下水位是否达到要求
-        if (Decimal(exists.value).lt(odd.value)) continue
+        if (Decimal(exists.value).add('0.02').lt(odd.value)) continue
 
         //水位达到要求了，那就开始插入推荐
         let promoted = await Promoted.findOne({
@@ -153,7 +143,7 @@ async function processRockballCheck(content: string) {
             type: odd.type,
             condition: odd.condition,
             odd_type: getOddIdentification(odd.type),
-            value: exists.value,
+            value: Decimal(exists.value).add('0.02').toString(),
         })
 
         //标记这个盘口已经得到推荐

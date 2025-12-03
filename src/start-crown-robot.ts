@@ -11,11 +11,6 @@ import { redis } from './db'
 export async function processCrownRequest(content: string) {
     const { next, crown_match_id, extra, show_type } = JSON.parse(content) as CrownRobot.Input
 
-    if (show_type === 'live') {
-        //如果是滚球盘，去掉redis里的标记，表示已经有进程在处理了
-        await redis.hdel('rockball:tasks', crown_match_id)
-    }
-
     //读取皇冠的盘口
     const data = await getCrownData(crown_match_id, show_type === 'live' ? 'live' : 'today')
 
