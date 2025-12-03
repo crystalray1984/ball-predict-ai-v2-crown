@@ -48,12 +48,12 @@ function createPromotionMessage(promoted: VPromotedData) {
             oddParts.push(parseFloat(promoted.condition).toString())
             break
         case 'draw':
-            oddParts.push('平局')
+            oddParts.push('平')
             break
     }
 
     if (Decimal.isDecimal(promoted.value)) {
-        oddParts.push(`@`, Decimal(promoted.value).toFixed(2).toString())
+        oddParts.push(`@${Decimal(promoted.value).toFixed(2).toString()}`)
     }
 
     //构建抛入到下一个队列的数据
@@ -67,7 +67,7 @@ ${promoted.team2_name}
 
 ${promoted.period === 'period1' ? '半场' : '全场'}
 
-${oddParts.join('')}
+${oddParts.join(' ')}
 `
 
     if (promoted.week_id) {
