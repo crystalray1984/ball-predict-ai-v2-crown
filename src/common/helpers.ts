@@ -408,7 +408,7 @@ export function compareValue(
     }
 }
 
-export function isDecimal(value: string | number) {
+export function isDecimal(value: any): value is string | number {
     try {
         Decimal(value)
         return true

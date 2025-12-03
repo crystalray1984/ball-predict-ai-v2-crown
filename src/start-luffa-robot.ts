@@ -2,7 +2,7 @@ import dayjs from 'dayjs'
 import Decimal from 'decimal.js'
 import { InferAttributes } from 'sequelize'
 import { sendSocketMessage } from './common/api'
-import { getNumberWithSymbol } from './common/helpers'
+import { getNumberWithSymbol, isDecimal } from './common/helpers'
 import { getLabelInfo } from './common/label'
 import { close, consume, publish } from './common/rabbitmq'
 import { CONFIG, LuffaNotificationConfig } from './config'
@@ -52,7 +52,7 @@ function createPromotionMessage(promoted: VPromotedData) {
             break
     }
 
-    if (Decimal.isDecimal(promoted.value)) {
+    if (isDecimal(promoted.value)) {
         oddParts.push(`@${Decimal(promoted.value).toFixed(2).toString()}`)
     }
 
