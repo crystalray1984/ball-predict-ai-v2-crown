@@ -143,8 +143,7 @@ async function processReadyCheck(content: string, isMansion: boolean) {
         attributes: ['id', 'status', 'tournament_is_open'],
     })
     if (!match) return
-    //比赛状态不对的去掉
-    if (match.status !== '') return
+
     //联赛被过滤掉的也去掉
     if (!match.tournament_is_open) return
 
@@ -167,6 +166,9 @@ async function processReadyCheck(content: string, isMansion: boolean) {
             await createDirectPromoted(rule, match.id, extra, findMainOdd(extra.type, data.odds)!)
         }
     }
+
+    //比赛状态不对的去掉
+    if (match.status !== '') return
 
     const MainModel = isMansion ? OddMansion : Odd
     const CompareModel = isMansion ? Odd : OddMansion
