@@ -4,7 +4,7 @@ import { getOddIdentification, getWeekDay, runLoop } from './common/helpers'
 import { consume, publish } from './common/rabbitmq'
 import { CONFIG } from './config'
 import { findMatchedOdd } from './crown'
-import { db, Match, Promoted, redis, RockballOdd } from './db'
+import { db, Match, Promoted, RockballOdd } from './db'
 
 /**
  * 开启滚球检查
@@ -112,7 +112,7 @@ async function processRockballCheck(content: string) {
         if (!exists) continue
 
         //判断一下水位是否达到要求
-        if (Decimal(exists.value).add('0.02').lt(odd.value)) continue
+        if (Decimal(exists.value).lt(odd.value)) continue
 
         //水位达到要求了，那就开始插入推荐
         let promoted = await Promoted.findOne({
@@ -143,7 +143,7 @@ async function processRockballCheck(content: string) {
             type: odd.type,
             condition: odd.condition,
             odd_type: getOddIdentification(odd.type),
-            value: Decimal(exists.value).add('0.02').toString(),
+            value: exists.value,
         })
 
         //标记这个盘口已经得到推荐
