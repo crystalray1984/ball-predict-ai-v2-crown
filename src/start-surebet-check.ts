@@ -1,5 +1,6 @@
 import Decimal from 'decimal.js'
 import { omit } from 'lodash'
+import { Op } from 'sequelize'
 import { isEmpty } from './common/helpers'
 import { close, consume, publish } from './common/rabbitmq'
 import { getSetting } from './common/settings'
@@ -46,7 +47,8 @@ async function processRockball(
     surebet: Surebet.OddInfo,
     match_id: number,
 ) {
-    const surebet_condition = Decimal(surebet.type.condition)
+    //满足条件的盘口应该只有一个
+    let matchedRule: RockballConfig | undefined = undefined
 
     for (const rule of config) {
         //基础盘口判定
@@ -70,47 +72,80 @@ async function processRockball(
         //水位判定
         if (Decimal(surebet.value).lt(rule.value)) continue
 
-        //开始生成盘口
-        for (const oddRule of rule.odds) {
-            //尝试寻找相同的盘口
-            const odd = await RockballOdd.findOne({
-                where: {
-                    match_id,
-                    variety: oddRule.variety,
-                    period: oddRule.period,
-                    type: oddRule.type,
-                    condition: oddRule.condition,
-                },
-            })
-            if (odd) {
-                //如果盘口已存在，判断一下水位是否更低
-                if (Decimal(oddRule.value).lt(odd.value)) {
-                    //水位更低就按新的水位写入
-                    odd.value = oddRule.value
-                    odd.source_variety = rule.variety
-                    odd.source_period = rule.period
-                    odd.source_type = rule.type
-                    odd.source_condition = rule.condition
-                    odd.source_value = String(surebet.value)
-                    await odd.save()
-                }
-            } else {
-                //盘口不存在就创建盘口
-                await RockballOdd.create({
-                    match_id,
-                    crown_match_id: surebet.preferred_nav.markers.eventId,
-                    source_variety: rule.variety,
-                    source_period: rule.period,
-                    source_condition: rule.condition,
-                    source_type: rule.type,
-                    source_value: String(surebet.value),
-                    variety: oddRule.variety,
-                    period: oddRule.period,
-                    type: oddRule.type,
-                    condition: oddRule.condition,
-                    value: oddRule.value,
-                })
+        matchedRule = rule
+        break
+    }
+
+    if (!matchedRule) return
+
+    //在生成盘口之前，先判断之前有没有其他更小的盘口创建的待抓取盘口
+    const smaller = await RockballOdd.findOne({
+        where: {
+            match_id,
+            variety: matchedRule.variety,
+            period: matchedRule.period,
+            source_condition: {
+                [Op.lte]: surebet.type.condition,
+            },
+        },
+        attributes: ['id'],
+    })
+
+    //如果已经有更小的盘口创建的就出去了
+    if (smaller) return
+
+    //删除更大的来盘创建的盘口
+    await RockballOdd.destroy({
+        where: {
+            match_id,
+            variety: matchedRule.variety,
+            period: matchedRule.period,
+            source_condition: {
+                [Op.gt]: surebet.type.condition,
+            },
+        },
+    })
+
+    //开始生成盘口
+    for (const oddRule of matchedRule.odds) {
+        //尝试寻找相同的盘口
+        const odd = await RockballOdd.findOne({
+            where: {
+                match_id,
+                variety: oddRule.variety,
+                period: oddRule.period,
+                type: oddRule.type,
+                condition: oddRule.condition,
+            },
+        })
+        if (odd) {
+            //如果盘口已存在，判断一下水位是否更低
+            if (Decimal(oddRule.value).lt(odd.value)) {
+                //水位更低就按新的水位写入
+                odd.value = oddRule.value
+                odd.source_variety = surebet.type.variety
+                odd.source_period = surebet.type.period
+                odd.source_type = surebet.type.type
+                odd.source_condition = surebet.type.condition
+                odd.source_value = String(surebet.value)
+                await odd.save()
             }
+        } else {
+            //盘口不存在就创建盘口
+            await RockballOdd.create({
+                match_id,
+                crown_match_id: surebet.preferred_nav.markers.eventId,
+                source_variety: surebet.type.variety,
+                source_period: surebet.type.period,
+                source_condition: surebet.type.condition,
+                source_type: surebet.type.type,
+                source_value: String(surebet.value),
+                variety: oddRule.variety,
+                period: oddRule.period,
+                type: oddRule.type,
+                condition: oddRule.condition,
+                value: oddRule.value,
+            })
         }
     }
 }
