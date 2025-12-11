@@ -12,7 +12,7 @@ import { getSetting } from './common/settings'
 import { CONFIG } from './config'
 import { findMatchedOdd } from './crown'
 import { findMainOdd } from './crown/odd'
-import { CrownOdd, Match, Odd, OddMansion, Promoted, VMatch } from './db'
+import { Match, Odd, OddMansion, Promoted, VMatch } from './db'
 
 /**
  * 创建直通推荐盘口
@@ -374,7 +374,6 @@ async function createMansionPromoted(
     //         return mansion_promote_reverse ? 1 : 0
     //     }
     // })()
-    const back = 0
 
     //检查水位是否越过了上下限
     if (
@@ -413,9 +412,21 @@ async function createMansionPromoted(
     }
 
     //创建推荐盘口，这里创建的是皇冠主盘的大球
-    const condition = crown.condition
-    const type: OddType = 'over'
-    // const { condition, type } = getPromotedOddInfo(mansion, back)
+    let condition: string
+    let type: OddType
+    let back: number
+    if (['over', 'under'].includes(odd.type)) {
+        //原本就是大小球盘的，按原定方式的反推录入
+        const odd = getPromotedOddInfo(mansion, 1)
+        condition = odd.condition
+        type = odd.type
+        back = 1
+    } else {
+        //原本是让球盘的，固定推大球
+        condition = crown.condition
+        type = 'over'
+        back = 0
+    }
 
     const week_day = getWeekDay()
 
@@ -435,11 +446,11 @@ async function createMansionPromoted(
         odd_type: 'sum',
         value: value1,
         extra: {
-            // value0,
-            // value1,
+            value0,
+            value1,
             odd_id: odd.id,
             mansion_id: mansion.id,
-            // back,
+            back,
         },
     })
 
