@@ -46,12 +46,26 @@ async function processRockball(
     surebet: Surebet.OddInfo,
     match_id: number,
 ) {
+    const surebet_condition = Decimal(surebet.type.condition)
+
     for (const rule of config) {
         //基础盘口判定
         if (rule.variety !== surebet.type.variety) continue
         if (rule.period !== surebet.type.period) continue
         if (rule.type !== surebet.type.type) continue
-        if (rule.condition !== surebet.type.condition) continue
+        if (typeof rule.condition2 === 'undefined') {
+            //规则盘口是个固定值
+            if (!Decimal(rule.condition).eq(surebet.type.condition)) continue
+        } else {
+            //规则盘口是个范围
+            if (
+                !(
+                    Decimal(surebet.type.condition).gte(rule.condition) &&
+                    Decimal(surebet.type.condition).lte(rule.condition2)
+                )
+            )
+                continue
+        }
 
         //水位判定
         if (Decimal(surebet.value).lt(rule.value)) continue

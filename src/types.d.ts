@@ -587,6 +587,11 @@ declare namespace CrownRobot {
  */
 declare interface RockballConfig extends Required<SpecialPromoteRule> {
     /**
+     * 盘口上限
+     */
+    condition2?: string
+
+    /**
      * 水位条件
      */
     value: string
