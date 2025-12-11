@@ -12,7 +12,7 @@ import { getSetting } from './common/settings'
 import { CONFIG } from './config'
 import { findMatchedOdd } from './crown'
 import { findMainOdd } from './crown/odd'
-import { Match, Odd, OddMansion, Promoted, VMatch } from './db'
+import { CrownOdd, Match, Odd, OddMansion, Promoted, VMatch } from './db'
 
 /**
  * 创建直通推荐盘口
@@ -306,10 +306,26 @@ async function processReadyCheck(content: string, isMansion: boolean) {
             },
         })
         if (otherOdd) {
-            if (isMansion) {
-                await createMansionPromoted(otherOdd, odd, exists.value, exists.value_reverse)
-            } else {
-                await createMansionPromoted(odd, otherOdd, exists.value, exists.value_reverse)
+            //从皇冠盘口中寻找大小球盘口
+            const crown = data.odds.find((t) => t.variety === 'goal' && t.type === 'ou')
+            if (crown) {
+                if (isMansion) {
+                    await createMansionPromoted(
+                        otherOdd,
+                        odd,
+                        exists.value,
+                        exists.value_reverse,
+                        crown,
+                    )
+                } else {
+                    await createMansionPromoted(
+                        odd,
+                        otherOdd,
+                        exists.value,
+                        exists.value_reverse,
+                        crown,
+                    )
+                }
             }
         }
     }
@@ -321,12 +337,14 @@ async function processReadyCheck(content: string, isMansion: boolean) {
  * @param mansion mansion对冲盘口
  * @param value0 正推水位
  * @param value1 反推水位
+ * @param crown 大小球盘口
  */
 async function createMansionPromoted(
     odd: Odd,
     mansion: OddMansion,
     value0: string,
     value1: string,
+    crown: Crown.OddInfo,
 ) {
     let is_valid = 1,
         skip = ''
@@ -344,16 +362,19 @@ async function createMansionPromoted(
         'mansion_promote_max_value',
     )
 
+    //如果水位达到了上下限就退出
+
     //根据反推水位和中间点水位来判定正推还是反推
-    const back = (() => {
-        if (Decimal(value1).gt(mansion_promote_middle_value)) {
-            //高水位
-            return mansion_promote_reverse ? 0 : 1
-        } else {
-            //低水位
-            return mansion_promote_reverse ? 1 : 0
-        }
-    })()
+    // const back = (() => {
+    //     if (Decimal(value1).gt(mansion_promote_middle_value)) {
+    //         //高水位
+    //         return mansion_promote_reverse ? 0 : 1
+    //     } else {
+    //         //低水位
+    //         return mansion_promote_reverse ? 1 : 0
+    //     }
+    // })()
+    const back = 0
 
     //检查水位是否越过了上下限
     if (
@@ -364,6 +385,14 @@ async function createMansionPromoted(
         skip = 'setting'
     }
 
+    //如果盘口本身就是大小球，那么也不推
+    if (is_valid === 1 && ['over', 'under'].includes(odd.type)) {
+        is_valid = 0
+        skip = 'setting'
+    }
+
+    //最终要推送的是大球盘
+
     //如果水位满足条件，再判断有没有同类推送
     if (is_valid) {
         const exists = await Promoted.findOne({
@@ -371,7 +400,7 @@ async function createMansionPromoted(
                 match_id: mansion.match_id,
                 variety: mansion.variety,
                 period: mansion.period,
-                odd_type: mansion.odd_type,
+                odd_type: 'sum',
                 is_valid: 1,
                 channel: 'mansion',
             },
@@ -383,8 +412,10 @@ async function createMansionPromoted(
         }
     }
 
-    //创建推荐盘口
-    const { condition, type } = getPromotedOddInfo(mansion, back)
+    //创建推荐盘口，这里创建的是皇冠主盘的大球
+    const condition = crown.condition
+    const type: OddType = 'over'
+    // const { condition, type } = getPromotedOddInfo(mansion, back)
 
     const week_day = getWeekDay()
 
@@ -401,14 +432,14 @@ async function createMansionPromoted(
         period: mansion.period,
         type,
         condition,
-        odd_type: getOddIdentification(mansion.type),
-        value: back ? value1 : value0,
+        odd_type: 'sum',
+        value: value1,
         extra: {
-            value0,
-            value1,
+            // value0,
+            // value1,
             odd_id: odd.id,
             mansion_id: mansion.id,
-            back,
+            // back,
         },
     })
 
