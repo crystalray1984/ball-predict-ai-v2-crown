@@ -141,6 +141,7 @@ async function processRockball(
                 type: oddRule.type,
                 condition: oddRule.condition,
                 value: oddRule.value,
+                is_open: oddRule.disabled ? 0 : 1,
             })
         }
     }

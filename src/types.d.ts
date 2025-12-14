@@ -605,6 +605,7 @@ declare interface RockballConfig extends Required<SpecialPromoteRule> {
 declare interface RockballOddInfo extends OddInfo {
     id: string | number
     value: string
+    disabled?: boolean
 }
 
 declare namespace Socket {
