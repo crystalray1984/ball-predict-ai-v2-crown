@@ -82,8 +82,6 @@ async function processRockball(
     const smaller = await RockballOdd.findOne({
         where: {
             match_id,
-            variety: matchedRule.variety,
-            period: matchedRule.period,
             source_condition: {
                 [Op.lte]: surebet.type.condition,
             },
@@ -98,8 +96,6 @@ async function processRockball(
     await RockballOdd.destroy({
         where: {
             match_id,
-            variety: matchedRule.variety,
-            period: matchedRule.period,
             source_condition: {
                 [Op.gt]: surebet.type.condition,
             },
