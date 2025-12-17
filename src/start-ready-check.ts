@@ -430,29 +430,34 @@ async function createMansionPromoted(
 
     const week_day = getWeekDay()
 
-    const promoted = await Promoted.create({
-        match_id: mansion.match_id,
-        source_type: 'mansion',
-        source_id: mansion.id,
-        channel: 'mansion',
-        is_valid,
-        skip,
-        week_day,
-        week_id: 0,
-        variety: mansion.variety,
-        period: mansion.period,
-        type,
-        condition,
-        odd_type: 'sum',
-        value: value1,
-        extra: {
-            value0,
-            value1,
-            odd_id: odd.id,
-            mansion_id: mansion.id,
-            back,
-        },
-    })
+    let promoted: Promoted
+    try {
+        promoted = await Promoted.create({
+            match_id: mansion.match_id,
+            source_type: 'mansion',
+            source_id: mansion.id,
+            channel: 'mansion',
+            is_valid,
+            skip,
+            week_day,
+            week_id: 0,
+            variety: mansion.variety,
+            period: mansion.period,
+            type,
+            condition,
+            odd_type: 'sum',
+            value: value1,
+            extra: {
+                value0,
+                value1,
+                odd_id: odd.id,
+                mansion_id: mansion.id,
+                back,
+            },
+        })
+    } catch {
+        return
+    }
 
     if (is_valid) {
         //抛出推荐
