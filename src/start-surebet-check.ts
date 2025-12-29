@@ -388,27 +388,16 @@ async function processSurebetCheck(content: string, allowRockball: boolean, next
         }
 
         //滚球队列检查
-        //尝试构建滚球盘口
-        if (odd.type.type === 'over' || odd.type.type === 'under') {
-            console.log(
-                'match',
-                !!match,
-                'tournament_is_rockball_open',
-                match?.tournament_is_rockball_open,
-            )
-            console.log(odd)
-        }
-
-        if (
-            allowRockball &&
-            match &&
-            match.tournament_is_rockball_open &&
-            settings.rockball_config &&
-            Array.isArray(settings.rockball_config) &&
-            settings.rockball_config.length > 0
-        ) {
-            await processRockball(settings.rockball_config, odd, match.id)
-        }
+        // if (
+        //     allowRockball &&
+        //     match &&
+        //     match.tournament_is_rockball_open &&
+        //     settings.rockball_config &&
+        //     Array.isArray(settings.rockball_config) &&
+        //     settings.rockball_config.length > 0
+        // ) {
+        //     await processRockball(settings.rockball_config, odd, match.id)
+        // }
 
         //构建需要抛到后续队列的参数
         const output: Surebet.Output = {

@@ -13,6 +13,7 @@ import { CONFIG } from './config'
 import { findMatchedOdd } from './crown'
 import { findMainOdd } from './crown/odd'
 import { Match, Odd, OddMansion, Promoted, VMatch } from './db'
+import { createRockballOddFromPromoted } from './common/rockball'
 
 /**
  * 创建直通推荐盘口
@@ -107,6 +108,11 @@ async function createDirectPromoted(
         CONFIG.queues['send_promoted'],
         JSON.stringify({ id: promoted.id, type: 'direct' }),
     )
+
+    //创建滚球盘口
+    if (promoted.type === 'over' || promoted.type === 'under') {
+        await createRockballOddFromPromoted(promoted.id)
+    }
 }
 
 /**
@@ -480,6 +486,11 @@ async function createMansionPromoted(
             CONFIG.queues['send_promoted'],
             JSON.stringify({ id: promoted.id, type: 'mansion' }),
         )
+
+        //录入滚球盘
+        if (promoted.type === 'under' || promoted.type === 'over') {
+            await createRockballOddFromPromoted(promoted.id)
+        }
     }
 }
 

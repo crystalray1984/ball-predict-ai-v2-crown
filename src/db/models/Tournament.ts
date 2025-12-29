@@ -53,6 +53,12 @@ export class Tournament extends Model<
     declare is_open: CreationOptional<number>
 
     /**
+     * 是否开启滚球盘推荐
+     */
+    @Column(DataType.SMALLINT)
+    declare is_rockball_open: CreationOptional<number>
+
+    /**
      * 标签id
      */
     @Column(DataType.INTEGER)
