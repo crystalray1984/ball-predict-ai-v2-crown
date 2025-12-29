@@ -10,14 +10,7 @@ import { getSetting } from './settings'
 interface RockballInput
     extends Pick<
         InferAttributes<VPromoted>,
-        | 'match_id'
-        | 'variety'
-        | 'period'
-        | 'type'
-        | 'condition'
-        | 'value'
-        | 'tournament_id'
-        | 'crown_match_id'
+        'match_id' | 'variety' | 'period' | 'type' | 'condition' | 'value' | 'crown_match_id'
     > {}
 
 /**
@@ -37,15 +30,6 @@ export async function createRockballOddFromPromoted(input: RockballInput | numbe
         })
         if (!promoted) return
         input = promoted
-    }
-
-    //判断联赛是否要开滚球
-    const tournament = await Tournament.findOne({
-        where: { id: input.tournament_id },
-        attributes: ['is_rockball_open'],
-    })
-    if (!tournament || !tournament.is_rockball_open) {
-        return
     }
 
     let matchedRule: RockballConfig | undefined = undefined
