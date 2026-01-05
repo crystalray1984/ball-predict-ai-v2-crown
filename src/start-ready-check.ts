@@ -1,6 +1,7 @@
 import Decimal from 'decimal.js'
 import { literal, Op, UniqueConstraintError } from 'sequelize'
 import {
+    compareValue,
     findRule,
     getOddIdentification,
     getPromotedOddInfo,
@@ -356,31 +357,12 @@ async function createMansionPromoted(
         skip = ''
 
     //读取配置，根据水位区间确定是用正推还是反推
-    const {
-        mansion_promote_reverse,
-        mansion_promote_min_value,
-        mansion_promote_middle_value,
-        mansion_promote_max_value,
-    } = await getSetting(
-        'mansion_promote_reverse',
-        'mansion_promote_min_value',
-        'mansion_promote_middle_value',
-        'mansion_promote_max_value',
-    )
-
-    //如果水位达到了上下限就退出
-
-    //根据反推水位和中间点水位来判定正推还是反推
-    // const back = (() => {
-    //     if (Decimal(value1).gt(mansion_promote_middle_value)) {
-    //         //高水位
-    //         return mansion_promote_reverse ? 0 : 1
-    //     } else {
-    //         //低水位
-    //         return mansion_promote_reverse ? 1 : 0
-    //     }
-    // })()
-
+    const { mansion_promote_reverse, mansion_promote_min_value, mansion_promote_max_value } =
+        await getSetting(
+            'mansion_promote_reverse',
+            'mansion_promote_min_value',
+            'mansion_promote_max_value',
+        )
     //检查水位是否越过了上下限
     if (
         Decimal(value1).lt(mansion_promote_min_value) ||
@@ -428,10 +410,26 @@ async function createMansionPromoted(
         type = odd.type
         back = 1
     } else {
-        //原本是让球盘的，固定推大球
-        condition = crown.condition
-        type = 'over'
-        back = 0
+        //原本是让球盘的，根据配置规则，如果有满足规则的推小球，其余的默认推大球
+        let reverse = false
+        if (Array.isArray(mansion_promote_reverse) && mansion_promote_reverse.length > 0) {
+            if (
+                mansion_promote_reverse.some((rule: SumCondition) =>
+                    compareValue(crown.condition, rule.condition, rule.condition_symbol),
+                )
+            ) {
+                reverse = true
+            }
+        }
+        if (reverse) {
+            condition = crown.condition
+            type = 'under'
+            back = 1
+        } else {
+            condition = crown.condition
+            type = 'over'
+            back = 0
+        }
     }
 
     const week_day = getWeekDay()

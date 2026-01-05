@@ -56,6 +56,15 @@ declare interface SpecialConfig {
 }
 
 /**
+ * 对比的大小球筛选条件
+ */
+declare interface SumCondition {
+    id: string | number
+    condition_symbol: '>=' | '>' | '<=' | '<' | '='
+    condition: string
+}
+
+/**
  * 特殊的二次比对通过规则
  */
 declare interface SpecialPromoteRule extends Partial<OddInfo> {
