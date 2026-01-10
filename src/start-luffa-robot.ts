@@ -131,6 +131,10 @@ async function processSendPromoted(content: string) {
             target = CONFIG.luffa.rockball
             socket_type = 'rockball'
             break
+        //滚球2
+        case 'rockball2':
+            socket_type = 'rockball2'
+            break
         //总台
         case 'generic':
             target = CONFIG.luffa.notification_channel2

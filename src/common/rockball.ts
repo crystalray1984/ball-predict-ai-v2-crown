@@ -1,4 +1,4 @@
-import { RockballOdd, Tournament, VPromoted } from '@/db'
+import { RockballOdd, VPromoted } from '@/db'
 import Decimal from 'decimal.js'
 import { InferAttributes, Op } from 'sequelize'
 import { isDecimal } from './helpers'
@@ -10,7 +10,15 @@ import { getSetting } from './settings'
 interface RockballInput
     extends Pick<
         InferAttributes<VPromoted>,
-        'match_id' | 'variety' | 'period' | 'type' | 'condition' | 'value' | 'crown_match_id'
+        | 'id'
+        | 'channel'
+        | 'match_id'
+        | 'variety'
+        | 'period'
+        | 'type'
+        | 'condition'
+        | 'value'
+        | 'crown_match_id'
     > {}
 
 /**
@@ -125,6 +133,8 @@ export async function createRockballOddFromPromoted(input: RockballInput | numbe
                 condition: oddRule.condition,
                 value: oddRule.value,
                 is_open: oddRule.disabled ? 0 : 1,
+                source_channel: input.channel,
+                source_id: input.id,
             })
         }
     }

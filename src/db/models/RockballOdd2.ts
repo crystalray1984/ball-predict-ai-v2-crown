@@ -13,10 +13,10 @@ import {
 /**
  * 滚球追踪盘口表
  */
-@Table({ tableName: 'rockball_odd' })
-export class RockballOdd extends Model<
-    InferAttributes<RockballOdd>,
-    InferCreationAttributes<RockballOdd>
+@Table({ tableName: 'rockball_odd2' })
+export class RockballOdd2 extends Model<
+    InferAttributes<RockballOdd2>,
+    InferCreationAttributes<RockballOdd2>
 > {
     /**
      * 盘口id
@@ -114,16 +114,4 @@ export class RockballOdd extends Model<
 
     @Column(DataType.INTEGER)
     declare is_open: CreationOptional<number>
-
-    /**
-     * 来源推荐通道
-     */
-    @Column(DataType.STRING)
-    declare source_channel: string
-
-    /**
-     * 来源推荐id
-     */
-    @Column(DataType.INTEGER)
-    declare source_id: number
 }
