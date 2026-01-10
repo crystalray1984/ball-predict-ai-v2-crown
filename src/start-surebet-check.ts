@@ -111,19 +111,7 @@ async function processRockball2(
                 condition: oddRule.condition,
             },
         })
-        if (odd) {
-            //如果盘口已存在，判断一下水位是否更低
-            if (Decimal(oddRule.value).lt(odd.value)) {
-                //水位更低就按新的水位写入
-                odd.value = oddRule.value
-                odd.source_variety = surebet.type.variety
-                odd.source_period = surebet.type.period
-                odd.source_type = surebet.type.type
-                odd.source_condition = surebet.type.condition
-                odd.source_value = String(surebet.value)
-                await odd.save()
-            }
-        } else {
+        if (!odd) {
             //盘口不存在就创建盘口
             await RockballOdd2.create({
                 match_id,
@@ -137,7 +125,7 @@ async function processRockball2(
                 period: oddRule.period,
                 type: oddRule.type,
                 condition: oddRule.condition,
-                value: oddRule.value,
+                value: '0',
                 is_open: oddRule.disabled ? 0 : 1,
             })
         }
