@@ -46,6 +46,7 @@ async function processRockball2(
     config: RockballConfig[],
     surebet: Surebet.OddInfo,
     match_id: number,
+    is_rockball_open: number,
 ) {
     //满足条件的盘口应该只有一个
     let matchedRule: RockballConfig | undefined = undefined
@@ -126,7 +127,7 @@ async function processRockball2(
                 type: oddRule.type,
                 condition: oddRule.condition,
                 value: '0',
-                is_open: oddRule.disabled ? 0 : 1,
+                is_open: !oddRule.disabled && is_rockball_open ? 1 : 0,
             })
         }
     }
@@ -376,12 +377,16 @@ async function processSurebetCheck(content: string, allowRockball: boolean, next
         if (
             allowRockball &&
             match &&
-            match.tournament_is_rockball_open &&
             settings.rockball_config2 &&
             Array.isArray(settings.rockball_config2) &&
             settings.rockball_config2.length > 0
         ) {
-            await processRockball2(settings.rockball_config2, odd, match.id)
+            await processRockball2(
+                settings.rockball_config2,
+                odd,
+                match.id,
+                match.tournament_is_rockball_open,
+            )
         }
 
         //构建需要抛到后续队列的参数
