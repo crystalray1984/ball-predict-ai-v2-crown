@@ -1,7 +1,7 @@
 import Decimal from 'decimal.js'
 import { omit } from 'lodash'
 import { Op } from 'sequelize'
-import { isEmpty } from './common/helpers'
+import { isDecimal, isEmpty } from './common/helpers'
 import { close, consume, publish } from './common/rabbitmq'
 import { getSetting } from './common/settings'
 import { CONFIG } from './config'
@@ -56,7 +56,7 @@ async function processRockball2(
         if (rule.variety !== surebet.type.variety) continue
         if (rule.period !== surebet.type.period) continue
         if (rule.type !== surebet.type.type) continue
-        if (typeof rule.condition2 === 'undefined') {
+        if (!isDecimal(rule.condition2)) {
             //规则盘口是个固定值
             if (!Decimal(rule.condition).eq(surebet.type.condition)) continue
         } else {
@@ -126,7 +126,7 @@ async function processRockball2(
                 period: oddRule.period,
                 type: oddRule.type,
                 condition: oddRule.condition,
-                value: '0',
+                value: oddRule.value,
                 is_open: !oddRule.disabled && is_rockball_open ? 1 : 0,
             })
         }
