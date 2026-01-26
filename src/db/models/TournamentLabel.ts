@@ -1,4 +1,4 @@
-import type { InferAttributes } from 'sequelize'
+import type { CreationOptional, InferAttributes } from 'sequelize'
 import { Column, DataType, Model, PrimaryKey, Table } from 'sequelize-typescript'
 
 /**
@@ -18,4 +18,10 @@ export class TournamentLabel extends Model<InferAttributes<TournamentLabel>> {
 
     @Column(DataType.INTEGER)
     declare luffa_type: number
+
+    /**
+     * 此联赛是否允许bmiss投注
+     */
+    @Column(DataType.TINYINT)
+    declare bmiss_bet_enable: CreationOptional<number>
 }

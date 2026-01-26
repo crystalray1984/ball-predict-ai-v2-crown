@@ -11,6 +11,7 @@ import {
 } from 'sequelize-typescript'
 import { Team } from './Team'
 import { Tournament } from './Tournament'
+import { TournamentLabel } from './TournamentLabel'
 
 /**
  * 比赛表
@@ -148,6 +149,12 @@ export class Match extends Model<InferAttributes<Match>, InferCreationAttributes
     declare updated_at: CreationOptional<Date>
 
     /**
+     * 是否允许bmiss投注
+     */
+    @Column(DataType.TINYINT)
+    declare bmiss_bet_enable: CreationOptional<number>
+
+    /**
      * 准备比赛
      */
     static async prepare(data: Crown.MatchInfo): Promise<[number, boolean]> {
@@ -184,8 +191,19 @@ export class Match extends Model<InferAttributes<Match>, InferCreationAttributes
                 crown_tournament_id: data.lid,
                 name: data.league,
             },
-            attributes: ['id'],
+            attributes: ['id', 'label_id'],
         })
+
+        let bmiss_bet_enable = 0
+        if (tournament.label_id) {
+            //如果联赛有标签，那么获取标签的信息
+            const label = await TournamentLabel.findByPk(tournament.label_id, {
+                attributes: ['bmiss_bet_enable'],
+            })
+            if (label) {
+                bmiss_bet_enable = label.bmiss_bet_enable
+            }
+        }
 
         //准备好队伍
         const team1_id = await Team.prepare(data.team_id_h, data.team_h)
@@ -199,6 +217,7 @@ export class Match extends Model<InferAttributes<Match>, InferCreationAttributes
                 team1_id,
                 team2_id,
                 match_time: new Date(data.match_time),
+                bmiss_bet_enable,
             },
             {
                 returning: ['id'],

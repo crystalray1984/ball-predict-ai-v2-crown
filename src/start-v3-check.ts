@@ -1,5 +1,6 @@
 import Decimal from 'decimal.js'
 import { Op, QueryTypes } from 'sequelize'
+import { parseMainOddForBmiss } from './common/bmiss'
 import { getOddIdentification, getPromotedOddInfo, getWeekDay, runLoop } from './common/helpers'
 import { consume, publish } from './common/rabbitmq'
 import { getSetting } from './common/settings'
@@ -461,13 +462,13 @@ async function startV3Check() {
 /**
  * 保存从皇冠持续采集来的盘口
  */
-async function saveCrownOdd({
-    crown_match_id,
-    data,
-    extra,
-}: CrownRobot.Output<{
-    match_id: number
-}>) {
+async function saveCrownOdd(
+    all: CrownRobot.Output<{
+        match_id: number
+    }>,
+) {
+    const { crown_match_id, data, extra } = all
+
     if (!data || !extra) return
 
     const { match_id } = extra
@@ -477,8 +478,15 @@ async function saveCrownOdd({
         where: {
             id: extra.match_id,
         },
-        attributes: ['status'],
+        attributes: ['status', 'bmiss_bet_enable', 'match_time'],
     })
+
+    if (!match) return
+
+    //bmiss投注判断
+    if (match.bmiss_bet_enable && match.match_time.valueOf() > Date.now()) {
+        parseMainOddForBmiss(all)
+    }
 
     //没有找到比赛或者比赛状态不对就出去了
     if (!match || match.status !== '') return

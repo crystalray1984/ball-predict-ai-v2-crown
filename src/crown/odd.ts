@@ -347,6 +347,38 @@ function formatOddData(input: Crown.Resp, rockball = false) {
                     value_c,
                 })
             }
+            //全场独赢
+            if (
+                game.sw_M === 'Y' &&
+                isDecimal(game.ior_MH) &&
+                isDecimal(game.ior_MC) &&
+                isDecimal(game.ior_MN)
+            ) {
+                add({
+                    variety: 'goal',
+                    type: 'm',
+                    condition: '0',
+                    value_h: game.ior_MH,
+                    value_c: game.ior_MC,
+                    value_n: game.ior_MN,
+                })
+            }
+            //上半场独赢
+            if (
+                game.sw_HM === 'Y' &&
+                isDecimal(game.ior_HMH) &&
+                isDecimal(game.ior_HMC) &&
+                isDecimal(game.ior_HMN)
+            ) {
+                add({
+                    variety: 'goal',
+                    type: 'hm',
+                    condition: '0',
+                    value_h: game.ior_HMH,
+                    value_c: game.ior_HMC,
+                    value_n: game.ior_HMN,
+                })
+            }
         }
         //角球
         else if (game.ptype_id === '146') {

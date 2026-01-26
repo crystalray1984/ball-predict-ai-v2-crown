@@ -29,5 +29,6 @@ module.exports = {
     'luffa-message': createConfig('luffa-message'),
     'v3-check': createConfig('v3-check'),
     'rockball-check': createConfig('rockball-check'),
+    'bmiss-check': createConfig('bmiss-check'),
     createConfig,
 }

@@ -281,6 +281,38 @@ declare namespace Crown {
          * 滚球半场大小球大球水位
          */
         ior_HROUC: string
+        /**
+         * 全场独赢是否开启
+         */
+        sw_M: 'Y' | 'N'
+        /**
+         * 独赢主胜水位
+         */
+        ior_MH: string
+        /**
+         * 独赢客胜水位
+         */
+        ior_MC: string
+        /**
+         * 独赢平局水位
+         */
+        ior_MN: string
+        /**
+         * 上半场独赢是否开启
+         */
+        sw_HM: 'Y' | 'N'
+        /**
+         * 上半场独赢主胜水位
+         */
+        ior_HMH: string
+        /**
+         * 上半场独赢客胜水位
+         */
+        ior_HMC: string
+        /**
+         * 上半场独赢平局水位
+         */
+        ior_HMN: string
     }
 
     /**
@@ -295,10 +327,11 @@ declare namespace Crown {
 
     interface OddInfo {
         variety: Variety
-        type: 'r' | 'hr' | 'ou' | 'hou'
+        type: 'r' | 'hr' | 'ou' | 'hou' | 'm' | 'hm'
         condition: string
         value_h: string
         value_c: string
+        value_n?: string
     }
 
     /**
