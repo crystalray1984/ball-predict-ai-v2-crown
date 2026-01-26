@@ -133,6 +133,12 @@ export class VMatch extends Model<InferAttributes<VMatch>> {
     @Column(DataType.DATE)
     declare updated_at: Date
 
+    /**
+     * 是否允许bmiss投注
+     */
+    @Column(DataType.TINYINT)
+    declare bmiss_bet_enable: number
+
     @Column(DataType.STRING)
     declare tournament_name: string
 
