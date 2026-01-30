@@ -12,6 +12,7 @@ import { intersection } from 'lodash'
 import { writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { InferAttributes, Op, WhereOptions } from 'sequelize'
+import { publish } from './common/rabbitmq'
 
 /**
  * 处理今日抓到的单场比赛数据
@@ -191,6 +192,11 @@ export async function processFinalMatch(match: VMatch, period: Period): Promise<
         promoted.score2 = result.score2
 
         await promoted.save()
+    }
+
+    if (period === 'regularTime') {
+        //全场完赛时抛到队列去处理Bmiss投注
+        await publish('bmiss-bet-settlement', JSON.stringify({ match_id: match.id }))
     }
 }
 
