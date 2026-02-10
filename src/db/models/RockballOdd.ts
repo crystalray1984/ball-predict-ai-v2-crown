@@ -126,4 +126,10 @@ export class RockballOdd extends Model<
      */
     @Column(DataType.INTEGER)
     declare source_id: number
+
+    /**
+     * 手动设置的投注方向
+     */
+    @Column(DataType.STRING)
+    declare manual_type: CreationOptional<OddType>
 }

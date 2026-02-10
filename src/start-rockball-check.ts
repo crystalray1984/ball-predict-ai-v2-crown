@@ -169,8 +169,18 @@ async function processRockballCheck(content: string) {
 
         //对每个滚球盘口进行处理
         for (const odd of odds) {
+            const info: OddInfo = {
+                type: odd.type,
+                condition: odd.condition,
+                variety: odd.variety,
+                period: odd.period,
+            }
+            if ('manual_type' in odd && odd.manual_type) {
+                info.type = odd.manual_type
+            }
+
             //查询皇冠抓来的数据里有没有对应的盘口
-            const exists = findMatchedOdd(odd, data.odds).find((t) =>
+            const exists = findMatchedOdd(info, data.odds).find((t) =>
                 Decimal(odd.condition).eq(t.condition),
             )
 
@@ -185,7 +195,7 @@ async function processRockballCheck(content: string) {
                     match_id: match.id,
                     variety: odd.variety,
                     period: odd.period,
-                    type: odd.type,
+                    type: info.type,
                     condition: odd.condition,
                     channel: source.channel,
                 },
