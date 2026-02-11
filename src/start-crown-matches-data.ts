@@ -124,13 +124,14 @@ async function parseI18nData(content: string) {
         })
         if (!tournament) continue
 
-        console.log(`id=${tournament.id}`, typeof tournament.i18n_name)
-
         if (tournament.i18n_name) {
             if (tournament.i18n_name[lang] === name) {
                 continue
             }
-            tournament.i18n_name[lang] = name
+            tournament.i18n_name = {
+                ...tournament.i18n_name,
+                [lang]: name,
+            }
         } else {
             tournament.i18n_name = { [lang]: name }
         }
@@ -147,13 +148,14 @@ async function parseI18nData(content: string) {
         })
         if (!team) continue
 
-        console.log(`id=${team.id}`, typeof team.i18n_name)
-
         if (team.i18n_name) {
             if (team.i18n_name[lang] === name) {
                 continue
             }
-            team.i18n_name[lang] = name
+            team.i18n_name = {
+                ...team.i18n_name,
+                [lang]: name,
+            }
         } else {
             team.i18n_name = { [lang]: name }
         }
