@@ -3,7 +3,7 @@ import * as rabbitmq from './common/rabbitmq'
 import * as socket from './common/socket'
 import { CONFIG } from './config'
 import { getCrownData, getCrownMatches, getCrownScore, init, reset } from './crown'
-import { redis } from './db'
+import { getTodayMatches } from './crown/match'
 
 /**
  * 处理从消费队列中来的皇冠盘口抓取请求
@@ -39,6 +39,53 @@ async function startCrownMatches() {
 
     for (const queue of CONFIG.crown_matches_data_queues) {
         await rabbitmq.publish(queue, data)
+    }
+
+    const todayMatches = await getTodayMatches()
+    //把数据抛到队列中
+    const todayData = JSON.stringify(todayMatches)
+
+    for (const queue of CONFIG.crown_matches_data_queues) {
+        await rabbitmq.publish(queue, todayData)
+    }
+
+    await startI18n()
+}
+
+const LANGUAGES: Crown.Language[] = ['en-us', 'zh-tw']
+
+/**
+ * 采集多语言数据
+ */
+async function startI18n() {
+    for (const langx of LANGUAGES) {
+        const teams: Record<string, string> = {}
+        const tournaments: Record<string, string> = {}
+
+        /**
+         * 从比赛数据中解析赛事和队伍数据
+         * @param matches
+         */
+        const parseMatches = (matches: Crown.MatchInfo[]) => {
+            matches.forEach((match) => {
+                tournaments[match.lid] = match.league
+                teams[match.team_id_h] = match.team_h
+                teams[match.team_id_c] = match.team_c
+            })
+        }
+
+        //采集早盘比赛数据
+        parseMatches(await getCrownMatches(langx))
+        //采集今日比赛数据
+        parseMatches(await getTodayMatches(langx))
+        //抛到更新队列
+        const data = {
+            teams: Object.entries(teams).map(([id, name]) => ({ id, name })),
+            tournaments: Object.entries(tournaments).map(([id, name]) => ({ id, name })),
+            lang: langx.split('-')[0],
+        }
+
+        await rabbitmq.publish('i18n_data', JSON.stringify(data))
     }
 }
 

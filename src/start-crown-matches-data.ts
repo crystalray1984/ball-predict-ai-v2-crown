@@ -2,7 +2,7 @@ import { Op } from 'sequelize'
 import { getOddResult } from './common/helpers'
 import { consume } from './common/rabbitmq'
 import { CONFIG } from './config'
-import { Match, Promoted, VMatch } from './db'
+import { Match, Promoted, Team, Tournament, VMatch } from './db'
 
 /**
  * 解析从队列中得到的皇冠比赛数据
@@ -102,7 +102,73 @@ async function startCrownScoreData() {
     }
 }
 
+interface LocaledData {
+    id: string
+    name: string
+}
+
+async function parseI18nData(content: string) {
+    const { teams, tournaments, lang } = JSON.parse(content) as {
+        teams: LocaledData[]
+        tournaments: LocaledData[]
+        lang: string
+    }
+
+    //执行联赛更新
+    for (const { id, name } of tournaments) {
+        const tournament = await Tournament.findOne({
+            where: {
+                crown_tournament_id: id,
+            },
+            attributes: ['id', 'i18n_name'],
+        })
+        if (!tournament) continue
+
+        if (tournament.i18n_name) {
+            if (tournament.i18n_name[lang] === name) {
+                continue
+            }
+            tournament.i18n_name[lang] = name
+        } else {
+            tournament.i18n_name = { [lang]: name }
+        }
+        await tournament.save()
+    }
+
+    //执行队伍更新
+    for (const { id, name } of teams) {
+        const team = await Team.findOne({
+            where: {
+                crown_team_id: id,
+            },
+            attributes: ['id', 'i18n_name'],
+        })
+        if (!team) continue
+
+        if (team.i18n_name) {
+            if (team.i18n_name[lang] === name) {
+                continue
+            }
+            team.i18n_name[lang] = name
+        } else {
+            team.i18n_name = { [lang]: name }
+        }
+        await team.save()
+    }
+}
+
+/**
+ * 解析从队列得到的多语言数据
+ */
+async function startI18nData() {
+    while (true) {
+        const [promise] = consume('i18n_data', parseI18nData)
+        await promise
+    }
+}
+
 if (require.main === module) {
     startCrownMatchesData()
     startCrownScoreData()
+    startI18nData()
 }

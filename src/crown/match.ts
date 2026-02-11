@@ -9,9 +9,9 @@ dayjs.extend(utc)
 dayjs.extend(timezone)
 
 /**
- * 从皇冠页面获取比赛列表
+ * 从皇冠页面获取早盘比赛列表
  */
-export async function getCrownMatches(): Promise<Crown.MatchInfo[]> {
+export async function getCrownMatches(langx: Crown.Language = 'zh-cn'): Promise<Crown.MatchInfo[]> {
     return crownQueue.add(async () => {
         const page = await ready()
 
@@ -28,7 +28,7 @@ export async function getCrownMatches(): Promise<Crown.MatchInfo[]> {
     par += "&ts=" + Date.now();
 
     var params = new URLSearchParams(par);
-    params.set('langx', 'zh-cn');
+    params.set('langx', '${langx}');
 
     var getHTML = new HttpRequest;
     return new Promise((resolve, reject) => {
@@ -68,7 +68,7 @@ export async function getCrownMatches(): Promise<Crown.MatchInfo[]> {
         for (let start = 0; start < lids.length; start += 5) {
             const subList = lids.slice(start, start + 5)
             await delay(1000)
-            result = result.concat(await getCrownMatchesWithLeagues(page, subList))
+            result = result.concat(await getCrownMatchesWithLeagues(page, subList, langx))
         }
 
         //读取联赛列表
@@ -77,7 +77,78 @@ export async function getCrownMatches(): Promise<Crown.MatchInfo[]> {
     })
 }
 
-async function getCrownMatchesWithLeagues(page: Page, lids: string[]): Promise<Crown.MatchInfo[]> {
+/**
+ * 从皇冠页面获取今日比赛列表
+ */
+export async function getTodayMatches(langx: Crown.Language = 'zh-cn'): Promise<Crown.MatchInfo[]> {
+    return crownQueue.add(async () => {
+        const page = await ready()
+
+        const func2 = `
+(function () {
+    var par = top.param;
+    par += "&p=get_game_list";
+    par += "&p3type=";
+    par += "&date=";
+    par += "&gtype=ft";
+    par += "&showtype=today";
+    par += "&rtype=r";
+    par += "&ltype=" + top["userData"].ltype;
+    par += "&filter=MIX";
+    par += "&cupFantasy=N";
+    // par += "&field=cp1";
+    par += "&sorttype=L";
+    par += "&specialClick=";
+    par += "&isFantasy=N";
+    par += "&ts=" + Date.now();
+    par += "&chgSortTS=" + Date.now()
+
+    var params = new URLSearchParams(par);
+    params.set('langx', '${langx}');
+
+    var getHTML = new HttpRequest;
+    return new Promise((resolve, reject) => {
+        getHTML.addEventListener("onError", reject);
+        getHTML.addEventListener("LoadComplete", resolve);
+        getHTML.loadURL(top.m2_url, "POST", params.toString())
+    })
+})()
+`
+        const respList = (await page.evaluate(func2)) as string
+        console.log('抓取皇冠今日比赛列表完成')
+        const gameList = xmlParser.parse(respList).serverresponse
+
+        if (!Array.isArray(gameList.ec) || gameList.ec.length === 0) {
+            console.log('未读取到今日皇冠比赛列表')
+            return []
+        }
+
+        const result: Crown.MatchInfo[] = []
+
+        gameList.ec.forEach((ec: Record<string, any>) => {
+            if (ec['@_hasEC'] !== 'Y' || !ec.game || ec.game.ISFANTASY === 'Y') return
+            const game = ec.game as Record<string, string>
+            result.push({
+                lid: game.LID,
+                league: game.LEAGUE,
+                team_id_h: game.TEAM_H_ID,
+                team_id_c: game.TEAM_C_ID,
+                team_h: game.TEAM_H,
+                team_c: game.TEAM_C,
+                ecid: game.ECID,
+                match_time: parseMatchTime(game.SYSTIME, game.DATETIME),
+            })
+        })
+
+        return result
+    })
+}
+
+async function getCrownMatchesWithLeagues(
+    page: Page,
+    lids: string[],
+    langx: Crown.Language = 'zh-cn',
+): Promise<Crown.MatchInfo[]> {
     const func2 = `
 (function () {
     var par = top.param;
@@ -99,7 +170,7 @@ async function getCrownMatchesWithLeagues(page: Page, lids: string[]): Promise<C
     par += "&ts=" + Date.now();
 
     var params = new URLSearchParams(par);
-    params.set('langx', 'zh-cn');
+    params.set('langx', '${langx}');
 
     var getHTML = new HttpRequest;
     return new Promise((resolve, reject) => {
@@ -144,7 +215,7 @@ async function getCrownMatchesWithLeagues(page: Page, lids: string[]): Promise<C
  * @param DATETIME
  * @returns
  */
-function parseMatchTime(SYSTIME: string, DATETIME: string) {
+export function parseMatchTime(SYSTIME: string, DATETIME: string) {
     const timeMatch = /([0-9]+)-([0-9]+) ([0-9]+):([0-9]+)(a|p)/.exec(DATETIME)!
 
     let hour = parseInt(timeMatch[3])
@@ -164,4 +235,13 @@ function parseMatchTime(SYSTIME: string, DATETIME: string) {
     }
 
     return matchTime.valueOf()
+}
+
+/**
+ * 解析皇冠比赛时间
+ * @param time 从盘口数据中拿到的原始比赛时间
+ * @returns
+ */
+export function parseFullMatchTime(time: string) {
+    return dayjs.tz(time, '-04:00').valueOf()
 }

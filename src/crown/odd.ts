@@ -1,9 +1,10 @@
-import Decimal from 'decimal.js'
-import { crownQueue, ready, xmlParser } from './base'
 import { isDecimal, isEmpty, prepareDir } from '@/common/helpers'
-import { join, resolve } from 'node:path'
-import { writeFile } from 'node:fs/promises'
 import dayjs from 'dayjs'
+import Decimal from 'decimal.js'
+import { writeFile } from 'node:fs/promises'
+import { join, resolve } from 'node:path'
+import { crownQueue, ready, xmlParser } from './base'
+import { parseFullMatchTime } from './match'
 
 /**
  * 读取皇冠盘口数据
@@ -87,7 +88,7 @@ function formatOddData(input: Crown.Resp, rockball = false) {
      * 比赛主体数据
      */
     const match: Crown.MatchInfo = {
-        match_time: 0,
+        match_time: parseFullMatchTime(mainGame.datetime),
         ecid: mainGame.ecid,
         league: mainGame.league,
         lid: mainGame.lid,

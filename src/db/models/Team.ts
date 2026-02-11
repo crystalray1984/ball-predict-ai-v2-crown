@@ -41,6 +41,12 @@ export class Team extends Model<InferAttributes<Team>, InferCreationAttributes<T
     @Column(DataType.STRING(100))
     declare name: string
 
+    /**
+     * 多语言队伍名称
+     */
+    @Column(DataType.JSON)
+    declare i18n_name: CreationOptional<Record<string, string> | null>
+
     @CreatedAt
     @Column(DataType.DATE)
     declare created_at: CreationOptional<Date>

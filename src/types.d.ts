@@ -99,6 +99,8 @@ declare interface DirectConfig extends SpecialReverseRule, AdjustConditionRule {
  * 皇冠数据结构
  */
 declare namespace Crown {
+    declare type Language = 'zh-cn' | 'en-us' | 'zh-tw'
+
     /**
      * 皇冠比赛数据
      */
@@ -141,6 +143,7 @@ declare namespace Crown {
      * 皇冠返回的单个盘口数据
      */
     interface Game extends MatchInfo {
+        datetime: string
         /**
          * 盘口类型 0-赛果 146-角球
          */
