@@ -152,10 +152,10 @@ function parseMatchTime(SYSTIME: string, DATETIME: string) {
         hour += 12
     }
 
-    const baseTime = dayjs.tz(SYSTIME, 'America/New_York')
+    const baseTime = dayjs.tz(SYSTIME, '-04:00')
     let matchTime = dayjs.tz(
         `${baseTime.year()}-${timeMatch[1]}-${timeMatch[2]} ${hour.toString().padStart(2, '0')}:${timeMatch[4]}`,
-        'America/New_York',
+        '-04:00',
     )
 
     //比赛时间不应小于当前时间，否则就年份+1
