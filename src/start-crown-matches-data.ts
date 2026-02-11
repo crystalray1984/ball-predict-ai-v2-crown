@@ -108,6 +108,8 @@ interface LocaledData {
 }
 
 async function parseI18nData(content: string) {
+    console.log(content)
+
     const { teams, tournaments, lang } = JSON.parse(content) as {
         teams: LocaledData[]
         tournaments: LocaledData[]
