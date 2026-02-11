@@ -108,8 +108,6 @@ interface LocaledData {
 }
 
 async function parseI18nData(content: string) {
-    console.log(content)
-
     const { teams, tournaments, lang } = JSON.parse(content) as {
         teams: LocaledData[]
         tournaments: LocaledData[]
@@ -125,6 +123,8 @@ async function parseI18nData(content: string) {
             attributes: ['id', 'i18n_name'],
         })
         if (!tournament) continue
+
+        console.log(`id=${tournament.id}`, typeof tournament.i18n_name)
 
         if (tournament.i18n_name) {
             if (tournament.i18n_name[lang] === name) {
@@ -146,6 +146,8 @@ async function parseI18nData(content: string) {
             attributes: ['id', 'i18n_name'],
         })
         if (!team) continue
+
+        console.log(`id=${team.id}`, typeof team.i18n_name)
 
         if (team.i18n_name) {
             if (team.i18n_name[lang] === name) {
