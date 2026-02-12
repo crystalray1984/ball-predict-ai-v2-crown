@@ -1,4 +1,4 @@
-import { delay } from '@/common/helpers'
+import { debugFileLog, delay } from '@/common/helpers'
 import dayjs from 'dayjs'
 import timezone from 'dayjs/plugin/timezone'
 import utc from 'dayjs/plugin/utc'
@@ -115,8 +115,11 @@ export async function getTodayMatches(langx: Crown.Language = 'zh-cn'): Promise<
 })()
 `
         const respList = (await page.evaluate(func2)) as string
+
         console.log('抓取皇冠今日比赛列表完成')
         const gameList = xmlParser.parse(respList).serverresponse
+
+        debugFileLog('matches', respList)
 
         if (!Array.isArray(gameList.ec) || gameList.ec.length === 0) {
             console.log('未读取到今日皇冠比赛列表')
@@ -126,7 +129,13 @@ export async function getTodayMatches(langx: Crown.Language = 'zh-cn'): Promise<
         const result: Crown.MatchInfo[] = []
 
         gameList.ec.forEach((ec: Record<string, any>) => {
-            if (ec['@_hasEC'] !== 'Y' || !ec.game || ec.game.ISFANTASY === 'Y') return
+            if (
+                ec['@_hasEC'] !== 'Y' ||
+                ec['@_myGame'] !== 'ft' ||
+                !ec.game ||
+                ec.game.ISFANTASY === 'Y'
+            )
+                return
             const game = ec.game as Record<string, string>
             result.push({
                 lid: game.LID,
