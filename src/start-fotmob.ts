@@ -14,6 +14,7 @@ import { uniq } from 'lodash'
 async function processMatch(match: VMatch) {
     //查询比赛详情
     const details = await getMatchDetails(match.fotmob_match_id)
+    console.log('fotmob_match_id', match.fotmob_match_id, details)
     if (!details) return
 
     const updates: Partial<Attributes<Match>> = {}
