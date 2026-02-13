@@ -123,6 +123,7 @@ async function startFotmob() {
 
     //直接调用接口去查询已有id的比赛
     for (const match of hasIdMatches) {
+        if (Date.now() - match.match_time.valueOf() < 270000) continue
         try {
             await processMatch(match)
         } catch (err) {
