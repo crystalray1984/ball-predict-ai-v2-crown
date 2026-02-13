@@ -151,15 +151,17 @@ async function startFotmob() {
         //比赛搜索
         const matched = findMatch(match, fotmobMatches)
         if (!matched) {
-            console.log(
-                '未找到匹配的比赛',
-                match.id,
-                match.match_time,
-                match.team1_name,
-                match.team2_name,
-            )
             continue
         }
+
+        console.log(
+            '匹配比赛',
+            match.id,
+            match.match_time,
+            match.team1_name,
+            'VS',
+            match.team2_name,
+        )
 
         //更新比赛基础数据
         if (!match.fotmob_match_id) {
