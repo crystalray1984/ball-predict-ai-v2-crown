@@ -717,6 +717,8 @@ declare namespace Fotmob {
          *
          */
         statusId: number
+
+        status: MatchStatus
     }
 
     /**
@@ -727,6 +729,10 @@ declare namespace Fotmob {
          * 开赛时间
          */
         utcTime: string
+        /**
+         * 解析后的开赛时间
+         */
+        time: number
         /**
          * 是否已完赛
          */
@@ -792,6 +798,8 @@ declare namespace Fotmob {
      * 比赛详情
      */
     interface MatchDetails {
+        error?: boolean
+
         header: {
             status: {
                 halfs: {
@@ -834,14 +842,14 @@ declare namespace Fotmob {
                          * FT-全场
                          * AET-加时赛结束
                          */
-                        halfStrShort: 'HT'
+                        halfStrShort: string
                         /**
                          * 半场标识key
                          * halftime_short-半场
                          * fulltime_short-全场
                          * afterextratime_short-加时赛结束
                          */
-                        halfStrKey: 'halftime_short'
+                        halfStrKey: string
                     }[]
                 }
             }

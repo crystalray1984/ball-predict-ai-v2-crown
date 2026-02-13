@@ -30,5 +30,6 @@ module.exports = {
     'v3-check': createConfig('v3-check'),
     'rockball-check': createConfig('rockball-check'),
     'bmiss-check': createConfig('bmiss-check'),
+    fotmob: createConfig('fotmob'),
     createConfig,
 }
