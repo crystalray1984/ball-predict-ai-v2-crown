@@ -36,6 +36,12 @@ export class Team extends Model<InferAttributes<Team>, InferCreationAttributes<T
     declare titan007_team_id: CreationOptional<string>
 
     /**
+     * Fotmob球队id
+     */
+    @Column(DataType.STRING)
+    declare fotmob_team_id: CreationOptional<string>
+
+    /**
      * 队伍名称
      */
     @Column(DataType.STRING(100))
@@ -44,7 +50,7 @@ export class Team extends Model<InferAttributes<Team>, InferCreationAttributes<T
     /**
      * 多语言队伍名称
      */
-    @Column(DataType.JSON)
+    @Column(DataType.JSONB)
     declare i18n_name: CreationOptional<Record<string, string> | null>
 
     @CreatedAt

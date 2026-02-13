@@ -51,6 +51,18 @@ export class Match extends Model<InferAttributes<Match>, InferCreationAttributes
     declare titan007_swap: CreationOptional<number>
 
     /**
+     * Fotmob比赛id
+     */
+    @Column(DataType.STRING)
+    declare fotmob_match_id: CreationOptional<string>
+
+    /**
+     * Fotmob主客队交换
+     */
+    @Column(DataType.SMALLINT)
+    declare fotmob_swap: CreationOptional<number>
+
+    /**
      * 主队id
      */
     @Column(DataType.INTEGER)

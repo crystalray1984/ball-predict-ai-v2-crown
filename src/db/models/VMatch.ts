@@ -38,6 +38,18 @@ export class VMatch extends Model<InferAttributes<VMatch>> {
     declare titan007_swap: number
 
     /**
+     * Fotmob比赛id
+     */
+    @Column(DataType.STRING)
+    declare fotmob_match_id: string
+
+    /**
+     * Fotmob主客队交换
+     */
+    @Column(DataType.SMALLINT)
+    declare fotmob_swap: number
+
+    /**
      * 主队id
      */
     @Column(DataType.INTEGER)
@@ -154,6 +166,9 @@ export class VMatch extends Model<InferAttributes<VMatch>> {
     @Column(DataType.SMALLINT)
     declare tournament_is_rockball_open: number
 
+    @Column(DataType.JSONB)
+    declare tournament_i18n_name: Record<string, string> | null
+
     /**
      * 联赛标签id
      */
@@ -164,11 +179,23 @@ export class VMatch extends Model<InferAttributes<VMatch>> {
     declare team1_titan007_id: string
 
     @Column(DataType.STRING)
+    declare team1_fotmob_id: string
+
+    @Column(DataType.STRING)
     declare team1_name: string
+
+    @Column(DataType.JSONB)
+    declare team1_i18n_name: Record<string, string> | null
 
     @Column(DataType.STRING)
     declare team2_titan007_id: string
 
     @Column(DataType.STRING)
+    declare team2_fotmob_id: string
+
+    @Column(DataType.STRING)
     declare team2_name: string
+
+    @Column(DataType.JSONB)
+    declare team2_i18n_name: Record<string, string> | null
 }

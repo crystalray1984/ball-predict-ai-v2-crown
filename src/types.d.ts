@@ -675,3 +675,176 @@ declare namespace Socket {
 
     type IncomingMessage = RockballStartMessage
 }
+
+/**
+ * Fotmob网站相关数据结构
+ */
+declare namespace Fotmob {
+    /**
+     * 赛事信息
+     */
+    interface League {
+        /**
+         * 比赛列表
+         */
+        matches: Match[]
+    }
+
+    /**
+     * 比赛信息
+     */
+    interface Match {
+        /**
+         * 比赛id
+         */
+        id: number
+        /**
+         * 赛事id
+         */
+        leagueId: number
+        /**
+         * 主队
+         */
+        home: Team
+        /**
+         * 客队
+         */
+        away: Team
+        /**
+         * 状态id
+         * 1-比赛未开始
+         * 2-上半场进行中
+         *
+         */
+        statusId: number
+    }
+
+    /**
+     * 比赛状态信息
+     */
+    interface MatchStatus {
+        /**
+         * 开赛时间
+         */
+        utcTime: string
+        /**
+         * 是否已完赛
+         */
+        finished: boolean
+        /**
+         * 是否已开场
+         */
+        started: boolean
+        /**
+         * 是否已取消
+         */
+        cancelled: boolean
+        /**
+         * 比分文字（例如`1 - 1`)
+         */
+        scoreStr: string
+        /**
+         * 比赛状态文字描述
+         */
+        reason: {
+            /**
+             * 状态短文字（已完场为`FT`）
+             */
+            short: string
+            /**
+             * 状态短文字（已完场为`fulltime_short`）
+             */
+            shortKey: string
+            /**
+             * 状态长文字（已完场为`Full-Time`）
+             */
+            long: string
+            /**
+             * 状态标识（已完场为`finished`）
+             */
+            longKey: string
+        }
+    }
+
+    /**
+     * 队伍信息
+     */
+    interface Team {
+        /**
+         * 队伍id
+         */
+        id: number
+        /**
+         * 得分
+         */
+        score: number
+        /**
+         * 名称
+         */
+        name: string
+        /**
+         * 完整名称
+         */
+        longName: string
+    }
+
+    /**
+     * 比赛详情
+     */
+    interface MatchDetails {
+        header: {
+            status: {
+                halfs: {
+                    firstHalfStarted: string
+                    firstHalfEnded: string
+                    secondHalfStarted: string
+                    secondHalfEnded: string
+                    firstExtraHalfStarted: string
+                    secondExtraHalfStarted: string
+                }
+            }
+        }
+
+        content: {
+            matchFacts: {
+                events: {
+                    events: {
+                        /**
+                         * 事件类型
+                         * Goal 进球
+                         * Half 半场结束
+                         * PenaltyShootout 点球大战
+                         */
+                        type: string
+                        /**
+                         * 发生事件的比赛时间
+                         */
+                        time: number
+                        /**
+                         * 主队得分
+                         */
+                        homeScore: number
+                        /**
+                         * 客队得分
+                         */
+                        awayScore: number
+                        /**
+                         * 半场标识
+                         * HT-半场
+                         * FT-全场
+                         * AET-加时赛结束
+                         */
+                        halfStrShort: 'HT'
+                        /**
+                         * 半场标识key
+                         * halftime_short-半场
+                         * fulltime_short-全场
+                         * afterextratime_short-加时赛结束
+                         */
+                        halfStrKey: 'halftime_short'
+                    }[]
+                }
+            }
+        }
+    }
+}

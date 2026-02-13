@@ -41,7 +41,7 @@ export class Tournament extends Model<
     /**
      * 多语言联赛名称
      */
-    @Column(DataType.JSON)
+    @Column(DataType.JSONB)
     declare i18n_name: CreationOptional<Record<string, string> | null>
 
     @CreatedAt
