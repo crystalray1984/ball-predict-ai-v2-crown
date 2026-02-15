@@ -238,8 +238,8 @@ export function parseMatchTime(SYSTIME: string, DATETIME: string) {
         '-04:00',
     )
 
-    //比赛时间不应小于当前时间，否则就年份+1
-    if (matchTime.valueOf() < baseTime.valueOf()) {
+    //比赛时间不应与当前时间相差过大，否则就年份+1
+    if (Math.abs(matchTime.diff(baseTime, 'days')) >= 120) {
         matchTime = matchTime.add(1, 'year')
     }
 
