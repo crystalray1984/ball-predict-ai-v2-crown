@@ -158,8 +158,8 @@ function parseMatchTime(SYSTIME: string, DATETIME: string) {
         'America/New_York',
     )
 
-    //比赛时间不应小于当前时间，否则就年份+1
-    if (matchTime.valueOf() < baseTime.valueOf()) {
+    if (Math.abs(baseTime.diff(matchTime, 'days')) > 120) {
+        //比赛时间与当前时间相差不应过大，否则就年份+1
         matchTime = matchTime.add(1, 'year')
     }
 
