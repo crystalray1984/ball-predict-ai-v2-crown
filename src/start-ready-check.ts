@@ -147,7 +147,7 @@ async function processReadyCheck(content: string, isMansion: boolean) {
         where: {
             id: match_id,
         },
-        attributes: ['id', 'status', 'tournament_is_open'],
+        attributes: ['id', 'status', 'tournament_is_open', 'match_time'],
     })
     if (!match) return
 
