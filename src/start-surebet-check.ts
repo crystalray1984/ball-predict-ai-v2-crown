@@ -5,7 +5,7 @@ import { isDecimal, isEmpty } from './common/helpers'
 import { close, consume, publish } from './common/rabbitmq'
 import { getSetting } from './common/settings'
 import { CONFIG } from './config'
-import { Match, Odd, RockballOdd2, SurebetRecord, VMatch } from './db'
+import { Match, Odd, RockballOdd, SurebetRecord, VMatch } from './db'
 
 /**
  * 解析surebet时间条件的时长
@@ -77,12 +77,13 @@ async function processRockball2(
     if (!matchedRule) return
 
     //在生成盘口之前，先判断之前有没有其他更小的盘口创建的待抓取盘口
-    const smaller = await RockballOdd2.findOne({
+    const smaller = await RockballOdd.findOne({
         where: {
             match_id,
             source_condition: {
                 [Op.lte]: surebet.type.condition,
             },
+            channel: 'rockball2',
         },
         attributes: ['id'],
     })
@@ -91,30 +92,32 @@ async function processRockball2(
     if (smaller) return
 
     //删除更大的来盘创建的盘口
-    await RockballOdd2.destroy({
+    await RockballOdd.destroy({
         where: {
             match_id,
             source_condition: {
                 [Op.gt]: surebet.type.condition,
             },
+            channel: 'rockball2',
         },
     })
 
     //开始生成盘口
     for (const oddRule of matchedRule.odds) {
         //尝试寻找相同的盘口
-        const odd = await RockballOdd2.findOne({
+        const odd = await RockballOdd.findOne({
             where: {
                 match_id,
                 variety: oddRule.variety,
                 period: oddRule.period,
                 type: oddRule.type,
                 condition: oddRule.condition,
+                channel: 'rockball2',
             },
         })
         if (!odd) {
             //盘口不存在就创建盘口
-            await RockballOdd2.create({
+            await RockballOdd.create({
                 match_id,
                 crown_match_id: surebet.preferred_nav.markers.eventId,
                 source_variety: surebet.type.variety,
@@ -128,6 +131,9 @@ async function processRockball2(
                 condition: oddRule.condition,
                 value: oddRule.value,
                 is_open: !oddRule.disabled && is_rockball_open ? 1 : 0,
+                channel: 'rockball2',
+                source_channel: '',
+                source_id: 0,
             })
         }
     }

@@ -76,6 +76,7 @@ export async function createRockballOddFromPromoted(input: RockballInput | numbe
             source_condition: {
                 [Op.lte]: input.condition,
             },
+            channel: 'rockball',
         },
         attributes: ['id'],
     })
@@ -103,6 +104,7 @@ export async function createRockballOddFromPromoted(input: RockballInput | numbe
                 period: oddRule.period,
                 type: oddRule.type,
                 condition: oddRule.condition,
+                channel: 'rockball',
             },
         })
         if (odd) {
@@ -135,6 +137,7 @@ export async function createRockballOddFromPromoted(input: RockballInput | numbe
                 is_open: oddRule.disabled ? 0 : 1,
                 source_channel: input.channel,
                 source_id: input.id,
+                channel: 'rockball',
             })
         }
     }

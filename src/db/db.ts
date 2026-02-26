@@ -12,7 +12,6 @@ import { Odd } from './models/Odd'
 import { OddMansion } from './models/OddMansion'
 import { Promoted } from './models/Promoted'
 import { RockballOdd } from './models/RockballOdd'
-import { RockballOdd2 } from './models/RockballOdd2'
 import { Setting } from './models/Setting'
 import { SurebetRecord } from './models/SurebetRecord'
 import { Team } from './models/Team'
@@ -57,7 +56,6 @@ export const db = new Sequelize(
                 OddMansion,
                 Promoted,
                 VPromoted,
-                RockballOdd2,
                 CrownMainOdd,
             ],
         },
@@ -75,7 +73,6 @@ export { Odd } from './models/Odd'
 export { OddMansion } from './models/OddMansion'
 export { Promoted } from './models/Promoted'
 export { RockballOdd } from './models/RockballOdd'
-export { RockballOdd2 } from './models/RockballOdd2'
 export { Setting } from './models/Setting'
 export { SurebetRecord } from './models/SurebetRecord'
 export { Team } from './models/Team'

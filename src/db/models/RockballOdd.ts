@@ -39,6 +39,12 @@ export class RockballOdd extends Model<
     declare crown_match_id: string
 
     /**
+     * 推荐频道
+     */
+    @Column(DataType.STRING)
+    declare channel: string
+
+    /**
      * 投注目标
      */
     @Column(DataType.STRING)
