@@ -9,12 +9,12 @@ import {
     isNullOrUndefined,
 } from './common/helpers'
 import { close, consume, publish } from './common/rabbitmq'
+import { createRockball3Odd, createRockballOddFromPromoted } from './common/rockball'
 import { getSetting } from './common/settings'
 import { CONFIG } from './config'
 import { findMatchedOdd } from './crown'
 import { findMainOdd } from './crown/odd'
 import { Match, Odd, OddMansion, Promoted, VMatch } from './db'
-import { createRockball3Odd, createRockballOddFromPromoted } from './common/rockball'
 
 /**
  * 创建直通推荐盘口
@@ -163,14 +163,34 @@ async function processReadyCheck(content: string, isMansion: boolean) {
     if (!exists) return
 
     //直通推荐规则1-二次比对前
-    if (!isMansion && Array.isArray(direct_config) && direct_config.length > 0) {
+    //额外的赛前4个小时判断
+    if (
+        !isMansion &&
+        Array.isArray(direct_config) &&
+        direct_config.length > 0 &&
+        match.match_time.valueOf() - Date.now() > 3600000 * 4
+    ) {
         const rule = findRule<DirectConfig>(
             (direct_config as DirectConfig[]).filter((t) => !t.first_check),
             extra.type,
         )
         if (rule) {
             //有满足条件的直通推荐规则
-            await createDirectPromoted(rule, match.id, extra, findMainOdd(extra.type, data.odds)!)
+            //额外的判断，必须要有2.25球及以上的盘口
+            const hasOdd = data.odds.some(
+                (odd) =>
+                    odd.variety === 'goal' &&
+                    odd.type === 'ou' &&
+                    Decimal(odd.condition).gte('2.25'),
+            )
+            if (hasOdd) {
+                await createDirectPromoted(
+                    rule,
+                    match.id,
+                    extra,
+                    findMainOdd(extra.type, data.odds)!,
+                )
+            }
         }
     }
 
@@ -288,7 +308,8 @@ async function processReadyCheck(content: string, isMansion: boolean) {
         !isMansion &&
         odd.status === 'ready' &&
         Array.isArray(direct_config) &&
-        direct_config.length > 0
+        direct_config.length > 0 &&
+        match.match_time.valueOf() - Date.now() > 3600000 * 4
     ) {
         const rule = findRule<DirectConfig>(
             (direct_config as DirectConfig[]).filter((t) => t.first_check),
@@ -296,7 +317,21 @@ async function processReadyCheck(content: string, isMansion: boolean) {
         )
         if (rule) {
             //有满足条件的直通推荐规则
-            await createDirectPromoted(rule, match.id, extra, findMainOdd(extra.type, data.odds)!)
+            //额外的判断，必须要有2.25球及以上的盘口
+            const hasOdd = data.odds.some(
+                (odd) =>
+                    odd.variety === 'goal' &&
+                    odd.type === 'ou' &&
+                    Decimal(odd.condition).gte('2.25'),
+            )
+            if (hasOdd) {
+                await createDirectPromoted(
+                    rule,
+                    match.id,
+                    extra,
+                    findMainOdd(extra.type, data.odds)!,
+                )
+            }
         }
     }
 
