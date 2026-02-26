@@ -142,3 +142,57 @@ export async function createRockballOddFromPromoted(input: RockballInput | numbe
         }
     }
 }
+
+/**
+ * 根据已经推荐出来的推荐（模型2）生成滚球3的准备数据
+ * @param id
+ */
+export async function createRockball3Odd(input: RockballInput | number) {
+    if (typeof input === 'number') {
+        const promoted = await VPromoted.findOne({
+            where: {
+                id: input,
+            },
+        })
+        if (!promoted) return
+        input = promoted
+    }
+
+    //构建滚球准备盘口
+    const type: OddType = 'over'
+    //降0.25盘
+    const condition = Decimal(input.condition).sub('0.25').toString()
+    //水位条件固定为2
+    const value = '2'
+
+    //查询有没有存在的盘口
+    const exists = await RockballOdd.findOne({
+        where: {
+            match_id: input.match_id,
+            channel: 'rockball3',
+        },
+        attributes: ['id'],
+    })
+
+    if (exists) return
+
+    //盘口不存在就创建盘口
+    await RockballOdd.create({
+        match_id: input.match_id,
+        crown_match_id: input.crown_match_id,
+        source_variety: input.variety,
+        source_period: input.period,
+        source_condition: input.condition,
+        source_type: input.type,
+        source_value: input.value ?? '0',
+        variety: 'goal',
+        period: 'regularTime',
+        type,
+        condition,
+        value,
+        is_open: 1,
+        source_channel: input.channel,
+        source_id: input.id,
+        channel: 'rockball3',
+    })
+}

@@ -14,7 +14,7 @@ import { CONFIG } from './config'
 import { findMatchedOdd } from './crown'
 import { findMainOdd } from './crown/odd'
 import { Match, Odd, OddMansion, Promoted, VMatch } from './db'
-import { createRockballOddFromPromoted } from './common/rockball'
+import { createRockball3Odd, createRockballOddFromPromoted } from './common/rockball'
 
 /**
  * 创建直通推荐盘口
@@ -488,6 +488,7 @@ async function createMansionPromoted(
         //录入滚球盘
         if (promoted.type === 'under' || promoted.type === 'over') {
             await createRockballOddFromPromoted(promoted.id)
+            await createRockball3Odd(promoted.id)
         }
     }
 }
