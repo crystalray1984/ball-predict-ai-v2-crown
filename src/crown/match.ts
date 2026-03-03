@@ -1,4 +1,4 @@
-import { debugFileLog, delay } from '@/common/helpers'
+import { delay } from '@/common/helpers'
 import dayjs from 'dayjs'
 import timezone from 'dayjs/plugin/timezone'
 import utc from 'dayjs/plugin/utc'
@@ -119,7 +119,7 @@ export async function getTodayMatches(langx: Crown.Language = 'zh-cn'): Promise<
         console.log('抓取皇冠今日比赛列表完成')
         const gameList = xmlParser.parse(respList).serverresponse
 
-        debugFileLog('matches', respList)
+        // debugFileLog('matches', respList)
 
         if (!Array.isArray(gameList.ec) || gameList.ec.length === 0) {
             console.log('未读取到今日皇冠比赛列表')
