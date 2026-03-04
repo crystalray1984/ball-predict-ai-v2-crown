@@ -157,19 +157,23 @@ export async function createRockballOddFromPromoted(input: RockballInput | numbe
                         },
                     })
                     if (match) {
-                        provider(CONFIG.ai.rockball, match).then(async (result) => {
-                            const update = {
-                                ...result,
-                            }
-                            if (oddRule.disabled) {
-                                update.is_open = 0
-                            }
-                            await RockballOdd.update(update, {
-                                where: {
-                                    id: rockball.id,
-                                },
+                        provider(CONFIG.ai.rockball, match)
+                            .then(async (result) => {
+                                const update = {
+                                    ...result,
+                                }
+                                if (oddRule.disabled) {
+                                    update.is_open = 0
+                                }
+                                await RockballOdd.update(update, {
+                                    where: {
+                                        id: rockball.id,
+                                    },
+                                })
                             })
-                        })
+                            .catch((err) => {
+                                console.error(err)
+                            })
                     }
                 }
             }
