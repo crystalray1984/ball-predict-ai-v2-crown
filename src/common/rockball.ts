@@ -143,7 +143,12 @@ export async function createRockballOddFromPromoted(input: RockballInput | numbe
             })
 
             //抛到AI进行测试
-            if (CONFIG.ai.rockball) {
+            if (
+                CONFIG.ai.rockball &&
+                oddRule.type === 'over' &&
+                Decimal(input.condition).eq('0.5') &&
+                input.period === 'period1'
+            ) {
                 const provider = agents[CONFIG.ai.rockball.provider]
                 if (typeof provider === 'function') {
                     const match = await VMatch.findOne({
