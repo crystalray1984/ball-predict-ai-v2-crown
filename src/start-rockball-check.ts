@@ -1,6 +1,6 @@
 import Decimal from 'decimal.js'
-import { QueryTypes } from 'sequelize'
-import { getOddIdentification, getWeekDay, runLoop } from './common/helpers'
+import { Op, QueryTypes } from 'sequelize'
+import { getOddIdentification, getPromotedOddInfo, getWeekDay, runLoop } from './common/helpers'
 import { consume, publish } from './common/rabbitmq'
 import { CONFIG } from './config'
 import { findMatchedOdd } from './crown'
@@ -125,14 +125,19 @@ async function processRockballCheck(content: string) {
         //判断一下水位是否达到要求
         if (Decimal(exists.value).lt(odd.value)) continue
 
+        //滚球正反推判断
+        const { type } = getPromotedOddInfo(info, odd.back)
+
         //水位达到要求了，那就开始插入推荐
         let promoted = await Promoted.findOne({
             where: {
                 match_id: match.id,
                 variety: odd.variety,
                 period: odd.period,
-                type: info.type,
-                condition: odd.condition,
+                type: {
+                    [Op.in]: [type, info.type],
+                },
+                condition: info.condition,
                 channel: odd.channel,
             },
         })
@@ -151,10 +156,10 @@ async function processRockballCheck(content: string) {
             week_id: 0,
             variety: odd.variety,
             period: odd.period,
-            type: odd.type,
+            type,
             condition: odd.condition,
             odd_type: getOddIdentification(odd.type),
-            value: exists.value,
+            value: odd.back ? exists.value_reverse : exists.value,
         })
 
         //标记这个盘口已经得到推荐

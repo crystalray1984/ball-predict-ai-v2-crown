@@ -138,4 +138,10 @@ export class RockballOdd extends Model<
      */
     @Column(DataType.STRING)
     declare manual_type: CreationOptional<OddType>
+
+    /**
+     * 正推或反推
+     */
+    @Column(DataType.INTEGER)
+    declare back: CreationOptional<number>
 }

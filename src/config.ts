@@ -1,11 +1,11 @@
 import { Options as RabbitmqOptions } from 'amqplib'
+import { Options as PoolOptions } from 'generic-pool'
+import { RedisOptions } from 'ioredis'
 import { load } from 'js-yaml'
 import { merge } from 'lodash'
 import { existsSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { type Options as DbOptions } from 'sequelize'
-import { RedisOptions } from 'ioredis'
-import { Options as PoolOptions } from 'generic-pool'
 import { CrownAccount } from './db'
 
 /**
@@ -102,6 +102,17 @@ export interface AppConfig {
      * 接口调用地址
      */
     api_url: string
+
+    /**
+     * AI判断
+     */
+    ai: Record<string, AiConfig>
+}
+
+export interface AiConfig {
+    url: string
+    provider: 'coze'
+    token: string
 }
 
 /**

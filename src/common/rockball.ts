@@ -1,4 +1,6 @@
-import { RockballOdd, VPromoted } from '@/db'
+import * as agents from '@/ai'
+import { CONFIG } from '@/config'
+import { RockballOdd, VMatch, VPromoted } from '@/db'
 import Decimal from 'decimal.js'
 import { InferAttributes, Op } from 'sequelize'
 import { isDecimal } from './helpers'
@@ -121,7 +123,7 @@ export async function createRockballOddFromPromoted(input: RockballInput | numbe
             }
         } else {
             //盘口不存在就创建盘口
-            await RockballOdd.create({
+            const rockball = await RockballOdd.create({
                 match_id: input.match_id,
                 crown_match_id: input.crown_match_id,
                 source_variety: input.variety,
@@ -139,6 +141,33 @@ export async function createRockballOddFromPromoted(input: RockballInput | numbe
                 source_id: input.id,
                 channel: 'rockball',
             })
+
+            //抛到AI进行测试
+            if (CONFIG.ai.rockball) {
+                const provider = agents[CONFIG.ai.rockball.provider]
+                if (typeof provider === 'function') {
+                    const match = await VMatch.findOne({
+                        where: {
+                            id: input.match_id,
+                        },
+                    })
+                    if (match) {
+                        provider(CONFIG.ai.rockball, match).then(async (result) => {
+                            const update = {
+                                ...result,
+                            }
+                            if (oddRule.disabled) {
+                                update.is_open = 0
+                            }
+                            await RockballOdd.update(update, {
+                                where: {
+                                    id: rockball.id,
+                                },
+                            })
+                        })
+                    }
+                }
+            }
         }
     }
 }
