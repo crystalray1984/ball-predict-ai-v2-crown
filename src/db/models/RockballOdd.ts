@@ -144,4 +144,10 @@ export class RockballOdd extends Model<
      */
     @Column(DataType.INTEGER)
     declare back: CreationOptional<number>
+
+    /**
+     * AI备注
+     */
+    @Column(DataType.TEXT)
+    declare note: CreationOptional<string | null>
 }

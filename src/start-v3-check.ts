@@ -6,6 +6,7 @@ import { consume, publish } from './common/rabbitmq'
 import { getSetting } from './common/settings'
 import { CONFIG } from './config'
 import { CrownOdd, db, LabelPromoted, Match, Odd, Promoted, VMatch } from './db'
+import { CROWN_ODD_QUEUE } from './common/constants'
 
 /**
  * 处理赛事的最终结算
@@ -444,7 +445,7 @@ async function startV3Check() {
 
     //把数据抛入队列
     await publish(
-        'crown_odd',
+        CROWN_ODD_QUEUE,
         matches.map((match) => {
             return JSON.stringify({
                 next: CONFIG.queues['v3_check'],
@@ -454,8 +455,6 @@ async function startV3Check() {
                 },
             })
         }),
-        undefined,
-        { maxPriority: 20 },
     )
 }
 

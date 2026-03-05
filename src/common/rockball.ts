@@ -1,4 +1,4 @@
-import * as agents from '@/ai'
+import * as ai from '@/ai'
 import { CONFIG } from '@/config'
 import { RockballOdd, VMatch, VPromoted } from '@/db'
 import Decimal from 'decimal.js'
@@ -143,39 +143,11 @@ export async function createRockballOddFromPromoted(input: RockballInput | numbe
             })
 
             //抛到AI进行测试
-            if (
-                CONFIG.ai.rockball &&
-                oddRule.type === 'over' &&
-                Decimal(input.condition).eq('0.5') &&
-                input.period === 'period1'
-            ) {
-                const provider = agents[CONFIG.ai.rockball.provider]
-                if (typeof provider === 'function') {
-                    const match = await VMatch.findOne({
-                        where: {
-                            id: input.match_id,
-                        },
-                    })
-                    if (match) {
-                        provider(CONFIG.ai.rockball, match)
-                            .then(async (result) => {
-                                const update = {
-                                    ...result,
-                                }
-                                if (oddRule.disabled) {
-                                    update.is_open = 0
-                                }
-                                await RockballOdd.update(update, {
-                                    where: {
-                                        id: rockball.id,
-                                    },
-                                })
-                            })
-                            .catch((err) => {
-                                console.error(err)
-                            })
-                    }
-                }
+            if (CONFIG.ai.rockball) {
+                await ai.rockball.publish({
+                    match_id: input.match_id,
+                    odd_id: rockball.id,
+                })
             }
         }
     }

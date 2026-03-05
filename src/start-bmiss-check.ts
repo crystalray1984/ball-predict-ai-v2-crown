@@ -1,5 +1,6 @@
 import { Op } from 'sequelize'
 import { parseMainOddForBmiss } from './common/bmiss'
+import { CROWN_ODD_QUEUE } from './common/constants'
 import { runLoop } from './common/helpers'
 import { consume, publish } from './common/rabbitmq'
 import { Match } from './db'
@@ -26,7 +27,7 @@ async function startBmissMatchesCheck() {
     //抛到皇冠盘口采集队列中
     //把数据抛入队列
     await publish(
-        'crown_odd',
+        CROWN_ODD_QUEUE,
         matches.map((match) => {
             return JSON.stringify({
                 next: 'bmiss_check',
@@ -36,8 +37,6 @@ async function startBmissMatchesCheck() {
                 },
             })
         }),
-        undefined,
-        { maxPriority: 20 },
     )
 }
 

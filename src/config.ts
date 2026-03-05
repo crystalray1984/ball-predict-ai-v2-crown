@@ -111,7 +111,6 @@ export interface AppConfig {
 
 export interface AiConfig {
     url: string
-    provider: 'coze'
     token: string
 }
 

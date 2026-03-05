@@ -1,8 +1,9 @@
 import { CONFIG } from '@/config'
-import { ChannelModel, connect, Options } from 'amqplib'
+import { ChannelModel, ConfirmChannel, connect, Options } from 'amqplib'
 import { singleton } from './singleton'
 
 let connection = null as unknown as ChannelModel
+let publishChannel = null as unknown as ConfirmChannel
 const assertedQueues: string[] = []
 
 /**
@@ -20,6 +21,11 @@ async function ready() {
  * 关闭客户端连接
  */
 export async function close() {
+    if (publishChannel) {
+        await publishChannel.close()
+        console.log('[rabbitmq]', '关闭发布通道')
+        publishChannel = null as any
+    }
     if (!connection) return
     await connection.close()
     assertedQueues.splice(0, assertedQueues.length)
@@ -28,38 +34,77 @@ export async function close() {
 }
 
 /**
+ * 队列定义
+ */
+export interface QueueConfig {
+    /**
+     * 队列名称
+     */
+    name: string
+    /**
+     * 队列定义参数
+     */
+    assert?: Options.AssertQueue
+    /**
+     * 交换机参数
+     */
+    exchange?: Options.AssertExchange & {
+        type?: 'direct' | 'topic' | 'headers' | 'fanout' | 'match' | string
+    }
+}
+
+async function publishReady() {
+    if (publishChannel) return
+    return singleton('rabbitmq_publish', async () => {
+        publishChannel = await connection.createConfirmChannel()
+        console.log('[rabbitmq]', '开启发布通道', CONFIG.rabbitmq.hostname)
+    })
+}
+
+/**
  * 发布数据到消息队列
- * @param queue
+ * @param queue 队列定义
  * @param content
  * @param options
- * @param forceAssert
  */
 export async function publish(
-    queue: string,
+    queue: string | QueueConfig,
     content: string | string[],
     options?: Options.Publish,
-    assertOptions?: Options.AssertQueue,
 ) {
-    await ready()
-    const channel = await connection.createConfirmChannel()
-    try {
-        if (!assertedQueues.includes(queue)) {
-            await channel.assertQueue(queue, assertOptions)
+    await publishReady()
+
+    const config = typeof queue === 'string' ? { name: queue } : queue
+
+    //初始化队列
+    if (!assertedQueues.includes(config.name)) {
+        await publishChannel.assertQueue(config.name, config.assert)
+        if (config.exchange) {
+            const { type, ...exchangeOptions } = config.exchange
+            await publishChannel.assertExchange(config.name, type ?? 'direct', exchangeOptions)
+            await publishChannel.bindQueue(config.name, config.name, '', exchangeOptions.arguments)
         }
-        if (!assertedQueues.includes(queue)) {
-            assertedQueues.push(queue)
-        }
-        if (Array.isArray(content)) {
-            content.forEach((data) =>
-                channel.sendToQueue(queue, Buffer.from(data, 'utf-8'), options),
-            )
-        } else {
-            channel.sendToQueue(queue, Buffer.from(content, 'utf-8'), options)
-        }
-        await channel.waitForConfirms()
-    } finally {
-        await channel.close()
     }
+
+    if (!assertedQueues.includes(config.name)) {
+        assertedQueues.push(config.name)
+    }
+
+    //发送数据
+    const send = (content: string) => {
+        if (config.exchange) {
+            publishChannel.publish(config.name, '', Buffer.from(content, 'utf-8'), options)
+        } else {
+            publishChannel.sendToQueue(config.name, Buffer.from(content, 'utf-8'), options)
+        }
+    }
+
+    if (Array.isArray(content)) {
+        content.forEach((data) => send(data))
+    } else {
+        send(content)
+    }
+    await publishChannel.waitForConfirms()
 }
 
 export interface ConsumeOptions extends Options.Consume {
@@ -73,10 +118,9 @@ export interface ConsumeOptions extends Options.Consume {
  * @param options
  */
 export function consume(
-    queue: string,
+    queue: string | QueueConfig,
     callback: (content: string) => any,
     options: ConsumeOptions = {},
-    assertOptions?: Options.AssertQueue,
 ): [Promise<void>, () => void] {
     const controller = new AbortController()
     const close = () => controller.abort()
@@ -90,11 +134,21 @@ export function consume(
             if (controller.signal.aborted) return
             await channel.prefetch(prefetchCount)
             if (controller.signal.aborted) return
-            await channel.assertQueue(queue, assertOptions)
+
+            //队列确认
+            const config = typeof queue === 'string' ? { name: queue } : queue
+            //初始化队列
+            await channel.assertQueue(config.name, config.assert)
+            if (config.exchange) {
+                const { type, ...exchangeOptions } = config.exchange
+                await channel.assertExchange(config.name, type ?? 'direct', exchangeOptions)
+                await channel.bindQueue(config.name, config.name, '', exchangeOptions.arguments)
+            }
+
             if (controller.signal.aborted) return
             await new Promise<void>(async (resolve, reject) => {
                 const { consumerTag } = await channel.consume(
-                    queue,
+                    config.name,
                     async (msg) => {
                         if (!msg) {
                             reject(new Error('rabbitmq服务器已断开连接'))

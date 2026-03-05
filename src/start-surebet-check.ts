@@ -1,6 +1,8 @@
+import * as ai from '@/ai'
 import Decimal from 'decimal.js'
 import { omit } from 'lodash'
 import { Op } from 'sequelize'
+import { CROWN_ODD_QUEUE } from './common/constants'
 import { isDecimal, isEmpty } from './common/helpers'
 import { close, consume, publish } from './common/rabbitmq'
 import { getSetting } from './common/settings'
@@ -117,7 +119,7 @@ async function processRockball2(
         })
         if (!odd) {
             //盘口不存在就创建盘口
-            await RockballOdd.create({
+            const rockball = await RockballOdd.create({
                 match_id,
                 crown_match_id: surebet.preferred_nav.markers.eventId,
                 source_variety: surebet.type.variety,
@@ -135,6 +137,13 @@ async function processRockball2(
                 source_channel: '',
                 source_id: 0,
             })
+
+            if (CONFIG.ai.rockball2) {
+                await ai.rockball2.publish({
+                    match_id,
+                    odd_id: rockball.id,
+                })
+            }
         }
     }
 }
@@ -445,7 +454,7 @@ async function processSurebetCheck(content: string, allowRockball: boolean, next
     }
 
     if (nextDataList.length > 0) {
-        await publish('crown_odd', nextDataList, undefined, { maxPriority: 20 })
+        await publish(CROWN_ODD_QUEUE, nextDataList)
     }
 
     console.log(next, JSON.stringify(fails), `success=` + nextDataList.length)

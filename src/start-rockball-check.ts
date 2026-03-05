@@ -1,5 +1,6 @@
 import Decimal from 'decimal.js'
 import { Op, QueryTypes } from 'sequelize'
+import { CROWN_ODD_QUEUE } from './common/constants'
 import { getOddIdentification, getPromotedOddInfo, getWeekDay, runLoop } from './common/helpers'
 import { consume, publish } from './common/rabbitmq'
 import { CONFIG } from './config'
@@ -64,10 +65,9 @@ async function startRockballCheck() {
     //抛入到皇冠队列进行盘口抓取
     if (list.length > 0) {
         await publish(
-            'crown_odd',
+            CROWN_ODD_QUEUE,
             list.map((item) => JSON.stringify(item)),
             { priority: 10 },
-            { maxPriority: 20 },
         )
     }
 }
