@@ -49,36 +49,45 @@ export function isEmpty(value: any): value is null | undefined {
 }
 
 /**
- * 计算盘口结果
+ * 进行比分对比
+ * @param score1
+ * @param score2
  */
-export function calcResult(
-    condition: string,
-    score1: number | string,
-    score2: number | string,
-): number {
-    condition = Decimal(condition).toString()
-    let parts: string[]
-    if (condition.endsWith('.25') || condition.endsWith('.75')) {
-        parts = [Decimal(condition).sub('.25').toString(), Decimal(condition).add('.25').toString()]
-    } else {
-        parts = [condition]
+export function compareScore(
+    score1: Decimal.Value,
+    score2: Decimal.Value,
+): '-0.5' | '-1' | '0' | '0.5' | '1' {
+    //给作为比对的结果加上盘口
+    const delta = Decimal(score1).sub(score2)
+    if (delta.eq('0')) return '0'
+    if (delta.gte('0.5')) {
+        return '1'
     }
-
-    const result = parts.reduce<number>((prev, part) => {
-        return prev + Decimal(score1).add(part).comparedTo(score2)
-    }, 0)
-
-    return result > 0 ? 1 : result < 0 ? -1 : 0
+    if (delta.gte('0.25')) {
+        return '0.5'
+    }
+    if (delta.lte('-0.5')) {
+        return '-1'
+    }
+    if (delta.lte('-0.25')) {
+        return '-0.5'
+    }
+    return '0'
 }
 
 /**
  * 计算盘口的赛果
  */
-export function getOddResult(odd: OddInfo, match: Titan007.MatchScore) {
+export function getOddResult(
+    odd: OddInfo & { value?: string | number | null },
+    match: Titan007.MatchScore,
+) {
     let score1: number
     let score2: number
     let result: number
     let score: string
+    let result_value: string
+    let result_profit: string | number | null = null
 
     //数据完整性检测
     if (odd.variety === 'corner') {
@@ -113,25 +122,53 @@ export function getOddResult(odd: OddInfo, match: Titan007.MatchScore) {
     //确认投注类型
     if (odd.type === 'ah1') {
         //让球，买主队
-        result = calcResult(odd.condition, score1, score2)
         score = `${score1}:${score2}`
+        result_value = compareScore(Decimal(score1).add(odd.condition), score2)
     } else if (odd.type === 'ah2') {
         //让球，买客队
-        result = calcResult(odd.condition, score2, score1)
         score = `${score1}:${score2}`
+        result_value = compareScore(Decimal(score2).add(odd.condition), score1)
     } else if (odd.type === 'over') {
         //大球
-        result = calcResult(Decimal(0).sub(odd.condition).toString(), score1 + score2, 0)
         score = `${score1 + score2}`
+        result_value = compareScore(score1 + score2, odd.condition)
     } else if (odd.type === 'under') {
         //小球
-        result = 0 - calcResult(Decimal(0).sub(odd.condition).toString(), score1 + score2, 0)
         score = `${score1 + score2}`
+        result_value = compareScore(odd.condition, score1 + score2)
     } else if (odd.type === 'draw') {
-        result = score1 === score2 ? 1 : -1
         score = `${score1}:${score2}`
+        result_value = score1 === score2 ? '1' : '-1'
     } else {
         return
+    }
+
+    //胜负计算
+    switch (result_value) {
+        case '0.5':
+        case '1':
+            result = 1
+            break
+        case '-0.5':
+        case '-1':
+            result = -1
+            break
+        default:
+            result = 0
+            break
+    }
+
+    //收益计算
+    if (isDecimal(odd.value)) {
+        switch (result_value) {
+            case '0.5':
+            case '1':
+                result_profit = Decimal(odd.value).mul(result_value).toString()
+                break
+            default:
+                result_profit = result_value
+                break
+        }
     }
 
     return {
@@ -139,6 +176,8 @@ export function getOddResult(odd: OddInfo, match: Titan007.MatchScore) {
         score,
         score1,
         score2,
+        result_value,
+        result_profit,
     }
 }
 

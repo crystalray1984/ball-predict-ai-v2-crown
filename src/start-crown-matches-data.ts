@@ -86,6 +86,8 @@ async function parseCrownScoreData(content: string) {
                 promoted.score1 = result.score1
                 promoted.score2 = result.score2
                 promoted.score = result.score
+                promoted.result_value = result.result_value
+                promoted.result_profit = result.result_profit
                 await promoted.save()
             }
         }

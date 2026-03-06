@@ -122,6 +122,18 @@ export class VPromoted extends Model<InferAttributes<VPromoted>> {
     declare score2: number | null
 
     /**
+     * 结果手数
+     */
+    @Column(DataType.DECIMAL)
+    declare result_value: string | number | null
+
+    /**
+     * 结果收益
+     */
+    @Column(DataType.DECIMAL)
+    declare result_profit: string | number | null
+
+    /**
      * 扩展数据
      */
     @Column(DataType.JSON)

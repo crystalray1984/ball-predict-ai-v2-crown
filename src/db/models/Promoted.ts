@@ -141,6 +141,18 @@ export class Promoted extends Model<InferAttributes<Promoted>, InferCreationAttr
     declare score2: CreationOptional<number | null>
 
     /**
+     * 结果手数
+     */
+    @Column(DataType.DECIMAL)
+    declare result_value: CreationOptional<string | number | null>
+
+    /**
+     * 结果收益
+     */
+    @Column(DataType.DECIMAL)
+    declare result_profit: CreationOptional<string | number | null>
+
+    /**
      * 扩展数据
      */
     @Column(DataType.JSON)

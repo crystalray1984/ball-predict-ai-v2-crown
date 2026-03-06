@@ -190,6 +190,8 @@ export async function processFinalMatch(match: VMatch, period: Period): Promise<
         promoted.score = result.score
         promoted.score1 = result.score1
         promoted.score2 = result.score2
+        promoted.result_value = result.result_value
+        promoted.result_profit = result.result_profit
 
         await promoted.save()
     }
