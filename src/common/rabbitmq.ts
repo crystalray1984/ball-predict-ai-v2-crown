@@ -56,6 +56,7 @@ export interface QueueConfig {
 async function publishReady() {
     if (publishChannel) return
     return singleton('rabbitmq_publish', async () => {
+        await ready()
         publishChannel = await connection.createConfirmChannel()
         console.log('[rabbitmq]', '开启发布通道', CONFIG.rabbitmq.hostname)
     })
