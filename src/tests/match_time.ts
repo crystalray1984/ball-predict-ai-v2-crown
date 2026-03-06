@@ -13,7 +13,6 @@ async function main() {
             result: {
                 [Op.not]: null,
             },
-            result_value: null,
         },
         order: [['id', 'desc']],
     })

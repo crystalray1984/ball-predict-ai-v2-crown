@@ -164,6 +164,7 @@ async function processReadyCheck(content: string, isMansion: boolean) {
 
     //直通推荐规则1-二次比对前
     //额外的赛前4个小时判断
+
     if (
         !isMansion &&
         Array.isArray(direct_config) &&
@@ -190,6 +191,25 @@ async function processReadyCheck(content: string, isMansion: boolean) {
                     extra,
                     findMainOdd(extra.type, data.odds)!,
                 )
+            }
+        }
+    } else {
+        if (!isMansion && Array.isArray(direct_config) && direct_config.length > 0) {
+            console.log('时间差', match.match_time.valueOf() - Date.now())
+            const rule = findRule<DirectConfig>(
+                (direct_config as DirectConfig[]).filter((t) => !t.first_check),
+                extra.type,
+            )
+            console.log('满足条件', rule)
+            const hasOdd = data.odds.some(
+                (odd) =>
+                    odd.variety === 'goal' &&
+                    odd.type === 'ou' &&
+                    Decimal(odd.condition).gte('2.25'),
+            )
+            console.log('2.25以上盘', hasOdd)
+            if (!hasOdd) {
+                console.log(data.odds)
             }
         }
     }
