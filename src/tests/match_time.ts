@@ -1,17 +1,44 @@
-import { getCrownMatches, init } from '@/crown'
-import { getTodayMatches } from '@/crown/match'
+import { getOddResult } from '@/common/helpers'
+import { Match, Promoted } from '@/db'
+import { Op } from 'sequelize'
 
 async function main() {
-    await init()
-    const matches = await getTodayMatches()
+    const matches: Record<number, Match> = {}
 
-    matches.forEach((match) => {
-        const { match_time, ...rest } = match
-        console.log({
-            ...rest,
-            match_time: new Date(match_time),
-        })
+    const list = await Promoted.findAll({
+        where: {
+            value: {
+                [Op.not]: null,
+            },
+            result: {
+                [Op.not]: null,
+            },
+            result_value: null,
+        },
+        order: [['id', 'desc']],
     })
+
+    for (const promoted of list) {
+        let match = matches[promoted.match_id]
+        if (!match) {
+            const found = await Match.findByPk(promoted.match_id)
+            if (!found) continue
+            match = matches[promoted.match_id] = found
+        }
+
+        const result = getOddResult(promoted, match as any)
+        if (!result) continue
+
+        promoted.result_value = result.result_value
+        promoted.result_profit = result.result_profit
+        await promoted.save()
+        console.log(promoted.id)
+    }
 }
 
 main()
+    .then(() => process.exit())
+    .catch((err) => {
+        console.error(err)
+        process.exit()
+    })

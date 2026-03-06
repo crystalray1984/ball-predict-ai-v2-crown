@@ -163,7 +163,7 @@ export function getOddResult(
         switch (result_value) {
             case '0.5':
             case '1':
-                result_profit = Decimal(odd.value).mul(result_value).toString()
+                result_profit = Decimal(odd.value).sub(1).mul(result_value).toString()
                 break
             default:
                 result_profit = result_value
