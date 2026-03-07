@@ -138,8 +138,8 @@ async function processRockball2(
                 source_id: 0,
             })
 
-            if (CONFIG.ai.rockball2) {
-                await ai.rockball2.publish({
+            if (CONFIG.ai.rockball) {
+                await ai.rockball.publish({
                     match_id,
                     odd_id: rockball.id,
                 })
