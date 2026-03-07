@@ -67,7 +67,7 @@ export function consume() {
 const rateLimitter = new RateLimiter(60000)
 
 interface CozeResult extends Record<string, any> {
-    '上半场大0.5': string
+    '上半场0.5': string
 }
 
 interface CozeResponse {
@@ -125,7 +125,7 @@ async function process(input: CozeRockballInput): Promise<boolean> {
         },
     })
 
-    if (!resp.data.result || !resp.data.result['上半场大0.5']) {
+    if (!resp.data.result || !resp.data.result['上半场0.5']) {
         //无法解析得到信息
         console.error('rockball2')
         console.error(resp.data)
@@ -147,7 +147,7 @@ async function process(input: CozeRockballInput): Promise<boolean> {
         .join('\n')
 
     //根据解析结果进行盘口处理
-    switch (resp.data.result['上半场大0.5']) {
+    switch (resp.data.result['上半场0.5']) {
         case '大':
             //维持大球
             await RockballOdd.update(
