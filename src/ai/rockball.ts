@@ -6,7 +6,7 @@ import {
 import { RateLimiter } from '@/common/rate-limiter'
 import { CONFIG } from '@/config'
 import { RockballOdd, VMatch } from '@/db'
-import axios from 'axios'
+import axios, { AxiosResponse } from 'axios'
 import dayjs from 'dayjs'
 import Decimal from 'decimal.js'
 
@@ -111,19 +111,25 @@ async function process(input: CozeRockballInput): Promise<boolean> {
     await rateLimitter.next()
 
     //调用接口进行AI分析
-    const resp = await axios.request<CozeResponse>({
-        method: 'POST',
-        url: CONFIG.ai.rockball.url,
-        headers: {
-            Authorization: `Bearer ${CONFIG.ai.rockball.token}`,
-        },
-        data: {
-            league: tournament_name,
-            match_time: dayjs(match.match_time).format('YYYY/MM/DD HH:mm'),
-            home_team: team1_name,
-            away_team: team2_name,
-        },
-    })
+    let resp: AxiosResponse<CozeResponse>
+    try {
+        resp = await axios.request<CozeResponse>({
+            method: 'POST',
+            url: CONFIG.ai.rockball.url,
+            headers: {
+                Authorization: `Bearer ${CONFIG.ai.rockball.token}`,
+            },
+            data: {
+                league: tournament_name,
+                match_time: dayjs(match.match_time).format('YYYY/MM/DD HH:mm'),
+                home_team: team1_name,
+                away_team: team2_name,
+            },
+        })
+    } catch (err) {
+        console.error(err)
+        return false
+    }
 
     if (!resp.data.result || !resp.data.result['上半场大0.5']) {
         //无法解析得到信息
