@@ -112,6 +112,12 @@ export interface ConsumeOptions extends Options.Consume {
     prefetchCount?: number
 }
 
+export interface ConsumeContext {
+    ack(): void
+    nack(): void
+    requeue(): void
+}
+
 /**
  * 开启队列消费
  * @param queue
@@ -120,7 +126,7 @@ export interface ConsumeOptions extends Options.Consume {
  */
 export function consume(
     queue: string | QueueConfig,
-    callback: (content: string) => any,
+    callback: (content: string, context: ConsumeContext) => any,
     options: ConsumeOptions = {},
 ): [Promise<void>, () => void] {
     const controller = new AbortController()
@@ -151,16 +157,47 @@ export function consume(
                 const { consumerTag } = await channel.consume(
                     config.name,
                     async (msg) => {
+                        let action: 'ack' | 'nack' | 'requeue' | '' = ''
+                        const ack = () => {
+                            action = 'ack'
+                        }
+                        const nack = () => {
+                            action = 'nack'
+                        }
+                        const requeue = () => {
+                            action = 'requeue'
+                        }
+                        const ctx = {
+                            ack,
+                            nack,
+                            requeue,
+                        }
+
                         if (!msg) {
                             reject(new Error('rabbitmq服务器已断开连接'))
                             return
                         }
                         try {
-                            await callback(msg.content.toString('utf-8'))
-                            channel.ack(msg)
+                            await callback(msg.content.toString('utf-8'), ctx)
+                            if (!action) {
+                                action = 'ack'
+                            }
                         } catch (err) {
                             console.error(err)
-                            channel.nack(msg)
+                            if (!action) {
+                                action = 'nack'
+                            }
+                        }
+                        switch (action as any) {
+                            case 'nack':
+                                channel.nack(msg)
+                                break
+                            case 'requeue':
+                                channel.reject(msg, true)
+                                break
+                            default:
+                                channel.ack(msg)
+                                break
                         }
                     },
                     rest,

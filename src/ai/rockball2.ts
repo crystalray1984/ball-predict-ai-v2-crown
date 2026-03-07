@@ -50,12 +50,11 @@ export function publish(input: CozeRockballInput, delay = 1) {
  * 扣子滚球上半场大0.5判断工作流开启消费
  */
 export function consume() {
-    const [promise] = rabbitmqConsume(QUEUE, async (content) => {
+    const [promise] = rabbitmqConsume(QUEUE, async (content, ctx) => {
         const data = JSON.parse(content) as CozeRockballInput
         const processed = await process(data)
         if (!processed) {
-            //如果解析不成功，那么重新抛回到队列
-            await publish(data, 60)
+            ctx.requeue()
         }
     })
     return promise
