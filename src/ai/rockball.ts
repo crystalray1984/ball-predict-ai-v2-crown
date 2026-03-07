@@ -105,7 +105,7 @@ async function process(input: CozeRockballInput): Promise<boolean> {
     if (!match) return true
 
     //比赛已开始后就不再判断
-    if (match.match_time.valueOf() >= Date.now()) return true
+    if (match.match_time.valueOf() < Date.now()) return true
 
     /**
      * 基于AI的响应数据处理盘口
