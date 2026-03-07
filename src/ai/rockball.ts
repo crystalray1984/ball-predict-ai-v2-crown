@@ -5,10 +5,14 @@ import {
 } from '@/common/rabbitmq'
 import { RateLimiter } from '@/common/rate-limiter'
 import { CONFIG } from '@/config'
-import { RockballOdd, VMatch } from '@/db'
-import axios, { AxiosResponse } from 'axios'
+import { AiCache, RockballOdd, VMatch } from '@/db'
+import axios, { AxiosResponse, isAxiosError } from 'axios'
 import dayjs from 'dayjs'
 import Decimal from 'decimal.js'
+import { cloneDeep } from 'lodash'
+
+//构建基于所有AI序列的轮询队列
+const AI_QUEUE = cloneDeep(CONFIG.ai.rockball)
 
 /**
  * 扣子滚球上半场大0.5判断工作流输入参数
@@ -100,6 +104,94 @@ async function process(input: CozeRockballInput): Promise<boolean> {
     })
     if (!match) return true
 
+    //比赛已开始后就不再判断
+    if (match.match_time.valueOf() >= Date.now()) return true
+
+    /**
+     * 基于AI的响应数据处理盘口
+     */
+    const onSuccess = async (resp: CozeResponse) => {
+        console.log(match.match_time)
+        console.log(match.team1_name)
+        console.log(match.team2_name)
+        console.log(resp.result)
+
+        //刷新一下盘口信息
+        odd = await RockballOdd.findOne({
+            where: {
+                id: input.odd_id,
+            },
+        })
+        //盘口信息不正常的就出去了
+        if (!odd || odd.status !== '' || odd.note || !odd.is_open) return true
+
+        //整理AI得到的信息
+        const note = Object.entries(resp.result)
+            .map(([name, value]) => `${name}: ${value}`)
+            .join('\n')
+
+        //根据解析结果进行盘口处理
+        switch (resp.result['上半场0.5']) {
+            case '大':
+                //维持大球
+                await RockballOdd.update(
+                    {
+                        note,
+                    },
+                    {
+                        where: {
+                            id: input.odd_id,
+                        },
+                        returning: false,
+                    },
+                )
+                break
+            case '小':
+                //改为小球
+                await RockballOdd.update(
+                    {
+                        back: 1,
+                        note,
+                    },
+                    {
+                        where: {
+                            id: input.odd_id,
+                        },
+                        returning: false,
+                    },
+                )
+                break
+            default:
+                //解析结果不符合，这个盘口不推
+                await RockballOdd.update(
+                    {
+                        is_open: 0,
+                        note,
+                    },
+                    {
+                        where: {
+                            id: input.odd_id,
+                        },
+                        returning: false,
+                    },
+                )
+                break
+        }
+    }
+
+    //查询AI缓存表是否已有数据
+    const cache = await AiCache.findOne({
+        where: {
+            provider: 'rockball',
+            target: `match:${input.match_id}`,
+        },
+    })
+    if (cache) {
+        //有数据
+        await onSuccess(cache.response)
+        return true
+    }
+
     //拆解联赛名称
     const tournament_name = match.tournament_i18n_name?.en || match.tournament_name
 
@@ -110,13 +202,17 @@ async function process(input: CozeRockballInput): Promise<boolean> {
     await rateLimitter.next()
 
     //调用接口进行AI分析
+
+    const config = AI_QUEUE.shift()!
+    AI_QUEUE.push(config)
+
     let resp: AxiosResponse<CozeResponse>
     try {
         resp = await axios.request<CozeResponse>({
             method: 'POST',
-            url: CONFIG.ai.rockball.url,
+            url: config.url,
             headers: {
-                Authorization: `Bearer ${CONFIG.ai.rockball.token}`,
+                Authorization: `Bearer ${config.token}`,
             },
             data: {
                 league: tournament_name,
@@ -126,7 +222,15 @@ async function process(input: CozeRockballInput): Promise<boolean> {
             },
         })
     } catch (err) {
-        console.error(err)
+        if (isAxiosError(err)) {
+            if (err.response) {
+                console.error(err.response)
+            } else {
+                console.error(err.toJSON())
+            }
+        } else {
+            console.error(err)
+        }
         return false
     }
 
@@ -137,67 +241,20 @@ async function process(input: CozeRockballInput): Promise<boolean> {
         return false
     }
 
-    //刷新一下盘口信息
-    odd = await RockballOdd.findOne({
-        where: {
-            id: input.odd_id,
+    //写入AI缓存
+    await AiCache.create(
+        {
+            provider: 'rockball',
+            target: `match:${input.match_id}`,
+            response: resp.data,
         },
-    })
-    //盘口信息不正常的就出去了
-    if (!odd || odd.status !== '' || odd.note || !odd.is_open) return true
+        {
+            ignoreDuplicates: true,
+        },
+    )
 
-    //整理AI得到的信息
-    const note = Object.entries(resp.data.result)
-        .map(([name, value]) => `${name}: ${value}`)
-        .join('\n')
-
-    //根据解析结果进行盘口处理
-    switch (resp.data.result['上半场0.5']) {
-        case '大':
-            //维持大球
-            await RockballOdd.update(
-                {
-                    note,
-                },
-                {
-                    where: {
-                        id: input.odd_id,
-                    },
-                    returning: false,
-                },
-            )
-            break
-        case '小':
-            //改为小球
-            await RockballOdd.update(
-                {
-                    back: 1,
-                    note,
-                },
-                {
-                    where: {
-                        id: input.odd_id,
-                    },
-                    returning: false,
-                },
-            )
-            break
-        default:
-            //解析结果不符合，这个盘口不推
-            await RockballOdd.update(
-                {
-                    is_open: 0,
-                    note,
-                },
-                {
-                    where: {
-                        id: input.odd_id,
-                    },
-                    returning: false,
-                },
-            )
-            break
-    }
+    //执行盘口处理
+    await onSuccess(resp.data)
 
     return true
 }

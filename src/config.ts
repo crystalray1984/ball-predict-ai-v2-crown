@@ -104,9 +104,9 @@ export interface AppConfig {
     api_url: string
 
     /**
-     * AI判断
+     * AI判断配置
      */
-    ai: Record<string, AiConfig>
+    ai: Record<string, AiConfig[]>
 }
 
 export interface AiConfig {

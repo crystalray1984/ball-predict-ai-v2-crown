@@ -1,6 +1,7 @@
 import { CONFIG } from '@/config'
 import { merge } from 'lodash'
 import { Sequelize, SequelizeOptions } from 'sequelize-typescript'
+import { AiCache } from './models/AiCache'
 import { CrownAccount } from './models/CrownAccount'
 import { CrownMainOdd } from './models/CrownMainOdd'
 import { CrownOdd } from './models/CrownOdd'
@@ -57,11 +58,13 @@ export const db = new Sequelize(
                 Promoted,
                 VPromoted,
                 CrownMainOdd,
+                AiCache,
             ],
         },
     ),
 )
 
+export { AiCache } from './models/AiCache'
 export { CrownAccount } from './models/CrownAccount'
 export { CrownMainOdd } from './models/CrownMainOdd'
 export { CrownOdd } from './models/CrownOdd'
