@@ -125,7 +125,7 @@ async function process(input: CozeRockballInput): Promise<boolean> {
         },
     })
 
-    if (!resp.data.result) {
+    if (!resp.data.result || !resp.data.result['上半场大0.5']) {
         //无法解析得到信息
         console.error('rockball')
         console.error(resp.data)
