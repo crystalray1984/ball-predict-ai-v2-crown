@@ -32,7 +32,7 @@ async function startRockballCheck() {
             (
                 (rockball_odd.period = 'regularTime' AND "match".match_time BETWEEN ? AND ?)
                 OR
-                (rockball_odd.period = 'peroid1' AND "match".match_time BETWEEN ? AND ?)
+                (rockball_odd.period = 'period1' AND "match".match_time BETWEEN ? AND ?)
             )
         `,
             values: [
