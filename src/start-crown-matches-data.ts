@@ -32,6 +32,13 @@ async function startCrownMatchesData() {
     }
 }
 
+async function startCrownMatchesDataFake() {
+    while (true) {
+        const [promise] = consume('crown_matches_data', () => {})
+        await promise
+    }
+}
+
 async function parseCrownScoreData(content: string) {
     const list = JSON.parse(content) as Crown.ScoreInfo[]
 
@@ -177,6 +184,7 @@ async function startI18nData() {
 
 if (require.main === module) {
     startCrownMatchesData()
+    startCrownMatchesDataFake()
     startCrownScoreData()
     startI18nData()
 }
