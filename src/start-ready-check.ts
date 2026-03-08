@@ -163,13 +163,12 @@ async function processReadyCheck(content: string, isMansion: boolean) {
     if (!exists) return
 
     //直通推荐规则1-二次比对前
-    //额外的赛前4个小时判断
-
+    //额外的赛前3个小时判断
     if (
         !isMansion &&
         Array.isArray(direct_config) &&
         direct_config.length > 0 &&
-        match.match_time.valueOf() - Date.now() > 3600000 * 4
+        match.match_time.valueOf() - Date.now() > 3600000 * 3
     ) {
         const rule = findRule<DirectConfig>(
             (direct_config as DirectConfig[]).filter((t) => !t.first_check),
@@ -329,7 +328,7 @@ async function processReadyCheck(content: string, isMansion: boolean) {
         odd.status === 'ready' &&
         Array.isArray(direct_config) &&
         direct_config.length > 0 &&
-        match.match_time.valueOf() - Date.now() > 3600000 * 4
+        match.match_time.valueOf() - Date.now() > 3600000 * 3
     ) {
         const rule = findRule<DirectConfig>(
             (direct_config as DirectConfig[]).filter((t) => t.first_check),
