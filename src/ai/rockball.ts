@@ -192,12 +192,19 @@ async function process(input: CozeRockballInput): Promise<boolean> {
         return true
     }
 
+    // //拆解联赛名称
+    // const tournament_name = match.tournament_i18n_name?.en || match.tournament_name
+
+    // //拆解队伍名称
+    // const team1_name = match.team1_i18n_name?.en || match.team1_name
+    // const team2_name = match.team2_i18n_name?.en || match.team2_name
+
     //拆解联赛名称
-    const tournament_name = match.tournament_i18n_name?.en || match.tournament_name
+    const tournament_name = match.tournament_name
 
     //拆解队伍名称
-    const team1_name = match.team1_i18n_name?.en || match.team1_name
-    const team2_name = match.team2_i18n_name?.en || match.team2_name
+    const team1_name = match.team1_name
+    const team2_name = match.team2_name
 
     await rateLimitter.next()
 
