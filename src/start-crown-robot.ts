@@ -155,6 +155,7 @@ async function startCrownRobot() {
             socket.start()
 
             if (process.env.CROWN_MATCHES) {
+                startCrownMatches()
                 matchTimer = setInterval(startCrownMatches, 600000)
             }
             if (process.env.CROWN_SCORE) {
