@@ -1,10 +1,12 @@
-import { delay } from '@/common/helpers'
+import { delay, prepareDir } from '@/common/helpers'
 import dayjs from 'dayjs'
 import customParseFormat from 'dayjs/plugin/customParseFormat'
 import timezone from 'dayjs/plugin/timezone'
 import utc from 'dayjs/plugin/utc'
 import { Page } from 'puppeteer-core'
 import { crownQueue, ready, xmlParser } from './base'
+import { join, resolve } from 'node:path'
+import { writeFile } from 'node:fs/promises'
 
 dayjs.extend(utc)
 dayjs.extend(timezone)
@@ -74,6 +76,15 @@ export async function getCrownMatches(langx: Crown.Language = 'zh-cn'): Promise<
         }
 
         //读取联赛列表
+        try {
+            const now = dayjs()
+            const dirPath = resolve(__dirname, `../../runtime/crown/${now.format('YYYYMMDD')}`)
+            await prepareDir(dirPath)
+            const logFile = join(dirPath, `matches_${now.format('HHmmss')}.log`)
+            await writeFile(logFile, JSON.stringify(result, null, 4), 'utf-8')
+        } catch (err) {
+            console.error(err)
+        }
 
         return result
     })
@@ -214,6 +225,8 @@ async function getCrownMatchesWithLeagues(
             team_c: game.TEAM_C,
             ecid: game.ECID,
             match_time: parseMatchTime(game.SYSTIME, game.DATETIME),
+            // @ts-ignore
+            raw_match_time: game.DATETIME,
         })
     })
 
