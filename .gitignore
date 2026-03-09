@@ -6,3 +6,4 @@ dist/
 pm2-local.config.js
 titan007_today.json
 *.test.ts
+src/tests/*

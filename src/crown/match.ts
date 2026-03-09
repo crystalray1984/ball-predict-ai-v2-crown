@@ -1,5 +1,6 @@
 import { delay } from '@/common/helpers'
 import dayjs from 'dayjs'
+import customParseFormat from 'dayjs/plugin/customParseFormat'
 import timezone from 'dayjs/plugin/timezone'
 import utc from 'dayjs/plugin/utc'
 import { Page } from 'puppeteer-core'
@@ -7,6 +8,7 @@ import { crownQueue, ready, xmlParser } from './base'
 
 dayjs.extend(utc)
 dayjs.extend(timezone)
+dayjs.extend(customParseFormat)
 
 /**
  * 从皇冠页面获取早盘比赛列表
@@ -225,18 +227,8 @@ async function getCrownMatchesWithLeagues(
  * @returns
  */
 export function parseMatchTime(SYSTIME: string, DATETIME: string) {
-    const timeMatch = /([0-9]+)-([0-9]+) ([0-9]+):([0-9]+)(a|p)/.exec(DATETIME)!
-
-    let hour = parseInt(timeMatch[3])
-    if (timeMatch[5] === 'p') {
-        hour += 12
-    }
-
     const baseTime = dayjs.tz(SYSTIME, '-04:00')
-    let matchTime = dayjs.tz(
-        `${baseTime.year()}-${timeMatch[1]}-${timeMatch[2]} ${hour.toString().padStart(2, '0')}:${timeMatch[4]}`,
-        '-04:00',
-    )
+    let matchTime = dayjs.tz(`${baseTime.year()}-${DATETIME}`, 'YYYY-MM-DD hh:mma', '-04:00')
 
     //比赛时间不应与当前时间相差过大，否则就年份+1
     if (Math.abs(matchTime.diff(baseTime, 'days')) >= 120) {
