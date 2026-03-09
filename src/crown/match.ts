@@ -242,8 +242,12 @@ async function getCrownMatchesWithLeagues(
  * @returns
  */
 export function parseMatchTime(SYSTIME: string, DATETIME: string) {
+    const timeStr = /^(.+)(a|p)$/.exec(DATETIME)!
     const baseTime = dayjs.tz(SYSTIME, '-04:00')
-    let matchTime = dayjs.tz(`${baseTime.year()}-${DATETIME}`, 'YYYY-MM-DD hh:mma', '-04:00')
+    let matchTime = dayjs.tz(`${baseTime.year()}-${timeStr[1]}`, 'YYYY-MM-DD hh:mm', '-04:00')
+    if (timeStr[2] === 'p' && matchTime.hour() !== 12) {
+        matchTime = matchTime.add(12, 'hour')
+    }
 
     //比赛时间不应与当前时间相差过大，否则就年份+1
     if (Math.abs(matchTime.diff(baseTime, 'days')) >= 120) {
