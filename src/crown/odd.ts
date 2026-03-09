@@ -90,10 +90,12 @@ function formatOddData(input: Crown.Resp, rockball = false) {
     /**
      * 比赛主体数据
      */
+    const match_time = parseFullMatchTime(mainGame.datetime)
     const match: Crown.MatchInfo = {
-        match_time: parseFullMatchTime(mainGame.datetime),
+        match_time,
         // @ts-ignore
         raw_match_time: mainGame.datetime,
+        display_match_time: new Date(match_time),
         ecid: mainGame.ecid,
         league: mainGame.league,
         lid: mainGame.lid,

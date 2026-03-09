@@ -216,6 +216,7 @@ async function getCrownMatchesWithLeagues(
     gameList.ec.forEach((ec: Record<string, any>) => {
         if (ec['@_hasEC'] !== 'Y' || !ec.game || ec.game.ISFANTASY === 'Y') return
         const game = ec.game as Record<string, string>
+        const match_time = parseMatchTime(game.SYSTIME, game.DATETIME)
         result.push({
             lid: game.LID,
             league: game.LEAGUE,
@@ -224,9 +225,10 @@ async function getCrownMatchesWithLeagues(
             team_h: game.TEAM_H,
             team_c: game.TEAM_C,
             ecid: game.ECID,
-            match_time: parseMatchTime(game.SYSTIME, game.DATETIME),
+            match_time,
             // @ts-ignore
             raw_match_time: game.DATETIME,
+            display_match_time: new Date(match_time),
         })
     })
 
