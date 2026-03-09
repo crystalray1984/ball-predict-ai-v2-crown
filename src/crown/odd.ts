@@ -53,20 +53,22 @@ export async function getCrownData(
 
         //写入记录
         try {
-            const now = dayjs()
-            const dirPath = resolve(__dirname, `../../runtime/crown/${now.format('YYYYMMDD')}`)
-            await prepareDir(dirPath)
-            const logFile = join(
-                dirPath,
-                `${crown_match_id}_${show_type}_${now.format('HHmmss')}.log`,
-            )
-            await writeFile(logFile, JSON.stringify(data, null, 4), 'utf-8')
-        } catch (err) {
-            console.error(err)
-        }
+            const result = formatOddData(data, show_type === 'live')
 
-        try {
-            return formatOddData(data, show_type === 'live')
+            try {
+                const now = dayjs()
+                const dirPath = resolve(__dirname, `../../runtime/crown/${now.format('YYYYMMDD')}`)
+                await prepareDir(dirPath)
+                const logFile = join(
+                    dirPath,
+                    `${crown_match_id}_${show_type}_${now.format('HHmmss')}.log`,
+                )
+                await writeFile(logFile, JSON.stringify(result), 'utf-8')
+            } catch (err) {
+                console.error(err)
+            }
+
+            return result
         } catch (err) {
             console.error('解析响应体失败', resp)
             throw err
@@ -90,6 +92,8 @@ function formatOddData(input: Crown.Resp, rockball = false) {
      */
     const match: Crown.MatchInfo = {
         match_time: parseFullMatchTime(mainGame.datetime),
+        // @ts-ignore
+        raw_match_time: mainGame.datetime,
         ecid: mainGame.ecid,
         league: mainGame.league,
         lid: mainGame.lid,
