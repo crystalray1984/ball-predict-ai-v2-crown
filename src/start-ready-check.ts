@@ -608,6 +608,8 @@ async function createModel3Promoted(odd: Odd, value1: string, crown: Crown.OddIn
             value: crown.value_h,
             extra: {
                 id: odd.id,
+                variety: odd.variety,
+                period: odd.period,
                 type: odd.type,
                 condition: odd.condition,
                 value1,
