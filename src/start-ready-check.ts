@@ -607,8 +607,10 @@ async function createModel3Promoted(odd: Odd, value1: string, crown: Crown.OddIn
             odd_type: 'sum',
             value: crown.value_h,
             extra: {
+                id: odd.id,
+                type: odd.type,
+                condition: odd.condition,
                 value1,
-                odd_id: odd.id,
             },
         })
     } catch (err) {
