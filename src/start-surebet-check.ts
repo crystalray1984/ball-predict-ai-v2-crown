@@ -371,22 +371,22 @@ async function processSurebetCheck(content: string, allowRockball: boolean, next
                 'tournament_is_rockball_open',
             ],
         })
-        if (match) {
-            if (match.match_time.valueOf() !== odd.time) {
-                match.match_time = new Date(odd.time)
+        // if (match) {
+        //     if (match.match_time.valueOf() !== odd.time) {
+        //         match.match_time = new Date(odd.time)
 
-                await Match.update(
-                    {
-                        match_time: match.match_time,
-                    },
-                    {
-                        where: {
-                            id: match.id,
-                        },
-                    },
-                )
-            }
-        }
+        //         await Match.update(
+        //             {
+        //                 match_time: match.match_time,
+        //             },
+        //             {
+        //                 where: {
+        //                     id: match.id,
+        //                 },
+        //             },
+        //         )
+        //     }
+        // }
 
         //滚球队列检查
         if (
