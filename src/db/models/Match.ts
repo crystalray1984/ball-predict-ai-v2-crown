@@ -190,6 +190,7 @@ export class Match extends Model<InferAttributes<Match>, InferCreationAttributes
                         },
                     },
                 )
+                console.trace('更新比赛时间', match.id, match.match_time.valueOf(), data.match_time)
             }
             return [match.id, false]
         }
