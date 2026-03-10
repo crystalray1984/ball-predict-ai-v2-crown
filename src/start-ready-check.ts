@@ -561,7 +561,7 @@ async function createModel3Promoted(odd: Odd, value1: string, crown: Crown.OddIn
     //只处理全场让球盘的0球盘
     if (odd.period !== 'regularTime') return
     if (odd.variety !== 'goal') return
-    if (['ah1', 'ah2'].includes(odd.type)) return
+    if (!['ah1', 'ah2'].includes(odd.type)) return
     if (!Decimal(odd.condition).eq(0)) return
 
     //读取模型3的规则
