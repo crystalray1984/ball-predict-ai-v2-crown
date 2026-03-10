@@ -6,6 +6,7 @@ import {
     getOddIdentification,
     getPromotedOddInfo,
     getWeekDay,
+    isDecimal,
     isNullOrUndefined,
 } from './common/helpers'
 import { close, consume, publish } from './common/rabbitmq'
@@ -147,7 +148,6 @@ async function processReadyCheck(content: string, isMansion: boolean) {
         where: {
             id: match_id,
         },
-        attributes: ['id', 'status', 'tournament_is_open', 'match_time'],
     })
     if (!match) return
 
@@ -378,6 +378,8 @@ async function processReadyCheck(content: string, isMansion: boolean) {
                         exists.value_reverse,
                         crown,
                     )
+                    //模型3的推荐判断
+                    await createModel3Promoted(otherOdd, exists.value_reverse, crown)
                 } else {
                     await createMansionPromoted(
                         odd,
@@ -386,6 +388,8 @@ async function processReadyCheck(content: string, isMansion: boolean) {
                         exists.value_reverse,
                         crown,
                     )
+                    //模型3的推荐判断
+                    await createModel3Promoted(odd, exists.value_reverse, crown)
                 }
             }
         }
@@ -545,6 +549,89 @@ async function createMansionPromoted(
             await createRockball3Odd(promoted.id)
         }
     }
+}
+
+/**
+ * 创建模型3的推荐
+ * @param odd 满足对比条件的surebet盘口
+ * @param value1 反推水位
+ * @param crown 当前比赛的皇冠大小球盘口
+ */
+async function createModel3Promoted(odd: Odd, value1: string, crown: Crown.OddInfo) {
+    //只处理全场让球盘的0球盘
+    if (odd.period !== 'regularTime') return
+    if (odd.variety !== 'goal') return
+    if (['ah1', 'ah2'].includes(odd.type)) return
+    if (!Decimal(odd.condition).eq(0)) return
+
+    //读取模型3的规则
+    const { model3_min_value, model3_max_value } = await getSetting(
+        'model3_min_value',
+        'model3_max_value',
+    )
+    if (!isDecimal(model3_min_value) || !isDecimal(model3_max_value)) return
+
+    //判断反推水位是否在配置的范围
+    if (!(Decimal(model3_min_value).lte(value1) && Decimal(model3_max_value).gte(value1))) return
+
+    //推当前皇冠大小球盘口的小球
+    //先判断是否已经存在已经推荐的数据
+    const exists = await Promoted.findOne({
+        where: {
+            match_id: odd.match_id,
+            variety: odd.variety,
+            period: odd.period,
+            odd_type: 'sum',
+            is_valid: 1,
+            channel: 'model3',
+        },
+        attributes: ['id'],
+    })
+    if (exists) return
+
+    const week_day = getWeekDay()
+
+    let promoted: Promoted
+    try {
+        promoted = await Promoted.create({
+            match_id: odd.match_id,
+            source_type: 'odd',
+            source_id: odd.id,
+            channel: 'model3',
+            week_day,
+            week_id: 0,
+            variety: odd.variety,
+            period: odd.period,
+            type: 'under',
+            condition: crown.condition,
+            odd_type: 'sum',
+            value: crown.value_h,
+        })
+    } catch (err) {
+        console.error(err)
+        return
+    }
+
+    //抛出推荐
+    //设置周标记
+    const weekLast = await Promoted.findOne({
+        where: {
+            week_day,
+            is_valid: 1,
+            id: {
+                [Op.lt]: promoted.id,
+            },
+            channel: 'model3',
+        },
+        order: [['id', 'desc']],
+        attributes: ['id', 'week_id'],
+    })
+    promoted.week_id = weekLast ? weekLast.week_id + 1 : 1
+    await promoted.save()
+    await publish(
+        CONFIG.queues['send_promoted'],
+        JSON.stringify({ id: promoted.id, type: 'model3' }),
+    )
 }
 
 /**

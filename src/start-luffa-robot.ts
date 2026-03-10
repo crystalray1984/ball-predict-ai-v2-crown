@@ -135,6 +135,14 @@ async function processSendPromoted(content: string) {
         case 'rockball2':
             socket_type = ['rockball2']
             break
+        //滚球3
+        case 'rockball3':
+            socket_type = ['rockball3']
+            break
+        //模型3
+        case 'model3':
+            socket_type = ['model3']
+            break
         //总台
         case 'generic':
             target = CONFIG.luffa.notification_channel2
