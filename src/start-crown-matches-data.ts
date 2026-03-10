@@ -1,5 +1,5 @@
 import { Op } from 'sequelize'
-import { getOddResult } from './common/helpers'
+import { debugFileLog, getOddResult } from './common/helpers'
 import { consume } from './common/rabbitmq'
 import { CONFIG } from './config'
 import { Match, Promoted, Team, Tournament, VMatch } from './db'
@@ -10,6 +10,8 @@ import { Match, Promoted, Team, Tournament, VMatch } from './db'
  */
 async function parseCrownMatchesData(content: string) {
     const matches = JSON.parse(content) as Crown.MatchInfo[]
+
+    debugFileLog('matches', matches)
 
     //插入比赛数据
     let newCount = 0

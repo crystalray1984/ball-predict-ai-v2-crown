@@ -501,7 +501,7 @@ export async function debugFileLog(name: string, data: any) {
         if (data instanceof Error) {
             return [data.name, data.message, data.stack].join('\n')
         }
-        return JSON.stringify(data)
+        return JSON.stringify(data, null, 4)
     })()
 
     await writeFile(logFile, content)
