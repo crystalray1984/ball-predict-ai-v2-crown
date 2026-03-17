@@ -45,6 +45,18 @@ export class CrownAccount extends Model<
     declare status: number
 
     /**
+     * 账号类型 空值-常规账号 betable-可用于投注的账号
+     */
+    @Column(DataType.STRING)
+    declare type: string
+
+    /**
+     * 账户余额
+     */
+    @Column(DataType.DECIMAL)
+    declare balance: CreationOptional<NumberVal>
+
+    /**
      * 正在使用账号的机器
      */
     @Column(DataType.STRING)

@@ -1,4 +1,9 @@
 /**
+ * 可视为数值的类型
+ */
+declare type NumberVal = string | number
+
+/**
  * 比赛状态
  */
 declare type MatchStatus = '' | 'final'

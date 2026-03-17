@@ -191,8 +191,9 @@ async function freeCrownAccount() {
 
 /**
  * 获取可用的皇冠账号
+ * @param type 账号类型
  */
-async function getCrownAccount() {
+async function getCrownAccount(type = '') {
     if (CONFIG.test_crown_account) {
         return CONFIG.test_crown_account
     }
@@ -203,6 +204,7 @@ async function getCrownAccount() {
             where: {
                 use_by: MACHINE_ID,
                 status: 1,
+                type,
                 use_expires: {
                     [Op.lte]: new Date(),
                 },
@@ -215,7 +217,7 @@ async function getCrownAccount() {
         account = await CrownAccount.findOne({
             where: {
                 [Op.and]: [
-                    { status: 1 },
+                    { status: 1, type },
                     {
                         [Op.or]: [{ use_by: '' }, { use_expires: { [Op.lt]: new Date() } }],
                     },
