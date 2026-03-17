@@ -85,6 +85,7 @@ async function doInit() {
                 headless: CONFIG.test_crown_account ? false : undefined,
                 args,
                 executablePath: getBrowserExecutePath(),
+                acceptInsecureCerts: true,
             })
 
             const page = await browser.newPage()
