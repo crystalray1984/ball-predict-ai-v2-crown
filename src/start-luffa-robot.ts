@@ -220,6 +220,8 @@ async function processSendPromoted(content: string) {
                                       score: promoted.score,
                                   }
                                 : null,
+                        crown_game_id: promoted.crown_game_id,
+                        crown_match_id: promoted.crown_match_id,
                     },
                 },
             })

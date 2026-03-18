@@ -186,4 +186,10 @@ export class VLabelPromoted extends Model<InferAttributes<VLabelPromoted>> {
      */
     @Column(DataType.STRING)
     declare team2_name: string
+
+    /**
+     * 皇冠盘口id
+     */
+    @Column(DataType.STRING)
+    declare crown_game_id: string
 }
