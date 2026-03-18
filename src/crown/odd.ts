@@ -120,6 +120,7 @@ function formatOddData(input: Crown.Resp, rockball = false) {
     }
 
     input.game.forEach((game) => {
+        const game_id = game.gid
         if (rockball) {
             //滚球盘
 
@@ -139,6 +140,7 @@ function formatOddData(input: Crown.Resp, rockball = false) {
                     }
                     const [value_h, value_c] = changeValue(game.ior_REH, game.ior_REC)
                     add({
+                        game_id,
                         variety: 'goal',
                         type: 'r',
                         condition,
@@ -160,6 +162,7 @@ function formatOddData(input: Crown.Resp, rockball = false) {
                     }
                     const [value_h, value_c] = changeValue(game.ior_HREH, game.ior_HREC)
                     add({
+                        game_id,
                         variety: 'goal',
                         type: 'hr',
                         condition,
@@ -176,6 +179,7 @@ function formatOddData(input: Crown.Resp, rockball = false) {
                 ) {
                     const [value_h, value_c] = changeValue(game.ior_ROUH, game.ior_ROUC)
                     add({
+                        game_id,
                         variety: 'goal',
                         type: 'ou',
                         condition: changeRatio(game.ratio_rouo),
@@ -192,6 +196,7 @@ function formatOddData(input: Crown.Resp, rockball = false) {
                 ) {
                     const [value_h, value_c] = changeValue(game.ior_HROUH, game.ior_HROUC)
                     add({
+                        game_id,
                         variety: 'goal',
                         type: 'hou',
                         condition: changeRatio(game.ratio_hrouo),
@@ -216,6 +221,7 @@ function formatOddData(input: Crown.Resp, rockball = false) {
                     }
                     const [value_h, value_c] = changeValue(game.ior_REH, game.ior_REC)
                     add({
+                        game_id,
                         variety: 'corner',
                         type: 'r',
                         condition,
@@ -237,6 +243,7 @@ function formatOddData(input: Crown.Resp, rockball = false) {
                     }
                     const [value_h, value_c] = changeValue(game.ior_HREH, game.ior_HREC)
                     add({
+                        game_id,
                         variety: 'corner',
                         type: 'hr',
                         condition,
@@ -253,6 +260,7 @@ function formatOddData(input: Crown.Resp, rockball = false) {
                 ) {
                     const [value_h, value_c] = changeValue(game.ior_ROUH, game.ior_ROUC)
                     add({
+                        game_id,
                         variety: 'corner',
                         type: 'ou',
                         condition: changeRatio(game.ratio_rouo),
@@ -269,6 +277,7 @@ function formatOddData(input: Crown.Resp, rockball = false) {
                 ) {
                     const [value_h, value_c] = changeValue(game.ior_HROUH, game.ior_HROUC)
                     add({
+                        game_id,
                         variety: 'corner',
                         type: 'hou',
                         condition: changeRatio(game.ratio_hrouo),
@@ -295,6 +304,7 @@ function formatOddData(input: Crown.Resp, rockball = false) {
                 }
                 const [value_h, value_c] = changeValue(game.ior_RH, game.ior_RC)
                 add({
+                    game_id,
                     variety: 'goal',
                     type: 'r',
                     condition,
@@ -316,6 +326,7 @@ function formatOddData(input: Crown.Resp, rockball = false) {
                 }
                 const [value_h, value_c] = changeValue(game.ior_HRH, game.ior_HRC)
                 add({
+                    game_id,
                     variety: 'goal',
                     type: 'hr',
                     condition,
@@ -332,6 +343,7 @@ function formatOddData(input: Crown.Resp, rockball = false) {
             ) {
                 const [value_h, value_c] = changeValue(game.ior_OUH, game.ior_OUC)
                 add({
+                    game_id,
                     variety: 'goal',
                     type: 'ou',
                     condition: changeRatio(game.ratio_o),
@@ -348,6 +360,7 @@ function formatOddData(input: Crown.Resp, rockball = false) {
             ) {
                 const [value_h, value_c] = changeValue(game.ior_HOUH, game.ior_HOUC)
                 add({
+                    game_id,
                     variety: 'goal',
                     type: 'hou',
                     condition: changeRatio(game.ratio_ho),
@@ -363,6 +376,7 @@ function formatOddData(input: Crown.Resp, rockball = false) {
                 isDecimal(game.ior_MN)
             ) {
                 add({
+                    game_id,
                     variety: 'goal',
                     type: 'm',
                     condition: '0',
@@ -379,6 +393,7 @@ function formatOddData(input: Crown.Resp, rockball = false) {
                 isDecimal(game.ior_HMN)
             ) {
                 add({
+                    game_id,
                     variety: 'goal',
                     type: 'hm',
                     condition: '0',
@@ -404,6 +419,7 @@ function formatOddData(input: Crown.Resp, rockball = false) {
                 }
                 const [value_h, value_c] = changeValue(game.ior_RH, game.ior_RC)
                 add({
+                    game_id,
                     variety: 'corner',
                     type: 'r',
                     condition,
@@ -425,6 +441,7 @@ function formatOddData(input: Crown.Resp, rockball = false) {
                 }
                 const [value_h, value_c] = changeValue(game.ior_HRH, game.ior_HRC)
                 add({
+                    game_id,
                     variety: 'corner',
                     type: 'hr',
                     condition,
@@ -441,6 +458,7 @@ function formatOddData(input: Crown.Resp, rockball = false) {
             ) {
                 const [value_h, value_c] = changeValue(game.ior_OUH, game.ior_OUC)
                 add({
+                    game_id,
                     variety: 'corner',
                     type: 'ou',
                     condition: changeRatio(game.ratio_o),
@@ -457,6 +475,7 @@ function formatOddData(input: Crown.Resp, rockball = false) {
             ) {
                 const [value_h, value_c] = changeValue(game.ior_HOUH, game.ior_HOUC)
                 add({
+                    game_id,
                     variety: 'corner',
                     type: 'hou',
                     condition: changeRatio(game.ratio_ho),

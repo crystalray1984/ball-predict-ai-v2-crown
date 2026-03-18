@@ -148,6 +148,10 @@ declare namespace Crown {
      * 皇冠返回的单个盘口数据
      */
     interface Game extends MatchInfo {
+        /**
+         * 盘口id
+         */
+        gid: string
         datetime: string
         /**
          * 盘口类型 0-赛果 146-角球
@@ -334,6 +338,7 @@ declare namespace Crown {
     }
 
     interface OddInfo {
+        game_id: string
         variety: Variety
         type: 'r' | 'hr' | 'ou' | 'hou' | 'm' | 'hm'
         condition: string
@@ -860,4 +865,22 @@ declare namespace Fotmob {
             }
         }
     }
+}
+
+/**
+ * 投注信息
+ */
+declare interface BetInfo extends OddInfo {
+    /**
+     * 皇冠盘口id
+     */
+    game_id: string
+    /**
+     * 是否滚球
+     */
+    rockball: number
+    /**
+     * 投注水位要求
+     */
+    value?: string
 }
