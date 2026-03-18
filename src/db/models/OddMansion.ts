@@ -120,4 +120,10 @@ export class OddMansion extends Model<
      */
     @Column(DataType.STRING)
     declare odd_type: 'ah' | 'sum'
+
+    /**
+     * 皇冠盘口id
+     */
+    @Column(DataType.STRING)
+    declare crown_game_id: CreationOptional<string>
 }

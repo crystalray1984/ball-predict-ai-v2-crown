@@ -160,6 +160,7 @@ async function processRockballCheck(content: string) {
             condition: odd.condition,
             odd_type: getOddIdentification(odd.type),
             value: odd.back ? exists.value_reverse : exists.value,
+            crown_game_id: exists.game_id,
         })
 
         //标记这个盘口已经得到推荐

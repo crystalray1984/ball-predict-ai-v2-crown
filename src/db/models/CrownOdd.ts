@@ -57,4 +57,10 @@ export class CrownOdd extends Model<InferAttributes<CrownOdd>, InferCreationAttr
 
     @Column(DataType.INTEGER)
     declare promote_flag: CreationOptional<number>
+
+    /**
+     * 皇冠盘口id
+     */
+    @Column(DataType.STRING)
+    declare crown_game_id: CreationOptional<string>
 }

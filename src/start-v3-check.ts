@@ -1,12 +1,12 @@
 import Decimal from 'decimal.js'
 import { Op, QueryTypes } from 'sequelize'
 import { parseMainOddForBmiss } from './common/bmiss'
+import { CROWN_ODD_QUEUE } from './common/constants'
 import { getOddIdentification, getPromotedOddInfo, getWeekDay, runLoop } from './common/helpers'
 import { consume, publish } from './common/rabbitmq'
 import { getSetting } from './common/settings'
 import { CONFIG } from './config'
 import { CrownOdd, db, LabelPromoted, Match, Odd, Promoted, VMatch } from './db'
-import { CROWN_ODD_QUEUE } from './common/constants'
 
 /**
  * 处理赛事的最终结算
@@ -530,6 +530,7 @@ async function saveCrownOdd(
                 condition: oddInfo.condition,
                 value1: oddInfo.value_h,
                 value2: oddInfo.value_c,
+                crown_game_id: oddInfo.game_id,
             },
             { returning: false },
         )
@@ -610,10 +611,13 @@ async function createV2ToV3Promote(odd: Odd, promoted: Promoted, tournament_labe
     if (exists) return
 
     //计算水位是否满足要求
-    const value = await (async () => {
+    const { value, game_id } = await (async () => {
         if (surebet_v2_to_v3_back) {
             //不是反推，就直接取原始水位就行
-            return promoted.extra.end_odd_data.value
+            return {
+                value: promoted.extra.end_odd_data.value,
+                game_id: promoted.extra.end_odd_data.game_id,
+            }
         }
 
         //反推就需要读取原始数据
@@ -623,8 +627,15 @@ async function createV2ToV3Promote(odd: Odd, promoted: Promoted, tournament_labe
                 id: promoted.extra.end_odd_data.id,
             },
         })
-        if (!origin_odd) return '0'
-        return origin_odd[field]
+        if (!origin_odd)
+            return {
+                value: '0',
+                game_id: '',
+            }
+        return {
+            value: origin_odd[field],
+            game_id: origin_odd.crown_game_id,
+        }
     })()
 
     const is_valid = Decimal(value).gte(surebet_v2_to_v3_min_value) ? 1 : 0
@@ -649,6 +660,7 @@ async function createV2ToV3Promote(odd: Odd, promoted: Promoted, tournament_labe
             back: surebet_v2_to_v3_back ? 0 : 1,
             promoted_id: promoted.id,
         },
+        crown_game_id: game_id ?? '',
     })
 
     if (is_valid) {

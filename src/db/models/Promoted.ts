@@ -164,4 +164,10 @@ export class Promoted extends Model<InferAttributes<Promoted>, InferCreationAttr
     @CreatedAt
     @Column(DataType.DATE)
     declare created_at: CreationOptional<Date>
+
+    /**
+     * 皇冠盘口id
+     */
+    @Column(DataType.STRING)
+    declare crown_game_id: CreationOptional<string>
 }

@@ -117,4 +117,10 @@ export class Odd extends Model<InferAttributes<Odd>, InferCreationAttributes<Odd
      */
     @Column(DataType.STRING)
     declare odd_type: 'ah' | 'sum'
+
+    /**
+     * 皇冠盘口id
+     */
+    @Column(DataType.STRING)
+    declare crown_game_id: CreationOptional<string>
 }
