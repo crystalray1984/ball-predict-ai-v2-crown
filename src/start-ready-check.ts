@@ -371,7 +371,7 @@ async function processReadyCheck(content: string, isMansion: boolean) {
             const crown = data.odds.find((t) => t.variety === 'goal' && t.type === 'ou')
             if (crown) {
                 if (isMansion) {
-                    await createMansionPromoted(
+                    const promoted = await createMansionPromoted(
                         otherOdd,
                         odd,
                         exists.value,
@@ -379,9 +379,11 @@ async function processReadyCheck(content: string, isMansion: boolean) {
                         crown,
                     )
                     //模型3的推荐判断
-                    await createModel3Promoted(otherOdd, exists.value_reverse, crown)
+                    if (promoted) {
+                        await createModel3Promoted(otherOdd, exists.value_reverse, crown)
+                    }
                 } else {
-                    await createMansionPromoted(
+                    const promoted = await createMansionPromoted(
                         odd,
                         otherOdd,
                         exists.value,
@@ -389,7 +391,9 @@ async function processReadyCheck(content: string, isMansion: boolean) {
                         crown,
                     )
                     //模型3的推荐判断
-                    await createModel3Promoted(odd, exists.value_reverse, crown)
+                    if (promoted) {
+                        await createModel3Promoted(odd, exists.value_reverse, crown)
+                    }
                 }
             }
         }
@@ -549,6 +553,7 @@ async function createMansionPromoted(
             await createRockball3Odd(promoted.id)
         }
     }
+    return promoted.id
 }
 
 /**
