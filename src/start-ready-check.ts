@@ -607,6 +607,7 @@ async function createModel3Promoted(odd: Odd, value1: string, crown: Crown.OddIn
             week_id: 0,
             variety: odd.variety,
             period: odd.period,
+            is_valid: 1,
             type: 'under',
             condition: crown.condition,
             odd_type: 'sum',
