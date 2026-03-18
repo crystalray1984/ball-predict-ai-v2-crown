@@ -344,12 +344,14 @@ async function processFinalCheck(match: VMatch, crownOdds: CrownOdd[]) {
                     time: stackRows[0].created_at.valueOf(),
                     value: stackRows[0][result],
                     field: result,
+                    game_id: stackRows[0].crown_game_id,
                 },
                 end_odd_data: {
                     id: resultRow.id,
                     time: resultRow.created_at.valueOf(),
                     value: resultRow[result],
                     field: result,
+                    game_id: resultRow.crown_game_id,
                 },
             },
         })
