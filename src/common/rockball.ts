@@ -172,8 +172,8 @@ export async function createRockball3Odd(input: RockballInput | number) {
     const type: OddType = 'over'
     //降0.25盘
     const condition = Decimal(input.condition).sub('0.25').toString()
-    //水位条件固定为2
-    const value = '2'
+    //水位条件固定为2.15
+    const value = '2.15'
 
     //查询有没有存在的盘口
     const exists = await RockballOdd.findOne({
