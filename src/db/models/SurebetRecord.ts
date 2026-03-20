@@ -68,4 +68,7 @@ export class SurebetRecord extends Model<
     @AllowNull(false)
     @Column(DataType.STRING)
     declare source: CreationOptional<string>
+
+    @Column(DataType.DECIMAL)
+    declare profit: CreationOptional<string | number | null>
 }

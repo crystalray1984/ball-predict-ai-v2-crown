@@ -236,6 +236,7 @@ async function processSurebetCheck(content: string, allowRockball: boolean, next
                     condition: odd.type.condition ?? null,
                     value: String(odd.value),
                     source: next,
+                    profit: record.profit,
                 },
             })
         } catch (err) {
