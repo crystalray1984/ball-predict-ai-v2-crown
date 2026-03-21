@@ -1,7 +1,9 @@
+import { writeFile } from 'node:fs/promises'
 import { runLoop } from './common/helpers'
 import { publish } from './common/rabbitmq'
 import { CONFIG } from './config'
 import { getAllOdds } from './surebet'
+import { resolve } from 'node:path'
 
 /**
  * 开启surebet数据抓取
@@ -22,6 +24,13 @@ export async function startSurebet() {
 
     //抛到后续的队列中
     const data = JSON.stringify(records)
+
+    await writeFile(
+        resolve(__dirname, `../runtime/logs/surebet_365_${Date.now()}.json`),
+        data,
+        'utf-8',
+    )
+
     for (const queue of CONFIG.surebet.next_queues) {
         await publish(queue, data)
     }
@@ -47,6 +56,13 @@ export async function startSurebetMansion() {
     //抛到后续的队列中
     console.log('mansion', records.length)
     const data = JSON.stringify(records)
+
+    await writeFile(
+        resolve(__dirname, `../runtime/logs/surebet_mansion_${Date.now()}.json`),
+        data,
+        'utf-8',
+    )
+
     for (const queue of CONFIG.surebet_mansion.next_queues) {
         await publish(queue, data)
     }
