@@ -193,23 +193,10 @@ async function processSurebetCheck(content: string, allowRockball: boolean, next
         game: 0,
     }
     for (const record of records) {
-        //收益率筛选
-        const profit = Decimal(record.profit)
-        if (profit.lt(minProfit) || profit.gt(maxProfit)) {
-            fails.profit++
-            continue
-        }
-
         //只筛选188bet的数据
         const odd = record.prongs.find((t) => t.bk === '188bet')
         if (!odd) {
             fails.no_188++
-            continue
-        }
-
-        //比赛时间筛选
-        if (odd.time < Date.now() + startOf || odd.time > Date.now() + endOf) {
-            fails.time++
             continue
         }
 
@@ -241,6 +228,19 @@ async function processSurebetCheck(content: string, allowRockball: boolean, next
             })
         } catch (err) {
             console.error(err)
+        }
+
+        //收益率筛选
+        const profit = Decimal(record.profit)
+        if (profit.lt(minProfit) || profit.gt(maxProfit)) {
+            fails.profit++
+            continue
+        }
+
+        //比赛时间筛选
+        if (odd.time < Date.now() + startOf || odd.time > Date.now() + endOf) {
+            fails.time++
+            continue
         }
 
         if (odd.type.game !== 'regular' || odd.type.base !== 'overall') {
