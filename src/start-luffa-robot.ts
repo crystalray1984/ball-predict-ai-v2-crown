@@ -112,36 +112,28 @@ async function processSendPromoted(content: string) {
     const text = createPromotionMessage(promoted)
     //推送到Luffa的目标
     let target: LuffaNotificationConfig[] = []
-    //WS推送的目标类型
-    let socket_type: string[] = []
 
     //根据不同的推送类型，发送到不同的地方
     switch (promoted.channel) {
         //直通规则
         case 'direct':
-            socket_type = ['manual', 'direct']
             break
         //mansion对比
         case 'mansion':
             target = CONFIG.luffa.mansion
-            socket_type = ['compare', 'mansion']
             break
         //滚球
         case 'rockball':
             target = CONFIG.luffa.rockball
-            socket_type = ['rockball']
             break
         //滚球2
         case 'rockball2':
-            socket_type = ['rockball2']
             break
         //滚球3
         case 'rockball3':
-            socket_type = ['rockball3']
             break
         //模型3
         case 'model3':
-            socket_type = ['model3']
             break
         //总台
         case 'generic':
@@ -182,51 +174,48 @@ async function processSendPromoted(content: string) {
     }
 
     //通过WS发送
-    if (socket_type.length > 0) {
-        for (const sub_type of socket_type) {
-            sendSocketMessage({
-                type: 'group',
-                target: 'vip',
-                message: {
-                    type: 'promote',
-                    sub_type,
-                    data: {
-                        id: promoted.id,
-                        match_id: promoted.match_id,
-                        match_time: promoted.match_time,
-                        variety: promoted.variety,
-                        period: promoted.period,
-                        type: promoted.type,
-                        condition: promoted.condition,
-                        value: promoted.value,
-                        tournament: {
-                            id: promoted.tournament_id,
-                            name: promoted.tournament_name,
-                        },
-                        team1: {
-                            id: promoted.team1_id,
-                            name: promoted.team1_name,
-                        },
-                        team2: {
-                            id: promoted.team2_id,
-                            name: promoted.team2_name,
-                        },
-                        result:
-                            typeof promoted.result === 'number'
-                                ? {
-                                      result: promoted.result,
-                                      score1: promoted.score1,
-                                      score2: promoted.score2,
-                                      score: promoted.score,
-                                  }
-                                : null,
-                        crown_game_id: promoted.crown_game_id,
-                        crown_match_id: promoted.crown_match_id,
-                    },
+    sendSocketMessage({
+        type: 'group',
+        target: 'vip',
+        message: {
+            type: 'promote',
+            sub_type: promoted.channel,
+            data: {
+                id: promoted.id,
+                match_id: promoted.match_id,
+                match_time: promoted.match_time,
+                variety: promoted.variety,
+                period: promoted.period,
+                type: promoted.type,
+                condition: promoted.condition,
+                value: promoted.value,
+                tournament: {
+                    id: promoted.tournament_id,
+                    name: promoted.tournament_name,
                 },
-            })
-        }
-    }
+                team1: {
+                    id: promoted.team1_id,
+                    name: promoted.team1_name,
+                },
+                team2: {
+                    id: promoted.team2_id,
+                    name: promoted.team2_name,
+                },
+                result:
+                    typeof promoted.result === 'number'
+                        ? {
+                              result: promoted.result,
+                              score1: promoted.score1,
+                              score2: promoted.score2,
+                              score: promoted.score,
+                          }
+                        : null,
+                crown_game_id: promoted.crown_game_id,
+                crown_match_id: promoted.crown_match_id,
+                channel: promoted.channel,
+            },
+        },
+    })
 }
 
 /**
