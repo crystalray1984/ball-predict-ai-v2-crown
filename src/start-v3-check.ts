@@ -2,7 +2,13 @@ import Decimal from 'decimal.js'
 import { Op, QueryTypes } from 'sequelize'
 import { parseMainOddForBmiss } from './common/bmiss'
 import { CROWN_ODD_QUEUE } from './common/constants'
-import { getOddIdentification, getPromotedOddInfo, getWeekDay, runLoop } from './common/helpers'
+import {
+    clearChannelCache,
+    getOddIdentification,
+    getPromotedOddInfo,
+    getWeekDay,
+    runLoop,
+} from './common/helpers'
 import { consume, publish } from './common/rabbitmq'
 import { getSetting } from './common/settings'
 import { CONFIG } from './config'
@@ -370,6 +376,10 @@ async function processFinalCheck(match: VMatch, crownOdds: CrownOdd[]) {
         })
         promoted.week_id = weekLast ? weekLast.week_id + 1 : 1
         await promoted.save()
+
+        //清理频道缓存
+        await clearChannelCache(promoted.channel)
+
         await publish(
             CONFIG.queues['send_promoted'],
             JSON.stringify({ id: promoted.id, type: 'generic' }),
@@ -682,6 +692,9 @@ async function createV2ToV3Promote(odd: Odd, promoted: Promoted, tournament_labe
         const week_id = lastRow ? lastRow.week_id + 1 : 1
         promotedOdd.week_id = week_id
         await promotedOdd.save()
+
+        //清理频道缓存
+        await clearChannelCache(promoted.channel)
 
         //发出推荐
         await publish(

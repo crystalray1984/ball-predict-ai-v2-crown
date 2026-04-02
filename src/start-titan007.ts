@@ -1,4 +1,4 @@
-import { getOddResult, runLoop } from './common/helpers'
+import { clearChannelCache, getOddResult, runLoop } from './common/helpers'
 import { Match, Promoted, Team, VMatch } from './db'
 import {
     findMatch,
@@ -183,6 +183,8 @@ export async function processFinalMatch(match: VMatch, period: Period): Promise<
         where,
     })
 
+    const channels: string[] = []
+
     for (const promoted of promotes) {
         const result = getOddResult(promoted, matchScore)
         if (!result) continue
@@ -192,14 +194,18 @@ export async function processFinalMatch(match: VMatch, period: Period): Promise<
         promoted.score2 = result.score2
         promoted.result_value = result.result_value
         promoted.result_profit = result.result_profit
+        channels.push(promoted.channel)
 
         await promoted.save()
     }
 
-    if (period === 'regularTime') {
-        //全场完赛时抛到队列去处理Bmiss投注
-        await publish('bmiss-bet-settlement', JSON.stringify({ match_id: match.id }))
-    }
+    //清理频道缓存
+    await clearChannelCache(...channels)
+
+    // if (period === 'regularTime') {
+    //     //全场完赛时抛到队列去处理Bmiss投注
+    //     await publish('bmiss-bet-settlement', JSON.stringify({ match_id: match.id }))
+    // }
 }
 
 /**

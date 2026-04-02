@@ -1,6 +1,7 @@
 import Decimal from 'decimal.js'
 import { literal, Op, UniqueConstraintError } from 'sequelize'
 import {
+    clearChannelCache,
     compareValue,
     findRule,
     getOddIdentification,
@@ -103,6 +104,11 @@ async function createDirectPromoted(
             return
         }
         throw err
+    }
+
+    //清理频道缓存数据
+    if (is_valid) {
+        await clearChannelCache(channel)
     }
 
     //抛到推荐队列
@@ -542,6 +548,10 @@ async function createMansionPromoted(
         })
         promoted.week_id = weekLast ? weekLast.week_id + 1 : 1
         await promoted.save()
+
+        //清理频道缓存数据
+        await clearChannelCache(promoted.channel)
+
         await publish(
             CONFIG.queues['send_promoted'],
             JSON.stringify({ id: promoted.id, type: 'mansion' }),
@@ -642,6 +652,10 @@ async function createModel3Promoted(odd: Odd, value1: string, crown: Crown.OddIn
     })
     promoted.week_id = weekLast ? weekLast.week_id + 1 : 1
     await promoted.save()
+
+    //清理频道缓存数据
+    await clearChannelCache(promoted.channel)
+
     await publish(
         CONFIG.queues['send_promoted'],
         JSON.stringify({ id: promoted.id, type: 'model3' }),

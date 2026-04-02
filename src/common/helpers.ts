@@ -1,5 +1,5 @@
 import { CONFIG } from '@/config'
-import { Titan007Odd } from '@/db'
+import { redis, Titan007Odd } from '@/db'
 import dayjs, { ConfigType } from 'dayjs'
 import Decimal from 'decimal.js'
 import { machineIdSync } from 'node-machine-id'
@@ -527,4 +527,13 @@ export function getWeekDay(input?: ConfigType): number {
  */
 export function getMachineId() {
     return CONFIG.machine_id || machineIdSync()
+}
+
+/**
+ * 清理频道数据缓存
+ * @param channels
+ */
+export async function clearChannelCache(...channels: string[]) {
+    if (channels.length === 0) return
+    await redis.del(...channels.map((channel) => `summary:${channel}`))
 }

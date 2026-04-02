@@ -1,5 +1,5 @@
 import { Op } from 'sequelize'
-import { debugFileLog, getOddResult } from './common/helpers'
+import { clearChannelCache, debugFileLog, getOddResult } from './common/helpers'
 import { consume } from './common/rabbitmq'
 import { CONFIG } from './config'
 import { Match, Promoted, Team, Tournament, VMatch } from './db'
@@ -88,6 +88,11 @@ async function parseCrownScoreData(content: string) {
             },
         })
 
+        /**
+         * 需要清楚缓存的频道
+         */
+        const channels: string[] = []
+
         for (const promoted of promotes) {
             const result = getOddResult(promoted, score as any)
             if (result) {
@@ -97,9 +102,12 @@ async function parseCrownScoreData(content: string) {
                 promoted.score = result.score
                 promoted.result_value = result.result_value
                 promoted.result_profit = result.result_profit
+                channels.push(promoted.channel)
                 await promoted.save()
             }
         }
+
+        await clearChannelCache(...channels)
     }
 }
 

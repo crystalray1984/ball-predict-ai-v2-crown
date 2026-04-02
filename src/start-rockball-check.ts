@@ -1,7 +1,13 @@
 import Decimal from 'decimal.js'
 import { Op, QueryTypes } from 'sequelize'
 import { CROWN_ODD_QUEUE } from './common/constants'
-import { getOddIdentification, getPromotedOddInfo, getWeekDay, runLoop } from './common/helpers'
+import {
+    clearChannelCache,
+    getOddIdentification,
+    getPromotedOddInfo,
+    getWeekDay,
+    runLoop,
+} from './common/helpers'
 import { consume, publish } from './common/rabbitmq'
 import { CONFIG } from './config'
 import { findMatchedOdd } from './crown'
@@ -162,6 +168,11 @@ async function processRockballCheck(content: string) {
             value: odd.back ? exists.value_reverse : exists.value,
             crown_game_id: exists.game_id,
         })
+
+        //清理频道缓存数据
+        if (promoted.is_valid) {
+            await clearChannelCache(promoted.channel)
+        }
 
         //标记这个盘口已经得到推荐
         odd.status = 'promoted'
