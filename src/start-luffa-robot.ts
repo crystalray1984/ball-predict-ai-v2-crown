@@ -173,6 +173,8 @@ async function processSendPromoted(content: string) {
         await publish('send_luffa_message', queueData)
     }
 
+    if (type === 'label_promoted') return
+
     //通过WS发送
     sendSocketMessage({
         type: 'group',
@@ -208,11 +210,14 @@ async function processSendPromoted(content: string) {
                               score1: promoted.score1,
                               score2: promoted.score2,
                               score: promoted.score,
+                              result_value: (promoted as VPromoted).result_value,
+                              result_profit: (promoted as VPromoted).result_profit,
                           }
                         : null,
                 crown_game_id: promoted.crown_game_id,
                 crown_match_id: promoted.crown_match_id,
                 channel: promoted.channel,
+                updated_at: (promoted as VPromoted).updated_at,
             },
         },
     })
