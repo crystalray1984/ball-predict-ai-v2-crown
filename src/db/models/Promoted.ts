@@ -9,12 +9,13 @@ import {
     Model,
     PrimaryKey,
     Table,
+    UpdatedAt,
 } from 'sequelize-typescript'
 
 /**
  * 推荐记录表
  */
-@Table({ tableName: 'promoted', timestamps: true, updatedAt: false })
+@Table({ tableName: 'promoted', timestamps: true })
 export class Promoted extends Model<InferAttributes<Promoted>, InferCreationAttributes<Promoted>> {
     /**
      * 推荐id
@@ -170,4 +171,11 @@ export class Promoted extends Model<InferAttributes<Promoted>, InferCreationAttr
      */
     @Column(DataType.STRING)
     declare crown_game_id: CreationOptional<string>
+
+    /**
+     * 更新时间
+     */
+    @UpdatedAt
+    @Column(DataType.DATE)
+    declare updated_at: CreationOptional<Date>
 }

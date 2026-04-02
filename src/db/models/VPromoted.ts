@@ -146,6 +146,12 @@ export class VPromoted extends Model<InferAttributes<VPromoted>> {
     declare created_at: Date
 
     /**
+     * 更新时间
+     */
+    @Column(DataType.DATE)
+    declare updated_at: Date
+
+    /**
      * 比赛时间
      */
     @Column(DataType.DATE)
