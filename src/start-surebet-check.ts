@@ -137,13 +137,6 @@ async function processRockball2(
                 source_channel: '',
                 source_id: 0,
             })
-
-            if (CONFIG.ai.rockball) {
-                await ai.rockball.publish({
-                    match_id,
-                    odd_id: rockball.id,
-                })
-            }
         }
     }
 }
