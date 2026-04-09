@@ -115,25 +115,9 @@ async function processSendPromoted(content: string) {
 
     //根据不同的推送类型，发送到不同的地方
     switch (promoted.channel) {
-        //直通规则
-        case 'direct':
-            break
-        //mansion对比
-        case 'mansion':
-            target = CONFIG.luffa.mansion
-            break
         //滚球
         case 'rockball':
             target = CONFIG.luffa.rockball
-            break
-        //滚球2
-        case 'rockball2':
-            break
-        //滚球3
-        case 'rockball3':
-            break
-        //模型3
-        case 'model3':
             break
         //总台
         case 'generic':
@@ -154,8 +138,6 @@ async function processSendPromoted(content: string) {
                 },
             ]
             break
-        default:
-            return
     }
 
     //抛到Luffa发送队列
