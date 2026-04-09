@@ -262,7 +262,7 @@ async function parseHotMatchesData(content: string) {
                 type: 'over',
                 condition: '0.5',
                 period: 'period1',
-                value: '1.88',
+                value: '2',
             })
         }
     }
