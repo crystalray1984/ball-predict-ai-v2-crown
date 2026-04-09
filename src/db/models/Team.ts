@@ -62,6 +62,18 @@ export class Team extends Model<InferAttributes<Team>, InferCreationAttributes<T
     declare updated_at: CreationOptional<Date>
 
     /**
+     * 上半场进1球的能力
+     */
+    @Column(DataType.INTEGER)
+    declare goal_period1: CreationOptional<number>
+
+    /**
+     * 全场进2球的能力
+     */
+    @Column(DataType.INTEGER)
+    declare goal2_regular_time: CreationOptional<number>
+
+    /**
      * 队伍准备
      * @param crown_team_id
      * @param name

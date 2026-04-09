@@ -1,8 +1,8 @@
-import { Op } from 'sequelize'
-import { clearChannelCache, debugFileLog, getOddResult } from './common/helpers'
+import { InferCreationAttributes, Op } from 'sequelize'
+import { clearChannelCache, getOddResult } from './common/helpers'
 import { consume } from './common/rabbitmq'
 import { CONFIG } from './config'
-import { Match, Promoted, Team, Tournament, VMatch } from './db'
+import { Match, Promoted, RockballOdd, Team, Tournament, VMatch } from './db'
 
 /**
  * 解析从队列中得到的皇冠比赛数据
@@ -10,8 +10,6 @@ import { Match, Promoted, Team, Tournament, VMatch } from './db'
  */
 async function parseCrownMatchesData(content: string) {
     const matches = JSON.parse(content) as Crown.MatchInfo[]
-
-    debugFileLog('matches', matches)
 
     //插入比赛数据
     let newCount = 0
@@ -192,9 +190,98 @@ async function startI18nData() {
     }
 }
 
+/**
+ * 创建滚球4监测盘口
+ */
+async function createRockball4Odd(
+    data: Pick<
+        InferCreationAttributes<RockballOdd>,
+        'match_id' | 'type' | 'condition' | 'period' | 'value' | 'crown_match_id'
+    >,
+) {
+    //尝试寻找相同的盘口
+    const odd = await RockballOdd.findOne({
+        where: {
+            match_id: data.match_id,
+            variety: 'goal',
+            period: data.period,
+            type: data.type,
+            condition: data.condition,
+            channel: 'rockball4',
+        },
+    })
+    if (!odd) {
+        //盘口不存在就创建盘口
+        await RockballOdd.create({
+            match_id: data.match_id,
+            crown_match_id: data.crown_match_id,
+            source_variety: 'goal',
+            source_period: data.period,
+            source_condition: data.condition,
+            source_type: data.type,
+            source_value: '0',
+            variety: 'goal',
+            period: data.period,
+            type: data.type,
+            condition: data.condition,
+            value: data.value,
+            is_open: 1,
+            channel: 'rockball4',
+            source_channel: '',
+            source_id: 0,
+        })
+    }
+}
+
+/**
+ * 解析并处理皇冠热门比赛数据
+ * @param content
+ */
+async function parseHotMatchesData(content: string) {
+    const matches = JSON.parse(content) as Crown.MatchInfo[]
+
+    for (const match of matches) {
+        //插入比赛数据
+        const [match_id] = await Match.prepare(match)
+
+        //查询队伍数据
+        const teams = await Team.findAll({
+            where: {
+                crown_team_id: {
+                    [Op.in]: [match.team_id_h, match.team_id_c],
+                },
+            },
+        })
+
+        //检查是否有上半场进球的能力
+        if (teams.some((t) => t.goal_period1)) {
+            //有能力，插入到滚球4的上半场大0.5队列
+            await createRockball4Odd({
+                match_id,
+                crown_match_id: match.ecid,
+                type: 'over',
+                condition: '0.5',
+                period: 'period1',
+                value: '1.88',
+            })
+        }
+    }
+}
+
+/**
+ * 消费并处理皇冠热门比赛数据
+ */
+async function startCrownHotMatchesData() {
+    while (true) {
+        const [promise] = consume('crown_hot_matches', parseHotMatchesData)
+        await promise
+    }
+}
+
 if (require.main === module) {
     startCrownMatchesData()
     startCrownMatchesDataFake()
     startCrownScoreData()
     startI18nData()
+    startCrownHotMatchesData()
 }

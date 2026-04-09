@@ -1,10 +1,9 @@
 import dayjs from 'dayjs'
 import { CROWN_ODD_QUEUE } from './common/constants'
 import * as rabbitmq from './common/rabbitmq'
-import * as socket from './common/socket'
 import { CONFIG } from './config'
 import { getCrownData, getCrownMatches, getCrownScore, init, reset } from './crown'
-import { getTodayMatches } from './crown/match'
+import { getHotMatches, getTodayMatches } from './crown/match'
 
 /**
  * 处理从消费队列中来的皇冠盘口抓取请求
@@ -132,8 +131,23 @@ async function startCrownScore() {
     }
 }
 
+/**
+ * 执行热门比赛采集
+ */
+async function startHotMatches() {
+    //每半个小时抓取一次
+    const matches = await getHotMatches()
+
+    console.log('采集到热门比赛数据', matches.length)
+
+    //把数据抛到队列中
+    const data = JSON.stringify(matches)
+    await rabbitmq.publish('crown_hot_matches', data)
+}
+
 let matchTimer = undefined as any
 let scoreTimer = undefined as any
+let hotTimer = undefined as any
 
 /**
  * 开启皇冠采集进程
@@ -141,18 +155,11 @@ let scoreTimer = undefined as any
 async function startCrownRobot() {
     console.log('采集皇冠比赛', !!process.env.CROWN_MATCHES)
     console.log('采集皇冠赛果', !!process.env.CROWN_SCORE)
-
-    //设置WS的相关信息
-    socket.setServiceType('crown')
-    //监听滚球开启消息
-    socket.registerSocketListener('rockball', () => {})
+    console.log('采集皇冠热门比赛', !!process.env.CROWN_HOT)
 
     while (true) {
         try {
             await init()
-
-            //开启WS连接
-            socket.start()
 
             if (process.env.CROWN_MATCHES) {
                 startCrownMatches()
@@ -160,6 +167,9 @@ async function startCrownRobot() {
             }
             if (process.env.CROWN_SCORE) {
                 scoreTimer = setInterval(startCrownScore, 60000)
+            }
+            if (process.env.CROWN_HOT) {
+                hotTimer = setInterval(startHotMatches, 60000)
             }
 
             let errors = 0
@@ -178,7 +188,7 @@ async function startCrownRobot() {
         } finally {
             clearInterval(matchTimer)
             clearInterval(scoreTimer)
-            socket.close()
+            clearInterval(hotTimer)
 
             await reset()
             await rabbitmq.close()

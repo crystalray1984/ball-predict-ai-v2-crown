@@ -166,6 +166,82 @@ export async function getTodayMatches(langx: Crown.Language = 'zh-cn'): Promise<
     })
 }
 
+/**
+ * 获取皇冠热门比赛列表
+ * @param langx
+ */
+export function getHotMatches(langx: Crown.Language = 'zh-cn'): Promise<Crown.MatchInfo[]> {
+    return crownQueue.add(async () => {
+        const page = await ready()
+
+        const func2 = `
+(function () {
+    var par = top.param;
+    par += "&p=get_game_list";
+    par += "&p3type=";
+    par += "&date=";
+    par += "&gtype=ft";
+    par += "&showtype=hot";
+    par += "&rtype=r";
+    par += "&ltype=" + top["userData"].ltype;
+    par += "&filter=";
+    par += "&cupFantasy=N";
+    par += "&sorttype=L";
+    par += "&specialClick=";
+    par += "&isFantasy=N";
+    par += "&ts=" + Date.now();
+    par += "&chgSortTS=" + Date.now()
+
+    var params = new URLSearchParams(par);
+    params.set('langx', '${langx}');
+
+    var getHTML = new HttpRequest;
+    return new Promise((resolve, reject) => {
+        getHTML.addEventListener("onError", reject);
+        getHTML.addEventListener("LoadComplete", resolve);
+        getHTML.loadURL(top.m2_url, "POST", params.toString())
+    })
+})()
+`
+        const respList = (await page.evaluate(func2)) as string
+
+        console.log('抓取皇冠热门比赛列表完成')
+        const gameList = xmlParser.parse(respList).serverresponse
+
+        // debugFileLog('matches', respList)
+
+        if (!Array.isArray(gameList.ec) || gameList.ec.length === 0) {
+            console.log('未读取到热门皇冠比赛列表')
+            return []
+        }
+
+        const result: Crown.MatchInfo[] = []
+
+        gameList.ec.forEach((ec: Record<string, any>) => {
+            if (
+                ec['@_hasEC'] !== 'Y' ||
+                ec['@_myGame'] !== 'ft' ||
+                !ec.game ||
+                ec.game.ISFANTASY === 'Y'
+            )
+                return
+            const game = ec.game as Record<string, string>
+            result.push({
+                lid: game.LID,
+                league: game.LEAGUE,
+                team_id_h: game.TEAM_H_ID,
+                team_id_c: game.TEAM_C_ID,
+                team_h: game.TEAM_H,
+                team_c: game.TEAM_C,
+                ecid: game.ECID,
+                match_time: parseMatchTime(game.SYSTIME, game.DATETIME),
+            })
+        })
+
+        return result
+    })
+}
+
 async function getCrownMatchesWithLeagues(
     page: Page,
     lids: string[],
