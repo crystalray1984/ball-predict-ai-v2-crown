@@ -102,16 +102,6 @@ export interface AppConfig {
      * 接口调用地址
      */
     api_url: string
-
-    /**
-     * AI判断配置
-     */
-    ai: Record<string, AiConfig[]>
-}
-
-export interface AiConfig {
-    url: string
-    token: string
 }
 
 /**

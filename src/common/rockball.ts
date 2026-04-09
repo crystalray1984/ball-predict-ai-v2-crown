@@ -1,6 +1,4 @@
-import * as ai from '@/ai'
-import { CONFIG } from '@/config'
-import { RockballOdd, VMatch, VPromoted } from '@/db'
+import { RockballOdd, VPromoted } from '@/db'
 import Decimal from 'decimal.js'
 import { InferAttributes, Op } from 'sequelize'
 import { isDecimal } from './helpers'
@@ -141,14 +139,6 @@ export async function createRockballOddFromPromoted(input: RockballInput | numbe
                 source_id: input.id,
                 channel: 'rockball',
             })
-
-            //抛到AI进行测试
-            if (CONFIG.ai.rockball) {
-                await ai.rockball.publish({
-                    match_id: input.match_id,
-                    odd_id: rockball.id,
-                })
-            }
         }
     }
 }

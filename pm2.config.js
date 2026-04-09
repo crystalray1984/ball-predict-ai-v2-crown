@@ -31,6 +31,5 @@ module.exports = {
     'rockball-check': createConfig('rockball-check'),
     'bmiss-check': createConfig('bmiss-check'),
     fotmob: createConfig('fotmob'),
-    'ai-query': createConfig('ai-query'),
     createConfig,
 }

@@ -98,14 +98,3 @@ socket_url: ''
 
 #业务端接口地址
 api_url: 'https://v3.188zq.vip'
-
-#AI解析配置
-ai:
-  #滚球解析
-  rockball:
-    url: ''
-    token: ''
-  #滚球2解析
-  rockball2:
-    url: ''
-    token: ''
