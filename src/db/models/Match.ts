@@ -1,4 +1,9 @@
-import type { CreationOptional, InferAttributes, InferCreationAttributes } from 'sequelize'
+import {
+    Op,
+    type CreationOptional,
+    type InferAttributes,
+    type InferCreationAttributes,
+} from 'sequelize'
 import {
     AutoIncrement,
     Column,
@@ -9,6 +14,7 @@ import {
     Table,
     UpdatedAt,
 } from 'sequelize-typescript'
+import { MatchTeamInfo } from './MatchTeamInfo'
 import { Team } from './Team'
 import { Tournament } from './Tournament'
 import { TournamentLabel } from './TournamentLabel'
@@ -237,6 +243,69 @@ export class Match extends Model<InferAttributes<Match>, InferCreationAttributes
             },
         )
 
+        //更新对阵双方的比赛实力
+        const team1_info = await getTeamInfo(team1_id, data.match_time)
+        const team2_info = await getTeamInfo(team2_id, data.match_time)
+
+        //更新实力数据
+        await MatchTeamInfo.upsert(
+            {
+                match_id: match.id,
+                team1_goals_scored: team1_info.goals_scored,
+                team1_goals_allowed: team1_info.goals_allowed,
+                team1_matches: team1_info.matches,
+                team2_goals_scored: team2_info.goals_scored,
+                team2_goals_allowed: team2_info.goals_allowed,
+                team2_matches: team2_info.matches,
+            },
+            { returning: false },
+        )
+
         return [match.id, true]
+    }
+}
+
+/**
+ * 整理队伍的比赛数据
+ */
+export async function getTeamInfo(team_id: number, match_time: number) {
+    const matches = await Match.findAll({
+        where: {
+            [Op.or]: [{ team1_id: team_id }, { team2_id: team_id }],
+            has_period1_score: 1,
+            match_time: {
+                [Op.lt]: new Date(match_time),
+                [Op.gte]: new Date(match_time - 30 * 86400000),
+            },
+        },
+        order: [['match_time', 'DESC']],
+        attributes: ['team1_id', 'team2_id', 'score1_period1', 'score2_period1'],
+        limit: 5,
+    })
+
+    if (matches.length === 0) {
+        return {
+            goals_scored: null,
+            goals_allowed: null,
+            matches: 0,
+        }
+    }
+
+    let goals_scored = 0
+    let goals_allowed = 0
+    matches.forEach((match) => {
+        if (match.team1_id === team_id) {
+            goals_scored += match.score1_period1!
+            goals_allowed += match.score2_period1!
+        } else if (match.team2_id === team_id) {
+            goals_scored += match.score2_period1!
+            goals_allowed += match.score1_period1!
+        }
+    })
+
+    return {
+        goals_scored,
+        goals_allowed,
+        matches: matches.length,
     }
 }

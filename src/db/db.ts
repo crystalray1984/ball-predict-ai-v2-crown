@@ -8,6 +8,7 @@ import { CrownOdd } from './models/CrownOdd'
 import { LabelPromoted } from './models/LabelPromoted'
 import { LuffaUser } from './models/LuffaUser'
 import { Match } from './models/Match'
+import { MatchTeamInfo } from './models/MatchTeamInfo'
 import { NotificationLog } from './models/NotificationLog'
 import { Odd } from './models/Odd'
 import { OddMansion } from './models/OddMansion'
@@ -59,6 +60,7 @@ export const db = new Sequelize(
                 VPromoted,
                 CrownMainOdd,
                 AiCache,
+                MatchTeamInfo,
             ],
         },
     ),
@@ -71,6 +73,7 @@ export { CrownOdd } from './models/CrownOdd'
 export { LabelPromoted } from './models/LabelPromoted'
 export { LuffaUser } from './models/LuffaUser'
 export { Match } from './models/Match'
+export { MatchTeamInfo } from './models/MatchTeamInfo'
 export { NotificationLog } from './models/NotificationLog'
 export { Odd } from './models/Odd'
 export { OddMansion } from './models/OddMansion'
