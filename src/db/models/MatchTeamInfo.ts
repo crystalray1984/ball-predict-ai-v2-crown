@@ -17,42 +17,14 @@ export class MatchTeamInfo extends Model<
     declare match_id: number
 
     /**
-     * 主队进球数
+     * 扩展数据
      */
-    @AllowNull(true)
-    @Column(DataType.INTEGER)
-    declare team1_goals_scored: CreationOptional<number | null>
+    @Column(DataType.JSONB)
+    declare team1_info: any
 
     /**
-     * 主队丢球数
+     * 扩展数据
      */
-    @AllowNull(true)
-    @Column(DataType.INTEGER)
-    declare team1_goals_allowed: CreationOptional<number | null>
-
-    /**
-     * 主队比赛场次
-     */
-    @Column(DataType.INTEGER)
-    declare team1_matches: CreationOptional<number>
-
-    /**
-     * 客队进球数
-     */
-    @AllowNull(true)
-    @Column(DataType.INTEGER)
-    declare team2_goals_scored: CreationOptional<number | null>
-
-    /**
-     * 客队丢球数
-     */
-    @AllowNull(true)
-    @Column(DataType.INTEGER)
-    declare team2_goals_allowed: CreationOptional<number | null>
-
-    /**
-     * 客队比赛场次
-     */
-    @Column(DataType.INTEGER)
-    declare team2_matches: CreationOptional<number>
+    @Column(DataType.JSONB)
+    declare team2_info: any
 }

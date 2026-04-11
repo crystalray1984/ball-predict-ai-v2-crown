@@ -28,18 +28,14 @@ async function main() {
 
             const data = {
                 match_id: match.id,
-                team1_goals_scored: team1_info.goals_scored,
-                team1_goals_allowed: team1_info.goals_allowed,
-                team1_matches: team1_info.matches,
-                team2_goals_scored: team2_info.goals_scored,
-                team2_goals_allowed: team2_info.goals_allowed,
-                team2_matches: team2_info.matches,
+                team1_info,
+                team2_info,
             }
 
             //更新实力数据
             await MatchTeamInfo.upsert(data, { returning: false })
 
-            console.log(data)
+            console.log(match.id)
         }
     }
 }

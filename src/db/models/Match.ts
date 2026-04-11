@@ -257,12 +257,8 @@ export class Match extends Model<InferAttributes<Match>, InferCreationAttributes
         await MatchTeamInfo.upsert(
             {
                 match_id: match.id,
-                team1_goals_scored: team1_info.goals_scored,
-                team1_goals_allowed: team1_info.goals_allowed,
-                team1_matches: team1_info.matches,
-                team2_goals_scored: team2_info.goals_scored,
-                team2_goals_allowed: team2_info.goals_allowed,
-                team2_matches: team2_info.matches,
+                team1_info,
+                team2_info,
             },
             { returning: false },
         )
@@ -278,40 +274,69 @@ export async function getTeamInfo(team_id: number, match_time: number) {
     const matches = await Match.findAll({
         where: {
             [Op.or]: [{ team1_id: team_id }, { team2_id: team_id }],
-            has_period1_score: 1,
+            has_score: 1,
             match_time: {
                 [Op.lt]: new Date(match_time),
-                [Op.gte]: new Date(match_time - 30 * 86400000),
             },
         },
         order: [['match_time', 'DESC']],
-        attributes: ['team1_id', 'team2_id', 'score1_period1', 'score2_period1'],
-        limit: 5,
+        attributes: [
+            'match_time',
+            'team1_id',
+            'team2_id',
+            'score1_period1',
+            'score2_period1',
+            'score1',
+            'score2',
+        ],
     })
 
-    if (matches.length === 0) {
-        return {
-            goals_scored: null,
-            goals_allowed: null,
-            matches: 0,
-        }
-    }
-
-    let goals_scored = 0
-    let goals_allowed = 0
-    matches.forEach((match) => {
-        if (match.team1_id === team_id) {
-            goals_scored += match.score1_period1!
-            goals_allowed += match.score2_period1!
-        } else if (match.team2_id === team_id) {
-            goals_scored += match.score2_period1!
-            goals_allowed += match.score1_period1!
-        }
-    })
-
-    return {
-        goals_scored,
-        goals_allowed,
+    const info = {
+        goals_scored_period1: 0,
+        goals_allowed_period1: 0,
+        goals_scored: 0,
+        goals_allowed: 0,
         matches: matches.length,
+        goals_scored_period1_30day: 0,
+        goals_allowed_period1_30day: 0,
+        goals_scored_30day: 0,
+        goals_allowed_30day: 0,
+        matches_30day: 0,
     }
+
+    const day30 = match_time - 30 * 86400000
+
+    matches.forEach((match) => {
+        const time = match.match_time.valueOf()
+
+        if (match.team1_id === team_id) {
+            info.goals_scored += match.score1 ?? 0
+            info.goals_allowed += match.score2 ?? 0
+            info.goals_scored_period1 += match.score1_period1 ?? 0
+            info.goals_allowed_period1 += match.score2_period1 ?? 0
+
+            if (time >= day30) {
+                info.goals_scored_30day += match.score1 ?? 0
+                info.goals_allowed_30day += match.score2 ?? 0
+                info.goals_scored_period1_30day += match.score1_period1 ?? 0
+                info.goals_allowed_period1_30day += match.score2_period1 ?? 0
+                info.matches_30day++
+            }
+        } else if (match.team2_id === team_id) {
+            info.goals_scored += match.score2 ?? 0
+            info.goals_allowed += match.score1 ?? 0
+            info.goals_scored_period1 += match.score2_period1 ?? 0
+            info.goals_allowed_period1 += match.score1_period1 ?? 0
+
+            if (time >= day30) {
+                info.goals_scored_30day += match.score2 ?? 0
+                info.goals_allowed_30day += match.score1 ?? 0
+                info.goals_scored_period1_30day += match.score2_period1 ?? 0
+                info.goals_allowed_period1_30day += match.score1_period1 ?? 0
+                info.matches_30day++
+            }
+        }
+    })
+
+    return info
 }
