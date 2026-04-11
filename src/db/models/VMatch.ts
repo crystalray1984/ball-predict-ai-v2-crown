@@ -151,6 +151,12 @@ export class VMatch extends Model<InferAttributes<VMatch>> {
     @Column(DataType.TINYINT)
     declare bmiss_bet_enable: number
 
+    /**
+     * 成为皇冠热门赛事的时间
+     */
+    @Column(DataType.DATE)
+    declare crown_hot_at: Date | null
+
     @Column(DataType.STRING)
     declare tournament_name: string
 
