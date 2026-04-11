@@ -884,3 +884,25 @@ declare interface BetInfo extends OddInfo {
      */
     value?: string
 }
+
+declare interface TeamInfo {
+    /**
+     * 主队近期比赛数
+     */
+    matches: number
+    /**
+     * 主队近期总得分
+     */
+    goals_scored: number
+    /**
+     *
+     */
+    goals_allowed: number
+    goals_scored_period1: number
+    goals_allowed_period1: number
+    matches_30day: number
+    goals_scored_30day: number
+    goals_allowed_30day: number
+    goals_scored_period1_30day: number
+    goals_allowed_period1_30day: number
+}

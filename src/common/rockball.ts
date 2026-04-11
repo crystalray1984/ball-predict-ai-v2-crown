@@ -1,4 +1,4 @@
-import { RockballOdd, VPromoted } from '@/db'
+import { MatchTeamInfo, RockballOdd, VPromoted } from '@/db'
 import Decimal from 'decimal.js'
 import { InferAttributes, Op } from 'sequelize'
 import { isDecimal } from './helpers'
@@ -7,19 +7,18 @@ import { getSetting } from './settings'
 /**
  * 通过其他推荐数据作为滚球输入的数据
  */
-interface RockballInput
-    extends Pick<
-        InferAttributes<VPromoted>,
-        | 'id'
-        | 'channel'
-        | 'match_id'
-        | 'variety'
-        | 'period'
-        | 'type'
-        | 'condition'
-        | 'value'
-        | 'crown_match_id'
-    > {}
+interface RockballInput extends Pick<
+    InferAttributes<VPromoted>,
+    | 'id'
+    | 'channel'
+    | 'match_id'
+    | 'variety'
+    | 'period'
+    | 'type'
+    | 'condition'
+    | 'value'
+    | 'crown_match_id'
+> {}
 
 /**
  * 根据已经推荐出来的盘口信息生成滚球盘
@@ -195,4 +194,61 @@ export async function createRockball3Odd(input: RockballInput | number) {
         source_id: input.id,
         channel: 'rockball3',
     })
+}
+
+/**
+ * 计算上半场进球系数
+ */
+function calculateCoefficient(team1_info: TeamInfo, team2_info: TeamInfo) {
+    // 主队
+    const hRecent = team1_info.matches
+    const h30d = team1_info.matches_30day
+    const hGames = hRecent + h30d
+    let hAvgScored = 0,
+        hAvgConceded = 0
+    if (hGames > 0) {
+        const hScored =
+            (Number(row['主队近期上半场总得分']) || 0) +
+            (Number(row['主队30天内上半场总得分']) || 0)
+        const hConceded =
+            (Number(row['主队近期上半场总失分']) || 0) +
+            (Number(row['主队30天内上半场总失分']) || 0)
+        hAvgScored = hScored / hGames
+        hAvgConceded = hConceded / hGames
+    }
+
+    // 客队
+    const aRecent = Number(row['客队近期比赛数']) || 0
+    const a30d = Number(row['客队30天内比赛数']) || 0
+    const aGames = aRecent + a30d
+    let aAvgScored = 0,
+        aAvgConceded = 0
+    if (aGames > 0) {
+        const aScored =
+            (Number(row['客队近期上半场总得分']) || 0) +
+            (Number(row['客队30天内上半场总得分']) || 0)
+        const aConceded =
+            (Number(row['客队近期上半场总失分']) || 0) +
+            (Number(row['客队30天内上半场总失分']) || 0)
+        aAvgScored = aScored / aGames
+        aAvgConceded = aConceded / aGames
+    }
+
+    // 综合系数：进攻权重1.2，防守漏洞权重0.8
+    return (hAvgScored + aAvgScored) * 1.2 + (hAvgConceded + aAvgConceded) * 0.8
+}
+
+/**
+ * 基于当前比赛判断是否要进入滚球5
+ * @param match_id 比赛id
+ */
+export async function createRockball5(match_id: number) {
+    //检查比赛的对阵双方信息
+    const teamInfo = await MatchTeamInfo.findByPk(match_id)
+
+    //没有数据的不要
+    if (!teamInfo || !teamInfo.team1_info || !teamInfo.team2_info) return
+
+    //计算系数
+    const ratio = calculateCoefficient(teamInfo.team1_info, teamInfo.team2_info)
 }
