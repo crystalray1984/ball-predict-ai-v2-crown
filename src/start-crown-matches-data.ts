@@ -244,6 +244,20 @@ async function parseHotMatchesData(content: string) {
         //插入比赛数据
         const [match_id] = await Match.prepare(match)
 
+        //更新成为皇冠热门比赛的时间
+        await Match.update(
+            {
+                crown_hot_at: new Date(),
+            },
+            {
+                where: {
+                    id: match_id,
+                    crown_hot_at: null,
+                },
+                returning: false,
+            },
+        )
+
         //查询队伍数据
         const teams = await Team.findAll({
             where: {

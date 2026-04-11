@@ -173,6 +173,12 @@ export class Match extends Model<InferAttributes<Match>, InferCreationAttributes
     declare bmiss_bet_enable: CreationOptional<number>
 
     /**
+     * 成为皇冠热门赛事的时间
+     */
+    @Column(DataType.DATE)
+    declare crown_hot_at: CreationOptional<Date | null>
+
+    /**
      * 准备比赛
      */
     static async prepare(data: Crown.MatchInfo): Promise<[number, boolean]> {
