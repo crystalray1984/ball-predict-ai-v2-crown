@@ -47,16 +47,16 @@ async function main() {
             const matchInfo = await MatchTeamInfo.findByPk(source.match_id)
 
             //没有数据的不要
-            if (!matchInfo || !matchInfo.team1_info || !matchInfo.team2_info) return
+            if (!matchInfo || !matchInfo.team1_info || !matchInfo.team2_info) continue
 
             //没有比赛数据的不要
-            if (matchInfo.team1_info.matches <= 0 || matchInfo.team2_info.matches <= 0) return
+            if (matchInfo.team1_info.matches <= 0 || matchInfo.team2_info.matches <= 0) continue
 
             //计算系数
             const ratio = calculateCoefficient(matchInfo.team1_info, matchInfo.team2_info)
 
             //系数小于2的不要
-            if (ratio.lt(2)) return
+            if (ratio.lt(2)) continue
 
             //计算赛果和手数
             const result = getOddResult(
