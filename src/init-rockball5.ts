@@ -1,6 +1,7 @@
-import { Promoted, VPromoted } from '@/db'
+import { MatchTeamInfo, Promoted, VPromoted } from '@/db'
 import { Op } from 'sequelize'
 import { getOddResult } from './common/helpers'
+import { calculateCoefficient } from './common/rockball'
 
 async function main() {
     //重建滚球5数据
@@ -41,6 +42,21 @@ async function main() {
                 attributes: ['id'],
             })
             if (exists) continue
+
+            //检查比赛的对阵双方信息
+            const matchInfo = await MatchTeamInfo.findByPk(source.match_id)
+
+            //没有数据的不要
+            if (!matchInfo || !matchInfo.team1_info || !matchInfo.team2_info) return
+
+            //没有比赛数据的不要
+            if (matchInfo.team1_info.matches <= 0 || matchInfo.team2_info.matches <= 0) return
+
+            //计算系数
+            const ratio = calculateCoefficient(matchInfo.team1_info, matchInfo.team2_info)
+
+            //系数小于2的不要
+            if (ratio.lt(2)) return
 
             //计算赛果和手数
             const result = getOddResult(

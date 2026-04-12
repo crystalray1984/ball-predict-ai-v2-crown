@@ -214,7 +214,7 @@ export async function createRockball3Odd(input: RockballInput | number) {
 /**
  * 计算上半场进球系数
  */
-function calculateCoefficient(team1_info: TeamInfo, team2_info: TeamInfo) {
+export function calculateCoefficient(team1_info: TeamInfo, team2_info: TeamInfo) {
     // 主队
     const hGames = team1_info.matches + team1_info.matches_30day
     let hAvgScored = Decimal(0),
