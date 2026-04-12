@@ -51,7 +51,7 @@ async function main() {
             if (!matchInfo || !matchInfo.team1_info || !matchInfo.team2_info) continue
 
             //没有比赛数据的不要
-            if (matchInfo.team1_info.matches + matchInfo.team2_info.matches < 2) continue
+            if (matchInfo.team1_info.matches <= 0 || matchInfo.team2_info.matches <= 0) continue
 
             //计算系数
             const ratio = calculateCoefficient(matchInfo.team1_info, matchInfo.team2_info)

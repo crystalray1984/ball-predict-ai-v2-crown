@@ -258,7 +258,7 @@ export async function createRockball5(
     if (!matchInfo || !matchInfo.team1_info || !matchInfo.team2_info) return
 
     //没有比赛数据的不要
-    if (matchInfo.team1_info.matches + matchInfo.team2_info.matches < 2) return
+    if (matchInfo.team1_info.matches <= 0 || matchInfo.team2_info.matches <= 0) return
 
     //计算系数
     const ratio = calculateCoefficient(matchInfo.team1_info, matchInfo.team2_info)
