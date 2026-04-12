@@ -29,6 +29,7 @@ async function main() {
                 )
                 AND a.id > ?
             ORDER BY a.id
+            LIMIT 500
             `,
                 values: [lastPromotedId],
             },
