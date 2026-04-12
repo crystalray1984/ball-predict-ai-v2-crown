@@ -56,7 +56,7 @@ async function main() {
             //计算系数
             const ratio = calculateCoefficient(matchInfo.team1_info, matchInfo.team2_info)
 
-            //系数小于2的不要
+            //系数小的不要
             if (ratio.lt(3)) continue
 
             //计算赛果和手数

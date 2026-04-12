@@ -137,15 +137,6 @@ async function processRockball2(
                 source_channel: '',
                 source_id: 0,
             })
-
-            //只要进了滚球2，就同时进入滚球5判断
-            await createRockball5(
-                {
-                    id: match_id,
-                    crown_match_id: surebet.preferred_nav.markers.eventId,
-                },
-                'rockball2',
-            )
         }
     }
 }

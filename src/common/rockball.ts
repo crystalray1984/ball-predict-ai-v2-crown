@@ -138,12 +138,6 @@ export async function createRockballOddFromPromoted(input: RockballInput | numbe
                 source_id: input.id,
                 channel: 'rockball',
             })
-
-            //能进滚球1的也近滚球5
-            await createRockball5(
-                { id: input.match_id, crown_match_id: input.crown_match_id },
-                input.channel,
-            )
         }
     }
 }
@@ -200,15 +194,6 @@ export async function createRockball3Odd(input: RockballInput | number) {
         source_id: input.id,
         channel: 'rockball3',
     })
-
-    //能进入滚球3也同时进滚球5
-    await createRockball5(
-        {
-            id: input.match_id,
-            crown_match_id: input.crown_match_id,
-        },
-        input.channel,
-    )
 }
 
 /**
@@ -247,10 +232,7 @@ export function calculateCoefficient(team1_info: TeamInfo, team2_info: TeamInfo)
  * 基于当前比赛判断是否要进入滚球5
  * @param match_id 比赛id
  */
-export async function createRockball5(
-    match: Pick<Match, 'id' | 'crown_match_id'>,
-    source_channel: string,
-) {
+export async function createRockball5(match: Pick<Match, 'id' | 'crown_match_id'>) {
     //检查比赛的对阵双方信息
     const matchInfo = await MatchTeamInfo.findByPk(match.id)
 
@@ -292,7 +274,7 @@ export async function createRockball5(
         condition: '0.5',
         value: '1.88',
         is_open: 1,
-        source_channel,
+        source_channel: '',
         source_id: 0,
         channel: 'rockball5',
     })

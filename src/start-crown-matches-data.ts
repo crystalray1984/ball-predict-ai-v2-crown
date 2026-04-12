@@ -283,13 +283,10 @@ async function parseHotMatchesData(content: string) {
 
         if (updated) {
             //如果是新进入皇冠热门的比赛，那么进入滚球5判断
-            await createRockball5(
-                {
-                    id: match_id,
-                    crown_match_id: match.ecid,
-                },
-                'crown_hot',
-            )
+            await createRockball5({
+                id: match_id,
+                crown_match_id: match.ecid,
+            })
         }
     }
 }
