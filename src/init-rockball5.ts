@@ -8,7 +8,8 @@ async function main() {
     let lastPromotedId = 0
     while (true) {
         const list = await db.query(
-            `
+            {
+                query: `
             SELECT
                 a.*
             FROM
@@ -26,7 +27,11 @@ async function main() {
                         AND "period" = 'period1'
                     )
                 )
+                AND a.id > ?
+            ORDER BY a.id
             `,
+                values: [lastPromotedId],
+            },
             {
                 type: QueryTypes.SELECT,
                 model: Match,
