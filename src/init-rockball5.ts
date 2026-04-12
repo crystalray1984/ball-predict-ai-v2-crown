@@ -62,8 +62,8 @@ async function main() {
             //插入数据
             await Promoted.create({
                 match_id: source.match_id,
-                source_type: source.source_type,
-                source_id: source.source_id,
+                source_type: '',
+                source_id: 0,
                 channel: 'rockball5',
                 is_valid: 1,
                 week_day: 0,
