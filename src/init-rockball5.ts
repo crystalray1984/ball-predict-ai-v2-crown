@@ -1,5 +1,5 @@
-import { Match, MatchTeamInfo, Promoted, VPromoted } from '@/db'
-import { Op } from 'sequelize'
+import { db, Match, MatchTeamInfo, Promoted, VPromoted } from '@/db'
+import { Op, QueryTypes } from 'sequelize'
 import { getOddResult } from './common/helpers'
 import { calculateCoefficient } from './common/rockball'
 
@@ -7,16 +7,31 @@ async function main() {
     //重建滚球5数据
     let lastPromotedId = 0
     while (true) {
-        const list = await Match.findAll({
-            where: {
-                has_score: 1,
-                id: {
-                    [Op.gt]: lastPromotedId,
-                },
+        const list = await db.query(
+            `
+            SELECT
+                a.*
+            FROM
+                match AS a
+            WHERE
+                a.has_score = 1
+                AND a.id IN (
+                    (
+                    SELECT
+                        match_id
+                    FROM
+                        promoted
+                    WHERE
+                        channel IN ('rockball', 'rockball2', 'rockball3', 'rockball4')
+                        AND "period" = 'period1'
+                    )
+                )
+            `,
+            {
+                type: QueryTypes.SELECT,
+                model: Match,
             },
-            order: [['id', 'asc']],
-            limit: 100,
-        })
+        )
 
         if (list.length === 0) break
 
@@ -61,7 +76,7 @@ async function main() {
                 {
                     score1: source.score1_period1!,
                     score2: source.score2_period1!,
-                    score1_period1: source.score2_period1!,
+                    score1_period1: source.score1_period1!,
                     score2_period1: source.score2_period1!,
                 } as any,
             )!
