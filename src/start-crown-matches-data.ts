@@ -3,6 +3,7 @@ import { clearChannelCache, getOddResult } from './common/helpers'
 import { consume } from './common/rabbitmq'
 import { CONFIG } from './config'
 import { Match, Promoted, RockballOdd, Team, Tournament, VMatch } from './db'
+import { createRockball5 } from './common/rockball'
 
 /**
  * 解析从队列中得到的皇冠比赛数据
@@ -245,7 +246,7 @@ async function parseHotMatchesData(content: string) {
         const [match_id] = await Match.prepare(match)
 
         //更新成为皇冠热门比赛的时间
-        await Match.update(
+        const [updated] = await Match.update(
             {
                 crown_hot_at: new Date(),
             },
@@ -278,6 +279,17 @@ async function parseHotMatchesData(content: string) {
                 period: 'period1',
                 value: '2',
             })
+        }
+
+        if (updated) {
+            //如果是新进入皇冠热门的比赛，那么进入滚球5判断
+            await createRockball5(
+                {
+                    id: match_id,
+                    crown_match_id: match.ecid,
+                },
+                'crown_hot',
+            )
         }
     }
 }

@@ -270,7 +270,7 @@ export class Match extends Model<InferAttributes<Match>, InferCreationAttributes
 /**
  * 整理队伍的比赛数据
  */
-export async function getTeamInfo(team_id: number, match_time: number) {
+export async function getTeamInfo(team_id: number, match_time: number): Promise<TeamInfo> {
     const matches = await Match.findAll({
         where: {
             [Op.or]: [{ team1_id: team_id }, { team2_id: team_id }],

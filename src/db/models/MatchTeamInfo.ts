@@ -20,11 +20,11 @@ export class MatchTeamInfo extends Model<
      * 扩展数据
      */
     @Column(DataType.JSONB)
-    declare team1_info: any
+    declare team1_info: TeamInfo
 
     /**
      * 扩展数据
      */
     @Column(DataType.JSONB)
-    declare team2_info: any
+    declare team2_info: TeamInfo
 }

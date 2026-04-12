@@ -887,22 +887,43 @@ declare interface BetInfo extends OddInfo {
 
 declare interface TeamInfo {
     /**
-     * 主队近期比赛数
+     * 近期比赛数
      */
     matches: number
     /**
-     * 主队近期总得分
+     * 近期总得分
      */
     goals_scored: number
     /**
-     *
+     * 近期总得分
      */
     goals_allowed: number
+    /**
+     * 近期上半场总得分
+     */
     goals_scored_period1: number
+    /**
+     * 近期上半场总失分
+     */
     goals_allowed_period1: number
+    /**
+     * 30天内比赛数
+     */
     matches_30day: number
+    /**
+     * 30天内总得分
+     */
     goals_scored_30day: number
+    /**
+     * 30天内总失分
+     */
     goals_allowed_30day: number
+    /**
+     * 30天内上半场总得分
+     */
     goals_scored_period1_30day: number
+    /**
+     * 30天内上半场总失分
+     */
     goals_allowed_period1_30day: number
 }

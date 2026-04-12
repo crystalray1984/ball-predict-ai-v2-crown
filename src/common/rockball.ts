@@ -1,4 +1,4 @@
-import { MatchTeamInfo, RockballOdd, VPromoted } from '@/db'
+import { Match, MatchTeamInfo, RockballOdd, VPromoted } from '@/db'
 import Decimal from 'decimal.js'
 import { InferAttributes, Op } from 'sequelize'
 import { isDecimal } from './helpers'
@@ -120,7 +120,7 @@ export async function createRockballOddFromPromoted(input: RockballInput | numbe
             }
         } else {
             //盘口不存在就创建盘口
-            const rockball = await RockballOdd.create({
+            await RockballOdd.create({
                 match_id: input.match_id,
                 crown_match_id: input.crown_match_id,
                 source_variety: input.variety,
@@ -138,6 +138,12 @@ export async function createRockballOddFromPromoted(input: RockballInput | numbe
                 source_id: input.id,
                 channel: 'rockball',
             })
+
+            //能进滚球1的也近滚球5
+            await createRockball5(
+                { id: input.match_id, crown_match_id: input.crown_match_id },
+                input.channel,
+            )
         }
     }
 }
@@ -194,6 +200,15 @@ export async function createRockball3Odd(input: RockballInput | number) {
         source_id: input.id,
         channel: 'rockball3',
     })
+
+    //能进入滚球3也同时进滚球5
+    await createRockball5(
+        {
+            id: input.match_id,
+            crown_match_id: input.crown_match_id,
+        },
+        input.channel,
+    )
 }
 
 /**
@@ -201,54 +216,84 @@ export async function createRockball3Odd(input: RockballInput | number) {
  */
 function calculateCoefficient(team1_info: TeamInfo, team2_info: TeamInfo) {
     // 主队
-    const hRecent = team1_info.matches
-    const h30d = team1_info.matches_30day
-    const hGames = hRecent + h30d
-    let hAvgScored = 0,
-        hAvgConceded = 0
+    const hGames = team1_info.matches + team1_info.matches_30day
+    let hAvgScored = Decimal(0),
+        hAvgConceded = Decimal(0)
     if (hGames > 0) {
-        const hScored =
-            (Number(row['主队近期上半场总得分']) || 0) +
-            (Number(row['主队30天内上半场总得分']) || 0)
-        const hConceded =
-            (Number(row['主队近期上半场总失分']) || 0) +
-            (Number(row['主队30天内上半场总失分']) || 0)
-        hAvgScored = hScored / hGames
-        hAvgConceded = hConceded / hGames
+        const hScored = team1_info.goals_scored_period1 + team1_info.goals_scored_period1_30day
+        const hConceded = team1_info.goals_allowed_period1 + team1_info.goals_allowed_period1_30day
+        hAvgScored = Decimal(hScored).div(hGames)
+        hAvgConceded = Decimal(hConceded).div(hGames)
     }
 
     // 客队
-    const aRecent = Number(row['客队近期比赛数']) || 0
-    const a30d = Number(row['客队30天内比赛数']) || 0
-    const aGames = aRecent + a30d
-    let aAvgScored = 0,
-        aAvgConceded = 0
+    const aGames = team2_info.matches + team2_info.matches_30day
+    let aAvgScored = Decimal(0),
+        aAvgConceded = Decimal(0)
     if (aGames > 0) {
-        const aScored =
-            (Number(row['客队近期上半场总得分']) || 0) +
-            (Number(row['客队30天内上半场总得分']) || 0)
-        const aConceded =
-            (Number(row['客队近期上半场总失分']) || 0) +
-            (Number(row['客队30天内上半场总失分']) || 0)
-        aAvgScored = aScored / aGames
-        aAvgConceded = aConceded / aGames
+        const aScored = team2_info.goals_scored_period1 + team2_info.goals_scored_period1_30day
+        const aConceded = team2_info.goals_allowed_period1 + team2_info.goals_allowed_period1_30day
+        aAvgScored = Decimal(aScored).div(aGames)
+        aAvgConceded = Decimal(aConceded).div(aGames)
     }
 
     // 综合系数：进攻权重1.2，防守漏洞权重0.8
-    return (hAvgScored + aAvgScored) * 1.2 + (hAvgConceded + aAvgConceded) * 0.8
+    const atk = hAvgScored.add(aAvgScored).mul('1.2')
+    const def = hAvgConceded.add(aAvgConceded).mul('0.8')
+    return atk.add(def)
 }
 
 /**
  * 基于当前比赛判断是否要进入滚球5
  * @param match_id 比赛id
  */
-export async function createRockball5(match_id: number) {
+export async function createRockball5(
+    match: Pick<Match, 'id' | 'crown_match_id'>,
+    source_channel: string,
+) {
     //检查比赛的对阵双方信息
-    const teamInfo = await MatchTeamInfo.findByPk(match_id)
+    const matchInfo = await MatchTeamInfo.findByPk(match.id)
 
     //没有数据的不要
-    if (!teamInfo || !teamInfo.team1_info || !teamInfo.team2_info) return
+    if (!matchInfo || !matchInfo.team1_info || !matchInfo.team2_info) return
+
+    //没有比赛数据的不要
+    if (matchInfo.team1_info.matches <= 0 || matchInfo.team2_info.matches <= 0) return
 
     //计算系数
-    const ratio = calculateCoefficient(teamInfo.team1_info, teamInfo.team2_info)
+    const ratio = calculateCoefficient(matchInfo.team1_info, matchInfo.team2_info)
+
+    //系数小于2的不要
+    if (ratio.lt(2)) return
+
+    //查询有没有存在的盘口
+    const exists = await RockballOdd.findOne({
+        where: {
+            match_id: match.id,
+            channel: 'rockball5',
+        },
+        attributes: ['id'],
+    })
+
+    if (exists) return
+
+    //盘口不存在就创建盘口
+    await RockballOdd.create({
+        match_id: match.id,
+        crown_match_id: match.crown_match_id,
+        source_variety: 'goal',
+        source_period: 'period1',
+        source_condition: '0.5',
+        source_type: 'over',
+        source_value: '0',
+        variety: 'goal',
+        period: 'period1',
+        type: 'over',
+        condition: '0.5',
+        value: '1.88',
+        is_open: 1,
+        source_channel,
+        source_id: 0,
+        channel: 'rockball5',
+    })
 }

@@ -7,6 +7,7 @@ import { close, consume, publish } from './common/rabbitmq'
 import { getSetting } from './common/settings'
 import { CONFIG } from './config'
 import { Match, Odd, RockballOdd, SurebetRecord, VMatch } from './db'
+import { createRockball5 } from './common/rockball'
 
 /**
  * 解析surebet时间条件的时长
@@ -118,7 +119,7 @@ async function processRockball2(
         })
         if (!odd) {
             //盘口不存在就创建盘口
-            const rockball = await RockballOdd.create({
+            await RockballOdd.create({
                 match_id,
                 crown_match_id: surebet.preferred_nav.markers.eventId,
                 source_variety: surebet.type.variety,
@@ -136,6 +137,15 @@ async function processRockball2(
                 source_channel: '',
                 source_id: 0,
             })
+
+            //只要进了滚球2，就同时进入滚球5判断
+            await createRockball5(
+                {
+                    id: match_id,
+                    crown_match_id: surebet.preferred_nav.markers.eventId,
+                },
+                'rockball2',
+            )
         }
     }
 }
