@@ -16,17 +16,6 @@ async function main() {
                 match AS a
             WHERE
                 a.has_score = 1
-                AND a.id IN (
-                    (
-                    SELECT
-                        match_id
-                    FROM
-                        promoted
-                    WHERE
-                        channel IN ('rockball', 'rockball2', 'rockball3', 'rockball4')
-                        AND "period" = 'period1'
-                    )
-                )
                 AND a.id > ?
             ORDER BY a.id
             LIMIT 500
@@ -68,7 +57,7 @@ async function main() {
             const ratio = calculateCoefficient(matchInfo.team1_info, matchInfo.team2_info)
 
             //系数小于2的不要
-            if (ratio.lt(2)) continue
+            if (ratio.lt(3)) continue
 
             //计算赛果和手数
             const result = getOddResult(

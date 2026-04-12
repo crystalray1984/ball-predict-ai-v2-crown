@@ -263,8 +263,8 @@ export async function createRockball5(
     //计算系数
     const ratio = calculateCoefficient(matchInfo.team1_info, matchInfo.team2_info)
 
-    //系数小于2的不要
-    if (ratio.lt(2)) return
+    //系数小于3的不要
+    if (ratio.lt(3)) return
 
     //查询有没有存在的盘口
     const exists = await RockballOdd.findOne({
