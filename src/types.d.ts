@@ -895,17 +895,33 @@ declare interface TeamInfo {
      */
     goals_scored: number
     /**
+     * 近期有得分的比赛
+     */
+    matches_scored: number
+    /**
      * 近期总得分
      */
     goals_allowed: number
+    /**
+     * 近期有失分的比赛
+     */
+    matches_allowed: number
     /**
      * 近期上半场总得分
      */
     goals_scored_period1: number
     /**
+     * 近期上半场有得分的比赛
+     */
+    matches_scored_period1: number
+    /**
      * 近期上半场总失分
      */
     goals_allowed_period1: number
+    /**
+     * 近期上半场有失分的比赛
+     */
+    matches_allowed_period1: number
     /**
      * 30天内比赛数
      */
@@ -915,15 +931,31 @@ declare interface TeamInfo {
      */
     goals_scored_30day: number
     /**
+     * 30天内有得分的比赛
+     */
+    matches_scored_30day: number
+    /**
      * 30天内总失分
      */
     goals_allowed_30day: number
+    /**
+     * 30天内有失分的比赛
+     */
+    matches_allowed_30day: number
     /**
      * 30天内上半场总得分
      */
     goals_scored_period1_30day: number
     /**
+     * 30天内上半场有得分的比赛
+     */
+    matches_scored_period1_30day: number
+    /**
      * 30天内上半场总失分
      */
     goals_allowed_period1_30day: number
+    /**
+     * 30天内上半场有失分的比赛
+     */
+    matches_allowed_period1_30day: number
 }

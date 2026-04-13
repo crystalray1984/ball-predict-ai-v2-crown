@@ -1,5 +1,5 @@
-import type { CreationOptional, InferAttributes, InferCreationAttributes } from 'sequelize'
-import { AllowNull, Column, DataType, Model, PrimaryKey, Table } from 'sequelize-typescript'
+import { type InferAttributes, type InferCreationAttributes } from 'sequelize'
+import { Column, DataType, Model, PrimaryKey, Table } from 'sequelize-typescript'
 
 /**
  * 赛前队伍的实力统计

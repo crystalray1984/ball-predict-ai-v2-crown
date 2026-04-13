@@ -250,8 +250,8 @@ export class Match extends Model<InferAttributes<Match>, InferCreationAttributes
         )
 
         //更新对阵双方的比赛实力
-        const team1_info = await getTeamInfo(team1_id, data.match_time)
-        const team2_info = await getTeamInfo(team2_id, data.match_time)
+        const team1_info = await Match.getTeamInfo(team1_id, data.match_time)
+        const team2_info = await Match.getTeamInfo(team2_id, data.match_time)
 
         //更新实力数据
         await MatchTeamInfo.upsert(
@@ -265,78 +265,138 @@ export class Match extends Model<InferAttributes<Match>, InferCreationAttributes
 
         return [match.id, true]
     }
-}
 
-/**
- * 整理队伍的比赛数据
- */
-export async function getTeamInfo(team_id: number, match_time: number): Promise<TeamInfo> {
-    const matches = await Match.findAll({
-        where: {
-            [Op.or]: [{ team1_id: team_id }, { team2_id: team_id }],
-            has_score: 1,
-            match_time: {
-                [Op.lt]: new Date(match_time),
+    /**
+     * 整理队伍的比赛数据
+     */
+    static async getTeamInfo(team_id: number, match_time: number): Promise<TeamInfo> {
+        const matches = await Match.findAll({
+            where: {
+                [Op.or]: [{ team1_id: team_id }, { team2_id: team_id }],
+                has_score: 1,
+                match_time: {
+                    [Op.lt]: new Date(match_time),
+                },
             },
-        },
-        order: [['match_time', 'DESC']],
-        attributes: [
-            'match_time',
-            'team1_id',
-            'team2_id',
-            'score1_period1',
-            'score2_period1',
-            'score1',
-            'score2',
-        ],
-    })
+            order: [['match_time', 'DESC']],
+            attributes: [
+                'match_time',
+                'team1_id',
+                'team2_id',
+                'score1_period1',
+                'score2_period1',
+                'score1',
+                'score2',
+            ],
+        })
 
-    const info = {
-        goals_scored_period1: 0,
-        goals_allowed_period1: 0,
-        goals_scored: 0,
-        goals_allowed: 0,
-        matches: matches.length,
-        goals_scored_period1_30day: 0,
-        goals_allowed_period1_30day: 0,
-        goals_scored_30day: 0,
-        goals_allowed_30day: 0,
-        matches_30day: 0,
-    }
-
-    const day30 = match_time - 30 * 86400000
-
-    matches.forEach((match) => {
-        const time = match.match_time.valueOf()
-
-        if (match.team1_id === team_id) {
-            info.goals_scored += match.score1 ?? 0
-            info.goals_allowed += match.score2 ?? 0
-            info.goals_scored_period1 += match.score1_period1 ?? 0
-            info.goals_allowed_period1 += match.score2_period1 ?? 0
-
-            if (time >= day30) {
-                info.goals_scored_30day += match.score1 ?? 0
-                info.goals_allowed_30day += match.score2 ?? 0
-                info.goals_scored_period1_30day += match.score1_period1 ?? 0
-                info.goals_allowed_period1_30day += match.score2_period1 ?? 0
-                info.matches_30day++
-            }
-        } else if (match.team2_id === team_id) {
-            info.goals_scored += match.score2 ?? 0
-            info.goals_allowed += match.score1 ?? 0
-            info.goals_scored_period1 += match.score2_period1 ?? 0
-            info.goals_allowed_period1 += match.score1_period1 ?? 0
-
-            if (time >= day30) {
-                info.goals_scored_30day += match.score2 ?? 0
-                info.goals_allowed_30day += match.score1 ?? 0
-                info.goals_scored_period1_30day += match.score2_period1 ?? 0
-                info.goals_allowed_period1_30day += match.score1_period1 ?? 0
-                info.matches_30day++
-            }
+        const info: TeamInfo = {
+            goals_scored_period1: 0,
+            goals_allowed_period1: 0,
+            goals_scored: 0,
+            goals_allowed: 0,
+            matches: matches.length,
+            goals_scored_period1_30day: 0,
+            goals_allowed_period1_30day: 0,
+            goals_scored_30day: 0,
+            goals_allowed_30day: 0,
+            matches_30day: 0,
+            //分段
+            matches_scored: 0,
+            matches_allowed: 0,
+            matches_scored_period1: 0,
+            matches_allowed_period1: 0,
+            matches_scored_30day: 0,
+            matches_allowed_30day: 0,
+            matches_scored_period1_30day: 0,
+            matches_allowed_period1_30day: 0,
         }
-    })
 
-    return info
+        const day30 = match_time - 30 * 86400000
+
+        matches.forEach((match) => {
+            const time = match.match_time.valueOf()
+
+            if (match.team1_id === team_id) {
+                info.goals_scored += match.score1 ?? 0
+                info.goals_allowed += match.score2 ?? 0
+                info.goals_scored_period1 += match.score1_period1 ?? 0
+                info.goals_allowed_period1 += match.score2_period1 ?? 0
+                if (match.score1) {
+                    info.matches_scored++
+                }
+                if (match.score2) {
+                    info.matches_allowed++
+                }
+                if (match.score1_period1) {
+                    info.matches_scored_period1++
+                }
+                if (match.score2_period1) {
+                    info.matches_allowed_period1++
+                }
+
+                if (time >= day30) {
+                    info.goals_scored_30day += match.score1 ?? 0
+                    info.goals_allowed_30day += match.score2 ?? 0
+                    info.goals_scored_period1_30day += match.score1_period1 ?? 0
+                    info.goals_allowed_period1_30day += match.score2_period1 ?? 0
+                    info.matches_30day++
+
+                    if (match.score1) {
+                        info.matches_scored_30day++
+                    }
+                    if (match.score2) {
+                        info.matches_allowed_30day++
+                    }
+                    if (match.score1_period1) {
+                        info.matches_scored_period1_30day++
+                    }
+                    if (match.score2_period1) {
+                        info.matches_allowed_period1_30day++
+                    }
+                }
+            } else if (match.team2_id === team_id) {
+                info.goals_scored += match.score2 ?? 0
+                info.goals_allowed += match.score1 ?? 0
+                info.goals_scored_period1 += match.score2_period1 ?? 0
+                info.goals_allowed_period1 += match.score1_period1 ?? 0
+
+                if (match.score2) {
+                    info.matches_scored++
+                }
+                if (match.score1) {
+                    info.matches_allowed++
+                }
+                if (match.score2_period1) {
+                    info.matches_scored_period1++
+                }
+                if (match.score1_period1) {
+                    info.matches_allowed_period1++
+                }
+
+                if (time >= day30) {
+                    info.goals_scored_30day += match.score2 ?? 0
+                    info.goals_allowed_30day += match.score1 ?? 0
+                    info.goals_scored_period1_30day += match.score2_period1 ?? 0
+                    info.goals_allowed_period1_30day += match.score1_period1 ?? 0
+                    info.matches_30day++
+
+                    if (match.score2) {
+                        info.matches_scored_30day++
+                    }
+                    if (match.score1) {
+                        info.matches_allowed_30day++
+                    }
+                    if (match.score2_period1) {
+                        info.matches_scored_period1_30day++
+                    }
+                    if (match.score1_period1) {
+                        info.matches_allowed_period1_30day++
+                    }
+                }
+            }
+        })
+
+        return info
+    }
 }

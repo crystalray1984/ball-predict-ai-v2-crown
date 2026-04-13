@@ -1,5 +1,4 @@
 import { Match, MatchTeamInfo } from '@/db'
-import { getTeamInfo } from '@/db/models/Match'
 import { Op } from 'sequelize'
 
 async function main() {
@@ -23,8 +22,8 @@ async function main() {
 
         for (const match of matches) {
             lastMatchId = match.id
-            const team1_info = await getTeamInfo(match.team1_id, match.match_time.valueOf())
-            const team2_info = await getTeamInfo(match.team2_id, match.match_time.valueOf())
+            const team1_info = await Match.getTeamInfo(match.team1_id, match.match_time.valueOf())
+            const team2_info = await Match.getTeamInfo(match.team2_id, match.match_time.valueOf())
 
             const data = {
                 match_id: match.id,
