@@ -1,4 +1,4 @@
-import { trainAndSaveModel } from './predict'
+import { trainAndSaveModel } from '@/predict'
 
 if (require.main === module) {
     trainAndSaveModel()

@@ -141,6 +141,11 @@ WHERE
  * @param match
  */
 export function predictPeriod1Goals(match: MatchStats): [boolean, number] {
+    //检测比赛是否属于满足条件的比赛
+    if (!filterMatch(match)) {
+        return [false, 0]
+    }
+
     if (!predict) {
         //还未有数据就加载模型
         predict = loadModel()
