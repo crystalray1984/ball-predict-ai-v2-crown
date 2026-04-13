@@ -241,6 +241,8 @@ async function createRockball4Odd(
 async function parseHotMatchesData(content: string) {
     const matches = JSON.parse(content) as Crown.MatchInfo[]
 
+    console.log('收到皇冠热门比赛数据', matches.length, matches)
+
     for (const match of matches) {
         //插入比赛数据
         const [match_id] = await Match.prepare(match)
