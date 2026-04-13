@@ -1,4 +1,5 @@
 import { Match, MatchTeamInfo, RockballOdd, VPromoted } from '@/db'
+import { predictPeriod1Goals } from '@/predict'
 import Decimal from 'decimal.js'
 import { InferAttributes, Op } from 'sequelize'
 import { isDecimal } from './helpers'
@@ -239,14 +240,9 @@ export async function createRockball5(match: Pick<Match, 'id' | 'crown_match_id'
     //没有数据的不要
     if (!matchInfo || !matchInfo.team1_info || !matchInfo.team2_info) return
 
-    //没有比赛数据的不要
-    if (matchInfo.team1_info.matches <= 0 || matchInfo.team2_info.matches <= 0) return
-
-    //计算系数
-    const ratio = calculateCoefficient(matchInfo.team1_info, matchInfo.team2_info)
-
-    //系数小于3的不要
-    if (ratio.lt(3)) return
+    //抛入模型进行计算
+    const [result] = predictPeriod1Goals(matchInfo as any)
+    if (!result) return
 
     //查询有没有存在的盘口
     const exists = await RockballOdd.findOne({

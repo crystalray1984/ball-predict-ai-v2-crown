@@ -1,104 +1,109 @@
-import { db, Match, MatchTeamInfo, Promoted, VPromoted } from '@/db'
-import { Op, QueryTypes } from 'sequelize'
+import { db, MatchTeamInfo, Promoted } from '@/db'
+import { InferAttributes, QueryTypes } from 'sequelize'
 import { getOddResult } from './common/helpers'
-import { calculateCoefficient } from './common/rockball'
+import { predictPeriod1Goals } from './predict'
 
 async function main() {
     //重建滚球5数据
-    let lastPromotedId = 0
-    while (true) {
-        const list = await db.query(
-            {
-                query: `
-            SELECT
-                a.*
-            FROM
-                match AS a
-            WHERE
-                a.has_score = 1
-                AND a.id > ?
-            ORDER BY a.id
-            LIMIT 500
-            `,
-                values: [lastPromotedId],
-            },
-            {
-                type: QueryTypes.SELECT,
-                model: Match,
-            },
-        )
+    const sql = `
+SELECT
+  b.*,
+  a.score1_period1,
+  a.score2_period1
+FROM
+  "match" AS a
+INNER JOIN
+  match_team_info AS b ON b.match_id = a.id
+WHERE
+  a.has_score = 1
+  AND a.id IN (
+   SELECT
+    match_id
+  FROM
+    promoted
+  WHERE
+    channel LIKE 'rockball%'
+    AND "period" = 'period1' AND "condition" = '0.5' AND "type" = 'over'
+  )
+`
+    const list = await db.query<
+        InferAttributes<MatchTeamInfo> & {
+            score1_period1: number
+            score2_period1: number
+            period1_has_goals: number
+        }
+    >(sql, {
+        type: QueryTypes.SELECT,
+    })
 
-        if (list.length === 0) break
+    for (const match of list) {
+        console.log(match.match_id)
 
-        for (const source of list) {
-            console.log(source.id)
-            lastPromotedId = source.id
+        const team1_info =
+            typeof match.team1_info === 'string'
+                ? (JSON.parse(match.team1_info) as TeamInfo)
+                : match.team1_info
+        const team2_info =
+            typeof match.team2_info === 'string'
+                ? (JSON.parse(match.team2_info) as TeamInfo)
+                : match.team2_info
 
-            //先检查是否有重复的
-            const exists = await Promoted.findOne({
-                where: {
-                    match_id: source.id,
-                    channel: 'rockball5',
-                },
-                attributes: ['id'],
-            })
-            if (exists) continue
+        match.team1_info = team1_info
+        match.team2_info = team2_info
 
-            //检查比赛的对阵双方信息
-            const matchInfo = await MatchTeamInfo.findByPk(source.id)
+        const [result] = predictPeriod1Goals(match)
 
-            //没有数据的不要
-            if (!matchInfo || !matchInfo.team1_info || !matchInfo.team2_info) continue
+        if (!result) continue
 
-            //没有比赛数据的不要
-            if (matchInfo.team1_info.matches <= 0 || matchInfo.team2_info.matches <= 0) continue
-
-            //计算系数
-            const ratio = calculateCoefficient(matchInfo.team1_info, matchInfo.team2_info)
-
-            //系数小的不要
-            if (ratio.lt(3)) continue
-
-            //计算赛果和手数
-            const result = getOddResult(
-                {
-                    variety: 'goal',
-                    period: 'period1',
-                    type: 'over',
-                    condition: '0.5',
-                    value: '1.88',
-                },
-                {
-                    score1: source.score1_period1!,
-                    score2: source.score2_period1!,
-                    score1_period1: source.score1_period1!,
-                    score2_period1: source.score2_period1!,
-                } as any,
-            )!
-
-            //插入数据
-            await Promoted.create({
-                match_id: source.id,
-                source_type: '',
-                source_id: 0,
+        //判断是否存在
+        const exists = await Promoted.findOne({
+            where: {
+                match_id: match.match_id,
                 channel: 'rockball5',
-                is_valid: 1,
-                week_day: 0,
-                week_id: 0,
+            },
+            attributes: ['id'],
+        })
+        if (exists) continue
+
+        //计算赛果和手数
+        const oddResult = getOddResult(
+            {
                 variety: 'goal',
                 period: 'period1',
                 type: 'over',
-                odd_type: 'sum',
                 condition: '0.5',
                 value: '1.88',
-                score: (source.score1_period1! + source.score2_period1!).toString(),
-                score1: source.score1_period1,
-                score2: source.score2_period1,
-                result: result.result,
-                result_profit: result.result_profit,
-                result_value: result.result_value,
-            })
-        }
+            },
+            {
+                score1: match.score1_period1,
+                score2: match.score2_period1,
+                score1_period1: match.score1_period1,
+                score2_period1: match.score2_period1,
+            } as any,
+        )!
+
+        //插入数据
+        await Promoted.create({
+            match_id: match.match_id,
+            source_type: '',
+            source_id: 0,
+            channel: 'rockball5',
+            is_valid: 1,
+            week_day: 0,
+            week_id: 0,
+            variety: 'goal',
+            period: 'period1',
+            type: 'over',
+            odd_type: 'sum',
+            condition: '0.5',
+            value: '1.88',
+            score: (match.score1_period1 + match.score2_period1).toString(),
+            score1: match.score1_period1,
+            score2: match.score2_period1,
+            result: oddResult.result,
+            result_profit: oddResult.result_profit,
+            result_value: oddResult.result_value,
+        })
     }
 }
 
