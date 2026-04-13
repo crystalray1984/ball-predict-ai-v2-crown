@@ -23,7 +23,7 @@ WHERE
   FROM
     promoted
   WHERE
-    channel IN ('rockball', 'rockball2', 'rockball3', 'rockball4')
+    channel IN ('rockball', 'rockball2', 'rockball3', 'rockball4', 'rockball5')
     AND "period" = 'period1' AND "condition" = '0.5' AND "type" = 'over'
   )
 ORDER BY
