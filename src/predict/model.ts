@@ -1,10 +1,13 @@
 import { MatchTeamInfo } from '@/db'
-import { InferAttributes } from 'sequelize'
 
 // ==================== 类型定义 ====================
 
-/** 原始比赛统计数据（来自 matches.json 的每个元素） */
-export interface MatchStats extends InferAttributes<MatchTeamInfo> {
+export type MatchStats = Pick<MatchTeamInfo, 'team1_info' | 'team2_info'>
+
+/**
+ * 训练用的比赛数据
+ */
+export interface MatchStatsForTrain extends MatchStats {
     period1_has_goals: number
 }
 
@@ -31,7 +34,7 @@ export interface TrainedModel {
 }
 
 // ==================== 配置参数 ====================
-const FILTER_MIN_MATCHES = 3
+const FILTER_MIN_MATCHES = 2
 const FILTER_MIN_MATCHES_30DAY = 1
 const NUM_TREES = 100
 const MAX_DEPTH = 8
@@ -371,7 +374,7 @@ export function deserializeTree(obj: TreeNode): DecisionTreeNode {
  * @param matches 原始比赛统计数据数组
  * @returns 训练好的模型数据，包含树结构、标准化参数、特征名称及推荐阈值
  */
-export function trainModel(matches: MatchStats[]): TrainedModel {
+export function trainModel(matches: MatchStatsForTrain[]): TrainedModel {
     // 1. 过滤
     const filtered = matches.filter(filterMatch)
     console.log(

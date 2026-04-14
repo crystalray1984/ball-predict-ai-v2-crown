@@ -241,7 +241,7 @@ export async function createRockball5(match: Pick<Match, 'id' | 'crown_match_id'
     if (!matchInfo || !matchInfo.team1_info || !matchInfo.team2_info) return
 
     //抛入模型进行计算
-    const [result] = predictPeriod1Goals(matchInfo as any)
+    const [result] = predictPeriod1Goals(matchInfo as any, 0.7)
     if (!result) return
 
     //查询有没有存在的盘口

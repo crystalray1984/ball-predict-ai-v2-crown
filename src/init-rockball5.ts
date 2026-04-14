@@ -51,7 +51,7 @@ WHERE
         match.team1_info = team1_info
         match.team2_info = team2_info
 
-        const [result] = predictPeriod1Goals(match)
+        const [result] = predictPeriod1Goals(match, 0.7)
 
         if (!result) continue
 
