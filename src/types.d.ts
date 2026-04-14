@@ -26,9 +26,9 @@ declare type Variety = 'goal' | 'corner'
 /**
  * 投注方向
  */
-declare type OddType = 'ah1' | 'ah2' | 'over' | 'under' | 'draw'
+declare type OddType = 'ah1' | 'ah2' | 'over' | 'under' | 'draw' | 'win1' | 'win2'
 
-declare type OddIdentification = 'ah' | 'sum'
+declare type OddIdentification = 'ah' | 'sum' | 'win'
 
 /**
  * 盘口状态

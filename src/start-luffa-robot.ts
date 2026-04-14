@@ -47,6 +47,12 @@ function createPromotionMessage(promoted: VPromotedData) {
             oddParts.push('小')
             oddParts.push(parseFloat(promoted.condition).toString())
             break
+        case 'win1':
+            oddParts.push(promoted.team1_name)
+            break
+        case 'win2':
+            oddParts.push(promoted.team2_name)
+            break
         case 'draw':
             oddParts.push('平')
             break
@@ -69,7 +75,6 @@ ${promoted.period === 'period1' ? '半场' : '全场'}
 
 ${oddParts.join(' ')}
 `
-
     if (promoted.week_id) {
         text = `=====${promoted.week_id}=====
 

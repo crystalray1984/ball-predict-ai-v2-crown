@@ -119,7 +119,7 @@ export class OddMansion extends Model<
      * 投注方向类型
      */
     @Column(DataType.STRING)
-    declare odd_type: 'ah' | 'sum'
+    declare odd_type: OddIdentification
 
     /**
      * 皇冠盘口id

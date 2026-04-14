@@ -139,6 +139,12 @@ export function getOddResult(
     } else if (odd.type === 'draw') {
         score = `${score1}:${score2}`
         result_value = score1 === score2 ? '1' : '-1'
+    } else if (odd.type === 'win1') {
+        score = `${score1}:${score2}`
+        result_value = score1 > score2 ? '1' : '-1'
+    } else if (odd.type === 'win2') {
+        score = `${score1}:${score2}`
+        result_value = score1 < score2 ? '1' : '-1'
     } else {
         return
     }
@@ -228,92 +234,6 @@ export function getPromotedOddInfo(
 }
 
 /**
- * 判断是否应该使用球探网的盘口趋势来确定推荐方向
- */
-function isUseTitan007Odd(odd: OddInfo, titan007_odd: Titan007Odd): number | undefined {
-    let start: string | undefined | null = null
-    let end: string | undefined | null = null
-
-    if (odd.variety === 'goal') {
-        //进球判断
-        if (odd.period === 'period1') {
-            //半场判断
-            switch (odd.type) {
-                case 'ah1':
-                case 'ah2':
-                    start = titan007_odd.ah_period1_start
-                    end = titan007_odd.ah_period1_end
-                    break
-                case 'over':
-                case 'under':
-                    start = titan007_odd.goal_period1_start
-                    end = titan007_odd.goal_period1_end
-                    break
-            }
-        } else {
-            //全场判断
-            switch (odd.type) {
-                case 'ah1':
-                case 'ah2':
-                    start = titan007_odd.ah_start
-                    end = titan007_odd.ah_end
-                    break
-                case 'over':
-                case 'under':
-                    start = titan007_odd.goal_start
-                    end = titan007_odd.goal_end
-                    break
-            }
-        }
-    } else if (odd.variety === 'corner') {
-        //角球判断
-        switch (odd.type) {
-            case 'ah1':
-            case 'ah2':
-                start = titan007_odd.corner_ah_start
-                end = titan007_odd.corner_ah_end
-                break
-            case 'over':
-            case 'under':
-                start = titan007_odd.corner_goal_start
-                end = titan007_odd.corner_goal_end
-                break
-        }
-    }
-
-    if (isNullOrUndefined(start) || isNullOrUndefined(end)) return
-    const delta = Decimal(end).comparedTo(start)
-    if (delta === 0) {
-        //盘口相同
-        return
-    } else if (delta > 0) {
-        //盘口变大
-        switch (odd.type) {
-            case 'ah1':
-            case 'ah2':
-                //让球盘，盘口变大表示倾向于客队
-                return odd.type !== 'ah2' ? 1 : 0
-            case 'over':
-            case 'under':
-                //大小盘，盘口变大表示倾向于大球
-                return odd.type !== 'over' ? 1 : 0
-        }
-    } else {
-        //盘口变小
-        switch (odd.type) {
-            case 'ah1':
-            case 'ah2':
-                //让球盘，盘口变小表示倾向于主队
-                return odd.type !== 'ah1' ? 1 : 0
-            case 'over':
-            case 'under':
-                //大小盘，盘口变大表示倾向于小球
-                return odd.type !== 'under' ? 1 : 0
-        }
-    }
-}
-
-/**
  * 获取盘口标识（用于寻找相同类型的盘口）
  * @param type
  * @returns
@@ -322,11 +242,14 @@ export function getOddIdentification(type: OddType) {
     switch (type) {
         case 'ah1':
         case 'ah2':
-        case 'draw':
             return 'ah'
         case 'over':
         case 'under':
             return 'sum'
+        case 'win1':
+        case 'win2':
+        case 'draw':
+            return 'win'
     }
 }
 
@@ -337,9 +260,11 @@ export function getOddIdentification(type: OddType) {
 export function getSameOddTypes(type: OddType): OddType[] {
     switch (getOddIdentification(type)) {
         case 'ah':
-            return ['ah1', 'ah2', 'draw']
+            return ['ah1', 'ah2']
         case 'sum':
             return ['over', 'under']
+        case 'win':
+            return ['win1', 'win2', 'draw']
         default:
             return []
     }
