@@ -656,6 +656,28 @@ export function findMatchedOdd(info: OddInfo, odds: Crown.OddInfo[]) {
                 value_reverse: odd.value_h,
                 condition: odd.condition,
             }))
+        case 'win1':
+            //主胜
+            return odds.map((odd) => ({
+                game_id: odd.game_id,
+                value: odd.value_h,
+                value_reverse: odd.value_h,
+                condition: '0',
+            }))
+        case 'win2':
+            return odds.map((odd) => ({
+                game_id: odd.game_id,
+                value: odd.value_c,
+                value_reverse: odd.value_c,
+                condition: '0',
+            }))
+        case 'draw':
+            return odds.map((odd) => ({
+                game_id: odd.game_id,
+                value: odd.value_n!,
+                value_reverse: odd.value_n!,
+                condition: '0',
+            }))
         default:
             return []
     }
