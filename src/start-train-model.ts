@@ -98,9 +98,9 @@ LIMIT ${MATCH_BATCH_SIZE}
 function trainModelByGo(matchesJsonPath: string, modelPath: string) {
     return new Promise<void>((success, reject) => {
         const cwd = resolve(ROOT, './runtime')
-        const executable = 'train-model' + (process.platform === 'win32' ? '.exe' : '')
+        let executable = 'train-model' + (process.platform === 'win32' ? '.exe' : '')
+        executable = resolve(cwd, executable)
         spawn(executable, ['-input', matchesJsonPath, '-output', modelPath], {
-            cwd,
             stdio: [process.stdin, process.stdout, process.stderr],
         })
             .on('error', reject)
