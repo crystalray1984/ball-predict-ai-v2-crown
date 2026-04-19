@@ -94,9 +94,10 @@ async function processAiPromotedCheck(input: CrownRobot.Output<{ id: number }>) 
  */
 async function startAiPromotedCheck() {
     while (true) {
-        const [promise] = consume('ai_promoted', (content) =>
-            processAiPromotedCheck(JSON.parse(content)),
-        )
+        const [promise] = consume('ai_promoted', (content) => {
+            console.log(content)
+            return processAiPromotedCheck(JSON.parse(content))
+        })
         await promise
         await close()
     }

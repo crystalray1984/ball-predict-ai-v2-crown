@@ -49,6 +49,7 @@ export async function getCrownData(
 
         const resp = (await page.evaluate(func)) as string
         console.log('皇冠请求完成', crown_match_id, show_type)
+        if (!resp) return
         const data = xmlParser.parse(resp).serverresponse
 
         //写入记录
