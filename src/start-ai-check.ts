@@ -63,7 +63,7 @@ async function processAiPromotedCheck(input: CrownRobot.Output<{ id: number }>) 
         match_id: aiRow.match_id,
         source_type: 'ai_promoted',
         source_id: aiRow.id,
-        channel: 'channel',
+        channel,
         is_valid: 1,
         skip: '',
         week_day: 0,
