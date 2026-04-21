@@ -9,6 +9,8 @@ import { AiPromoted, Match, Promoted } from './db'
  * 检查皇冠队列回传的AI数据
  */
 async function processAiPromotedCheck(input: CrownRobot.Output<{ id: number }>) {
+    console.log(input)
+
     const { data, extra } = input
     if (!data || !extra) return
 
