@@ -702,6 +702,10 @@ export function findMainOdd(info: OddInfo, odds: Crown.OddInfo[]) {
                 return ['over', 'under'].includes(info.type) && info.period === 'regularTime'
             case 'hou':
                 return ['over', 'under'].includes(info.type) && info.period === 'period1'
+            case 'm':
+                return ['win1', 'win2', 'draw'].includes(info.type) && info.period === 'regularTime'
+            case 'hm':
+                return ['win1', 'win2', 'draw'].includes(info.type) && info.period === 'period1'
         }
     })
 }

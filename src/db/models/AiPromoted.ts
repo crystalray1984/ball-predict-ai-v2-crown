@@ -1,5 +1,6 @@
 import type { CreationOptional, InferAttributes, InferCreationAttributes } from 'sequelize'
 import {
+    AllowNull,
     AutoIncrement,
     Column,
     CreatedAt,
@@ -66,4 +67,8 @@ export class AiPromoted extends Model<
     @UpdatedAt
     @Column(DataType.DATE)
     declare updated_at: CreationOptional<Date>
+
+    @AllowNull(true)
+    @Column(DataType.JSON)
+    declare crown_info: CreationOptional<any>
 }
