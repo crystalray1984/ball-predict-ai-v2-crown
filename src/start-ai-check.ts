@@ -134,7 +134,7 @@ async function processAiPromotedCheck(input: CrownRobot.Output<{ id: number }>) 
             }
         } else {
             //不是推平局的盘，就要看主盘的让球数，让球数大于1的不推
-            if (Decimal(mainOdd.condition).gt(1)) {
+            if (Decimal(mainOdd.condition).abs().gt(1)) {
                 return
             }
 
