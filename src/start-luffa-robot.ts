@@ -205,6 +205,7 @@ async function processSendPromoted(content: string) {
                 crown_match_id: promoted.crown_match_id,
                 channel: promoted.channel,
                 updated_at: (promoted as VPromoted).updated_at,
+                is_rockball: (promoted as VPromoted).is_rockball,
             },
         },
     })

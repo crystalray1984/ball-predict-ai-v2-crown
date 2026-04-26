@@ -132,7 +132,7 @@ async function processRockballCheck(content: string) {
         if (Decimal(exists.value).lt(odd.value)) continue
 
         //滚球正反推判断
-        const { type } = getPromotedOddInfo(info, odd.back)
+        const { type, condition } = getPromotedOddInfo(info, odd.back)
 
         //水位达到要求了，那就开始插入推荐
         let promoted = await Promoted.findOne({
@@ -140,10 +140,6 @@ async function processRockballCheck(content: string) {
                 match_id: match.id,
                 variety: odd.variety,
                 period: odd.period,
-                type: {
-                    [Op.in]: [type, info.type],
-                },
-                condition: info.condition,
                 channel: odd.channel,
             },
         })
@@ -163,10 +159,11 @@ async function processRockballCheck(content: string) {
             variety: odd.variety,
             period: odd.period,
             type,
-            condition: odd.condition,
+            condition,
             odd_type: getOddIdentification(odd.type),
             value: odd.back ? exists.value_reverse : exists.value,
             crown_game_id: exists.game_id,
+            is_rockball: 1,
         })
 
         //清理频道缓存数据
