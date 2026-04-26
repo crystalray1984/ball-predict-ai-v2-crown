@@ -152,6 +152,27 @@ async function processAiPromotedCheck(input: CrownRobot.Output<{ id: number }>) 
                 value = mainOdd.value_reverse
             }
         }
+    } else if (aiRow.odd_type === 'btts') {
+        //双方进球，直接推
+
+        const odd = findMatchedOdd(
+            {
+                variety: 'goal',
+                period: aiRow.period,
+                type: aiRow.type,
+                condition: aiRow.condition.toString(),
+            },
+            data.odds,
+        )[0]
+
+        if (!odd) {
+            //没有对应的盘口
+            return
+        }
+
+        channel = `ai_${aiRow.odd_type}`
+        type = aiRow.type
+        value = odd.value
     } else {
         //其他盘口不处理
         return
