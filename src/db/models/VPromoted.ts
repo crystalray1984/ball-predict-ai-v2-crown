@@ -152,6 +152,12 @@ export class VPromoted extends Model<InferAttributes<VPromoted>> {
     declare updated_at: Date
 
     /**
+     * 是否滚球，默认为0
+     */
+    @Column(DataType.TINYINT)
+    declare is_rockball: number
+
+    /**
      * 比赛时间
      */
     @Column(DataType.DATE)

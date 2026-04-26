@@ -205,6 +205,18 @@ function formatOddData(input: Crown.Resp, rockball = false) {
                         value_c,
                     })
                 }
+                //全场双方进球
+                if (game.sw_RTS === 'Y' && isDecimal(game.ior_RTSY) && isDecimal(game.ior_RTSN)) {
+                    const [value_h, value_c] = changeValue(game.ior_RTSY, game.ior_RTSN)
+                    add({
+                        game_id,
+                        variety: 'goal',
+                        type: 'ts',
+                        condition: '0',
+                        value_h,
+                        value_c,
+                    })
+                }
             }
             //角球
             else if (game.ptype_id === '146') {
@@ -401,6 +413,32 @@ function formatOddData(input: Crown.Resp, rockball = false) {
                     value_h: game.ior_HMH,
                     value_c: game.ior_HMC,
                     value_n: game.ior_HMN,
+                })
+            }
+
+            //全场双方进球
+            if (game.sw_TS === 'Y' && isDecimal(game.ior_TSY) && isDecimal(game.ior_TSN)) {
+                const [value_h, value_c] = changeValue(game.ior_TSY, game.ior_TSN)
+                add({
+                    game_id,
+                    variety: 'goal',
+                    type: 'ts',
+                    condition: '0',
+                    value_h,
+                    value_c,
+                })
+            }
+
+            //上半场双方进球
+            if (game.sw_HTS === 'Y' && isDecimal(game.ior_HTSY) && isDecimal(game.ior_HTSN)) {
+                const [value_h, value_c] = changeValue(game.ior_HTSY, game.ior_HTSN)
+                add({
+                    game_id,
+                    variety: 'goal',
+                    type: 'hts',
+                    condition: '0',
+                    value_h,
+                    value_c,
                 })
             }
         }
@@ -613,6 +651,10 @@ export function findMatchedOdd(info: OddInfo, odds: Crown.OddInfo[]) {
                 return ['win1', 'win2', 'draw'].includes(info.type) && info.period === 'regularTime'
             case 'hm':
                 return ['win1', 'win2', 'draw'].includes(info.type) && info.period === 'period1'
+            case 'ts':
+                return ['btts_yes', 'btts_no'].includes(info.type) && info.period === 'regularTime'
+            case 'hts':
+                return ['btts_yes', 'btts_no'].includes(info.type) && info.period === 'period1'
         }
         return false
     })
@@ -679,6 +721,20 @@ export function findMatchedOdd(info: OddInfo, odds: Crown.OddInfo[]) {
                 value_reverse: odd.value_n!,
                 condition: '0',
             }))
+        case 'btts_yes':
+            return odds.map((odd) => ({
+                game_id: odd.game_id,
+                value: odd.value_h,
+                value_reverse: odd.value_c,
+                condition: '0',
+            }))
+        case 'btts_no':
+            return odds.map((odd) => ({
+                game_id: odd.game_id,
+                value: odd.value_c,
+                value_reverse: odd.value_h,
+                condition: '0',
+            }))
         default:
             return []
     }
@@ -706,6 +762,10 @@ export function findMainOdd(info: OddInfo, odds: Crown.OddInfo[]) {
                 return ['win1', 'win2', 'draw'].includes(info.type) && info.period === 'regularTime'
             case 'hm':
                 return ['win1', 'win2', 'draw'].includes(info.type) && info.period === 'period1'
+            case 'ts':
+                return ['btts_yes', 'btts_no'].includes(info.type) && info.period === 'regularTime'
+            case 'hts':
+                return ['btts_yes', 'btts_no'].includes(info.type) && info.period === 'period1'
         }
     })
 }

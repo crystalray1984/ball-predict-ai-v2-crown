@@ -178,4 +178,10 @@ export class Promoted extends Model<InferAttributes<Promoted>, InferCreationAttr
     @UpdatedAt
     @Column(DataType.DATE)
     declare updated_at: CreationOptional<Date>
+
+    /**
+     * 是否滚球，默认为0
+     */
+    @Column(DataType.TINYINT)
+    declare is_rockball: CreationOptional<number>
 }

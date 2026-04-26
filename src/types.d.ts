@@ -26,9 +26,18 @@ declare type Variety = 'goal' | 'corner'
 /**
  * 投注方向
  */
-declare type OddType = 'ah1' | 'ah2' | 'over' | 'under' | 'draw' | 'win1' | 'win2'
+declare type OddType =
+    | 'ah1'
+    | 'ah2'
+    | 'over'
+    | 'under'
+    | 'draw'
+    | 'win1'
+    | 'win2'
+    | 'btts_yes'
+    | 'btts_no'
 
-declare type OddIdentification = 'ah' | 'sum' | 'win'
+declare type OddIdentification = 'ah' | 'sum' | 'win' | 'btts'
 
 /**
  * 盘口状态
@@ -325,6 +334,42 @@ declare namespace Crown {
          * 上半场独赢平局水位
          */
         ior_HMN: string
+        /**
+         * 全场双方进球
+         */
+        sw_TS: 'Y' | 'N'
+        /**
+         * 全场双方有进球水位
+         */
+        ior_TSY: string
+        /**
+         * 全场双方无进球水位
+         */
+        ior_TSN: string
+        /**
+         * 上半场双方进球
+         */
+        sw_HTS: 'Y' | 'N'
+        /**
+         * 上半场双方有进球水位
+         */
+        ior_HTSY: string
+        /**
+         * 上半场双方无进球水位
+         */
+        ior_HTSN: string
+        /**
+         * 滚球全场双方进球
+         */
+        sw_RTS: 'Y' | 'N'
+        /**
+         * 滚球全场双方有进球水位
+         */
+        ior_RTSY: string
+        /**
+         * 滚球全场双方无进球水位
+         */
+        ior_RTSN: string
     }
 
     /**
@@ -340,7 +385,7 @@ declare namespace Crown {
     interface OddInfo {
         game_id: string
         variety: Variety
-        type: 'r' | 'hr' | 'ou' | 'hou' | 'm' | 'hm'
+        type: 'r' | 'hr' | 'ou' | 'hou' | 'm' | 'hm' | 'ts' | 'hts'
         condition: string
         value_h: string
         value_c: string

@@ -145,6 +145,14 @@ export function getOddResult(
     } else if (odd.type === 'win2') {
         score = `${score1}:${score2}`
         result_value = score1 < score2 ? '1' : '-1'
+    } else if (odd.type === 'btts_yes') {
+        //双方有进球
+        score = `${score1}:${score2}`
+        result_value = score1 > 0 && score2 > 0 ? '1' : '-1'
+    } else if (odd.type === 'btts_no') {
+        //双方有进球
+        score = `${score1}:${score2}`
+        result_value = score1 == 0 && score2 == 0 ? '1' : '-1'
     } else {
         return
     }
@@ -225,6 +233,26 @@ export function getPromotedOddInfo(
                 type: 'over',
                 condition: odd.condition,
             }
+        case 'win1':
+            return {
+                type: 'win2',
+                condition: odd.condition,
+            }
+        case 'win2':
+            return {
+                type: 'win1',
+                condition: odd.condition,
+            }
+        case 'btts_yes':
+            return {
+                type: 'btts_no',
+                condition: odd.condition,
+            }
+        case 'btts_no':
+            return {
+                type: 'btts_yes',
+                condition: odd.condition,
+            }
     }
 
     return {
@@ -238,7 +266,7 @@ export function getPromotedOddInfo(
  * @param type
  * @returns
  */
-export function getOddIdentification(type: OddType) {
+export function getOddIdentification(type: OddType): OddIdentification {
     switch (type) {
         case 'ah1':
         case 'ah2':
@@ -250,7 +278,12 @@ export function getOddIdentification(type: OddType) {
         case 'win2':
         case 'draw':
             return 'win'
+        case 'btts_yes':
+        case 'btts_no':
+            return 'btts'
     }
+
+    return undefined as any
 }
 
 /**
@@ -265,6 +298,8 @@ export function getSameOddTypes(type: OddType): OddType[] {
             return ['over', 'under']
         case 'win':
             return ['win1', 'win2', 'draw']
+        case 'btts':
+            return ['btts_yes', 'btts_no']
         default:
             return []
     }
