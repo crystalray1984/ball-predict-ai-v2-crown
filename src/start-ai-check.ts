@@ -133,8 +133,8 @@ async function processAiPromotedCheck(input: CrownRobot.Output<{ id: number }>) 
                 value = mainOdd.value_reverse
             }
         } else {
-            //不是推平局的盘，就要看主盘的让球数，让球数大于1的不推
-            if (Decimal(mainOdd.condition).abs().gt(1)) {
+            //不是推平局的盘，就要看主盘的让球数，让球数大于等于1的不推
+            if (Decimal(mainOdd.condition).abs().gte(1)) {
                 return
             }
 
