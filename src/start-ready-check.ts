@@ -11,11 +11,7 @@ import {
     isNullOrUndefined,
 } from './common/helpers'
 import { close, consume, publish } from './common/rabbitmq'
-import {
-    createRockball3Odd,
-    createRockball5,
-    createRockballOddFromPromoted,
-} from './common/rockball'
+import { createRockball3Odd, createRockballOddFromPromoted } from './common/rockball'
 import { getSetting } from './common/settings'
 import { CONFIG } from './config'
 import { findMatchedOdd } from './crown'
@@ -162,12 +158,12 @@ async function processReadyCheck(content: string, isMansion: boolean) {
     if (!match) return
 
     //滚球5
-    if (match && match.match_time.valueOf() - Date.now() >= 120000) {
-        await createRockball5({
-            id: match_id,
-            crown_match_id: extra.crown_match_id,
-        })
-    }
+    // if (match && match.match_time.valueOf() - Date.now() >= 120000) {
+    //     await createRockball5({
+    //         id: match_id,
+    //         crown_match_id: extra.crown_match_id,
+    //     })
+    // }
 
     //联赛被过滤掉的也去掉
     if (!match.tournament_is_open) return

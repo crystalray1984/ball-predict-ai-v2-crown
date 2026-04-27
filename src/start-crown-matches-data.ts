@@ -3,7 +3,6 @@ import { clearChannelCache, getOddResult } from './common/helpers'
 import { consume } from './common/rabbitmq'
 import { CONFIG } from './config'
 import { Match, Promoted, RockballOdd, Team, Tournament, VMatch } from './db'
-import { createRockball5 } from './common/rockball'
 
 /**
  * 解析从队列中得到的皇冠比赛数据

@@ -275,3 +275,71 @@ export async function createRockball5(match: Pick<Match, 'id' | 'crown_match_id'
         channel: 'rockball5',
     })
 }
+
+/**
+ * 新的滚球5逻辑，从AI预测的推荐盘口中进滚球5
+ */
+export async function createRockball5V2(match: Pick<Match, 'id' | 'crown_match_id'>) {
+    //查询有没有存在的盘口
+    const period1Exists = await RockballOdd.findOne({
+        where: {
+            match_id: match.id,
+            channel: 'rockball5',
+            period: 'period1',
+        },
+        attributes: ['id'],
+    })
+
+    if (!period1Exists) {
+        //盘口不存在就创建盘口
+        await RockballOdd.create({
+            match_id: match.id,
+            crown_match_id: match.crown_match_id,
+            source_variety: 'goal',
+            source_period: 'period1',
+            source_condition: '0.5',
+            source_type: 'over',
+            source_value: '0',
+            variety: 'goal',
+            period: 'period1',
+            type: 'over',
+            condition: '0.5',
+            value: '1.88',
+            is_open: 1,
+            source_channel: '',
+            source_id: 0,
+            channel: 'rockball5',
+        })
+    }
+
+    const regularTimeExists = await RockballOdd.findOne({
+        where: {
+            match_id: match.id,
+            channel: 'rockball5',
+            period: 'regularTime',
+        },
+        attributes: ['id'],
+    })
+
+    if (!regularTimeExists) {
+        //盘口不存在就创建盘口
+        await RockballOdd.create({
+            match_id: match.id,
+            crown_match_id: match.crown_match_id,
+            source_variety: 'goal',
+            source_period: 'regularTime',
+            source_condition: '0.5',
+            source_type: 'over',
+            source_value: '0',
+            variety: 'goal',
+            period: 'regularTime',
+            type: 'over',
+            condition: '0.5',
+            value: '1.88',
+            is_open: 1,
+            source_channel: '',
+            source_id: 0,
+            channel: 'rockball5',
+        })
+    }
+}

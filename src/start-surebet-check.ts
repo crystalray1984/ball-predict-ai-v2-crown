@@ -7,7 +7,6 @@ import { close, consume, publish } from './common/rabbitmq'
 import { getSetting } from './common/settings'
 import { CONFIG } from './config'
 import { Match, Odd, RockballOdd, SurebetRecord, VMatch } from './db'
-import { createRockball5 } from './common/rockball'
 
 /**
  * 解析surebet时间条件的时长
