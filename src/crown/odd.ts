@@ -418,27 +418,27 @@ function formatOddData(input: Crown.Resp, rockball = false) {
 
             //全场双方进球
             if (game.sw_TS === 'Y' && isDecimal(game.ior_TSY) && isDecimal(game.ior_TSN)) {
-                const [value_h, value_c] = changeValue(game.ior_TSY, game.ior_TSN)
+                // const [value_h, value_c] = changeValue(game.ior_TSY, game.ior_TSN)
                 add({
                     game_id,
                     variety: 'goal',
                     type: 'ts',
                     condition: '0',
-                    value_h,
-                    value_c,
+                    value_h: game.ior_TSY,
+                    value_c: game.ior_TSN,
                 })
             }
 
             //上半场双方进球
             if (game.sw_HTS === 'Y' && isDecimal(game.ior_HTSY) && isDecimal(game.ior_HTSN)) {
-                const [value_h, value_c] = changeValue(game.ior_HTSY, game.ior_HTSN)
+                // const [value_h, value_c] = changeValue(game.ior_HTSY, game.ior_HTSN)
                 add({
                     game_id,
                     variety: 'goal',
                     type: 'hts',
                     condition: '0',
-                    value_h,
-                    value_c,
+                    value_h: game.ior_HTSY,
+                    value_c: game.ior_HTSN,
                 })
             }
         }
