@@ -1,6 +1,7 @@
 import { CONFIG } from '@/config'
 import { merge } from 'lodash'
 import { Sequelize, SequelizeOptions } from 'sequelize-typescript'
+import { Ai2MissMatch } from './models/Ai2MissMatch'
 import { AiCache } from './models/AiCache'
 import { AiPromoted } from './models/AiPromoted'
 import { CrownAccount } from './models/CrownAccount'
@@ -63,11 +64,13 @@ export const db = new Sequelize(
                 AiCache,
                 MatchTeamInfo,
                 AiPromoted,
+                Ai2MissMatch,
             ],
         },
     ),
 )
 
+export { Ai2MissMatch } from './models/Ai2MissMatch'
 export { AiCache } from './models/AiCache'
 export { AiPromoted } from './models/AiPromoted'
 export { CrownAccount } from './models/CrownAccount'

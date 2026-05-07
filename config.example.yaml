@@ -98,3 +98,9 @@ socket_url: ''
 
 #业务端接口地址
 api_url: 'https://v3.188zq.vip'
+
+#第二套AI预测的配置
+ai2:
+  #接口基地址
+  api_url: 'http://111.229.131.172:20120'
+  api_token: 'bclMBXgKfPk8oZJObLv4MPLtdyQVMQqF5MYkZtSVC3ntGNqtflb9VA4egf-QqeFC'

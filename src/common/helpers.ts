@@ -433,6 +433,23 @@ export function isDirExists(dirPath: string): Promise<boolean> {
     })
 }
 
+/**
+ * 判断文件是否存在
+ * @param filePath
+ * @returns
+ */
+export function isFileExists(filePath: string): Promise<boolean> {
+    return new Promise((resolve) => {
+        stat(filePath, (err, stats) => {
+            if (err) {
+                resolve(false)
+            } else {
+                resolve(stats.isFile())
+            }
+        })
+    })
+}
+
 export async function prepareDir(dirPath: string): Promise<void> {
     if (await isDirExists(dirPath)) return
     await mkdir(dirPath, { recursive: true })

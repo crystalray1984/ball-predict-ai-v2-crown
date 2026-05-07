@@ -1,4 +1,5 @@
 import { Options as RabbitmqOptions } from 'amqplib'
+import { type AxiosProxyConfig } from 'axios'
 import { Options as PoolOptions } from 'generic-pool'
 import { RedisOptions } from 'ioredis'
 import { load } from 'js-yaml'
@@ -102,6 +103,15 @@ export interface AppConfig {
      * 接口调用地址
      */
     api_url: string
+
+    /**
+     * 第二套AI配置
+     */
+    ai2: {
+        api_url: string
+        api_token: string
+        proxy?: AxiosProxyConfig
+    }
 }
 
 /**
