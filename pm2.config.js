@@ -32,5 +32,6 @@ module.exports = {
     'bmiss-check': createConfig('bmiss-check'),
     fotmob: createConfig('fotmob'),
     'ai-check': createConfig('ai-check'),
+    'ai2-check': createConfig('ai2-check'),
     createConfig,
 }
