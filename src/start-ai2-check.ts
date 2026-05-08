@@ -236,13 +236,15 @@ async function tryFindMatch(matchItem: AIMatchItem) {
             match_time: {
                 [Op.between]: [
                     new Date(matchTime.valueOf() - 900000),
-                    new Date(matchTime.valueOf() - 900000),
+                    new Date(matchTime.valueOf() + 900000),
                 ],
             },
         },
     })
 
-    if (matches.length === 0) return false
+    if (matches.length === 0) {
+        return false
+    }
 
     //寻找匹配的比赛
     for (const match of matches) {
