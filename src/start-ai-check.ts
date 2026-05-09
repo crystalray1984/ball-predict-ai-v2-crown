@@ -1,7 +1,6 @@
 import Decimal from 'decimal.js'
 import { clearChannelCache, getOddIdentification } from './common/helpers'
 import { close, consume, publish } from './common/rabbitmq'
-import { createRockball5V2 } from './common/rockball'
 import { CONFIG } from './config'
 import { findMatchedOdd } from './crown'
 import { AiPromoted, Match, Promoted } from './db'
@@ -215,11 +214,6 @@ async function processAiPromotedCheck(input: CrownRobot.Output<{ id: number }>) 
         CONFIG.queues['send_promoted'],
         JSON.stringify({ id: promoted.id, type: channel }),
     )
-
-    //能进让球盘的，同时进滚球5的预测
-    if (['ai_ah'].includes(channel)) {
-        await createRockball5V2(match)
-    }
 }
 
 /**
