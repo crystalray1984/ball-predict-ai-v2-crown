@@ -401,11 +401,11 @@ async function processPromoteMatch(
     const tasks = item.tasks.filter((task) => {
         switch (task.task_name) {
             case 'ah':
-                return exists.includes('ah')
+                return !exists.includes('ah')
             case 'ou':
-                return exists.includes('sum')
+                return !exists.includes('sum')
             case 'btts':
-                return exists.includes('btts')
+                return !exists.includes('btts')
             default:
                 return false
         }
@@ -508,7 +508,9 @@ async function processPromote(items: AIMatchItem[]): Promise<boolean> {
  * @param param0
  * @returns
  */
-async function processCheck({ crown_match_id, data, extra }: CrownRobot.Output<OddInfo[]>) {
+async function processCheck(output: CrownRobot.Output<OddInfo[]>) {
+    console.log(output)
+    const { crown_match_id, data, extra } = output
     if (!data || !extra) return
 
     const match = await Match.findOne({
