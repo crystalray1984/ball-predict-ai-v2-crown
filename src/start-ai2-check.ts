@@ -552,7 +552,7 @@ async function processCheck(output: CrownRobot.Output<OddInfo[]>) {
             week_day: 0,
             week_id: 0,
             variety: 'goal',
-            period: 'period1',
+            period: 'regularTime',
             type: info.type,
             condition: info.condition,
             odd_type,
