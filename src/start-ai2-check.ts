@@ -509,7 +509,6 @@ async function processPromote(items: AIMatchItem[]): Promise<boolean> {
  * @returns
  */
 async function processCheck(output: CrownRobot.Output<OddInfo[]>) {
-    console.log(output)
     const { crown_match_id, data, extra } = output
     if (!data || !extra) return
 
@@ -574,7 +573,10 @@ async function processCheck(output: CrownRobot.Output<OddInfo[]>) {
  */
 async function startConsumer() {
     while (true) {
-        const [promise] = consume('ai2_after_check', (content) => processCheck(JSON.parse(content)))
+        const [promise] = consume('ai2_after_check', (content) => {
+            console.log(content)
+            return processCheck(JSON.parse(content))
+        })
         await promise
     }
 }
