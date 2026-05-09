@@ -47,6 +47,17 @@ export async function getCrownData(
 })()
 `
 
+        //最多只允许10秒的延迟，否则就要抛出异常
+        await Promise.race([
+            page.evaluate(func) as Promise<string>,
+            new Promise<string>((_, reject) =>
+                setTimeout(
+                    () => reject(new Error(`皇冠请求超时 ${crown_match_id} ${show_type}`)),
+                    10000,
+                ),
+            ),
+        ])
+
         const resp = (await page.evaluate(func)) as string
         console.log('皇冠请求完成', crown_match_id, show_type)
         if (!resp) return
