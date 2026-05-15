@@ -90,7 +90,7 @@ async function doInit() {
 
             const page = await browser.newPage()
             await page.goto(PAGE_URL)
-            console.log('page navigated')
+            console.log('page navigated', PAGE_URL)
 
             //等待登录脚本完成
             await waitForElement(page, '#usr')
