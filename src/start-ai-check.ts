@@ -30,7 +30,8 @@ async function processAiPromotedCheck(input: CrownRobot.Output<{ id: number }>) 
     aiRow.crown_info = data.odds
     await aiRow.save()
 
-    let channel: string
+    const CHANNEL = 'ai2'
+
     let type: OddType
     let condition = '0'
     let value = '0'
@@ -53,7 +54,6 @@ async function processAiPromotedCheck(input: CrownRobot.Output<{ id: number }>) 
             return
         }
 
-        channel = `ai_${aiRow.odd_type}`
         type = aiRow.type
         condition = aiRow.condition.toString()
         value = odd.value
@@ -93,7 +93,6 @@ async function processAiPromotedCheck(input: CrownRobot.Output<{ id: number }>) 
         }
 
         //放入推荐
-        channel = `ai_${aiRow.odd_type}`
         type = aiRow.type
         condition = aiRow.condition.toString()
         value = mainOdd.value
@@ -121,13 +120,11 @@ async function processAiPromotedCheck(input: CrownRobot.Output<{ id: number }>) 
                 return
             } else if (Decimal(mainOdd.condition).gt(0)) {
                 //主盘是主受让，那就推主
-                channel = `ai_ah`
                 type = 'ah1'
                 condition = mainOdd.condition
                 value = mainOdd.value
             } else {
                 //主盘是客受让，那就推客
-                channel = `ai_ah`
                 type = 'ah2'
                 condition = mainOdd.condition
                 value = mainOdd.value_reverse
@@ -139,7 +136,6 @@ async function processAiPromotedCheck(input: CrownRobot.Output<{ id: number }>) 
             }
 
             //让球数不大于1，那么按推送的方向去推
-            channel = `ai_ah`
             if (aiRow.type === 'win1') {
                 //推主胜
                 type = 'ah1'
@@ -170,7 +166,6 @@ async function processAiPromotedCheck(input: CrownRobot.Output<{ id: number }>) 
             return
         }
 
-        channel = `ai_${aiRow.odd_type}`
         type = aiRow.type
         value = odd.value
     } else {
@@ -178,12 +173,15 @@ async function processAiPromotedCheck(input: CrownRobot.Output<{ id: number }>) 
         return
     }
 
+    const odd_type = getOddIdentification(type)
+
     //判断推荐是否存在
     const exists = await Promoted.findOne({
         where: {
-            channel,
+            channel: CHANNEL,
             match_id: aiRow.match_id,
             period: aiRow.period,
+            odd_type,
         },
         attributes: ['id'],
     })
@@ -194,7 +192,7 @@ async function processAiPromotedCheck(input: CrownRobot.Output<{ id: number }>) 
         match_id: aiRow.match_id,
         source_type: 'ai_promoted',
         source_id: aiRow.id,
-        channel,
+        channel: CHANNEL,
         is_valid: 1,
         skip: '',
         week_day: 0,
@@ -203,7 +201,7 @@ async function processAiPromotedCheck(input: CrownRobot.Output<{ id: number }>) 
         period: aiRow.period,
         type,
         condition,
-        odd_type: getOddIdentification(type),
+        odd_type,
         value,
     })
 
@@ -212,7 +210,7 @@ async function processAiPromotedCheck(input: CrownRobot.Output<{ id: number }>) 
 
     await publish(
         CONFIG.queues['send_promoted'],
-        JSON.stringify({ id: promoted.id, type: channel }),
+        JSON.stringify({ id: promoted.id, type: CHANNEL }),
     )
 }
 

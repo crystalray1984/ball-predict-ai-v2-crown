@@ -118,8 +118,6 @@ interface AITaskBTTSItem extends AITaskItemBase<'btts'> {
 
 type AITaskItem = AITaskAHItem | AITaskOUItem | AITaskBTTSItem
 
-const CHANNEL = 'ai2'
-
 /**
  * 创建调用接口的客户端
  */
@@ -388,10 +386,9 @@ async function processPromoteMatch(
         await Promoted.findAll({
             where: {
                 match_id: match.id,
-                odd_type: {
-                    [Op.in]: types,
+                channel: {
+                    [Op.in]: types.map((odd_type) => `ai_${odd_type}`),
                 },
-                channel: CHANNEL,
             },
             attributes: ['odd_type'],
         })
@@ -529,12 +526,13 @@ async function processCheck(output: CrownRobot.Output<OddInfo[]>) {
         if (!odd) continue
 
         const odd_type = getOddIdentification(info.type)
+        const channel = `ai2_${odd_type}`
 
         //插入推荐
         const exists = await Promoted.findOne({
             where: {
                 match_id: match.id,
-                channel: CHANNEL,
+                channel,
                 odd_type,
             },
             attributes: ['id'],
@@ -545,7 +543,7 @@ async function processCheck(output: CrownRobot.Output<OddInfo[]>) {
             match_id: match.id,
             source_type: '',
             source_id: 0,
-            channel: CHANNEL,
+            channel,
             is_valid: 1,
             skip: '',
             week_day: 0,
@@ -559,11 +557,11 @@ async function processCheck(output: CrownRobot.Output<OddInfo[]>) {
         })
 
         //清理频道缓存数据
-        await clearChannelCache(CHANNEL)
+        await clearChannelCache(channel)
 
         await publish(
             CONFIG.queues['send_promoted'],
-            JSON.stringify({ id: promoted.id, type: CHANNEL }),
+            JSON.stringify({ id: promoted.id, type: channel }),
         )
     }
 }
