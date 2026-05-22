@@ -159,22 +159,24 @@ async function startCrownRobot() {
     console.log('采集皇冠热门比赛', !!process.env.CROWN_HOT)
 
     //测速
-    const speeds = await getSpeeds()
-    speeds.sort((site1, site2) => {
-        let fail1 = site1.speed.fail > 1 ? site1.speed.fail : 0
-        let fail2 = site2.speed.fail > 1 ? site2.speed.fail : 0
-        if (fail1 !== fail2) {
-            return fail1 - fail2
+    if (!CONFIG.crown_url) {
+        const speeds = await getSpeeds()
+        speeds.sort((site1, site2) => {
+            let fail1 = site1.speed.fail > 1 ? site1.speed.fail : 0
+            let fail2 = site2.speed.fail > 1 ? site2.speed.fail : 0
+            if (fail1 !== fail2) {
+                return fail1 - fail2
+            }
+            return site1.speed.speed - site2.speed.speed
+        })
+
+        console.log('测速结果')
+        speeds.forEach((item) => console.log(item))
+
+        //设置网址
+        if (speeds.length > 0) {
+            CONFIG.crown_url = speeds[0].url
         }
-        return site1.speed.speed - site2.speed.speed
-    })
-
-    console.log('测速结果')
-    speeds.forEach((item) => console.log(item))
-
-    //设置网址
-    if (speeds.length > 0) {
-        CONFIG.crown_url = speeds[0].url
     }
 
     while (true) {
