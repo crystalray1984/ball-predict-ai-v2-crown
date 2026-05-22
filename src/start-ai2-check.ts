@@ -526,7 +526,7 @@ async function processCheck(output: CrownRobot.Output<OddInfo[]>) {
         if (!odd) continue
 
         const odd_type = getOddIdentification(info.type)
-        const channel = `ai2_${odd_type}`
+        const channel = `ai_${odd_type}`
 
         //插入推荐
         const exists = await Promoted.findOne({
