@@ -16,14 +16,16 @@ export async function processCrownRequest(content: string) {
     const data = await getCrownData(crown_match_id, show_type === 'live' ? 'live' : 'today')
 
     //抛到下一个队列
-    await rabbitmq.publish(
-        next,
-        JSON.stringify({
-            crown_match_id,
-            extra,
-            data,
-        }),
-    )
+    if (next) {
+        await rabbitmq.publish(
+            next,
+            JSON.stringify({
+                crown_match_id,
+                extra,
+                data,
+            }),
+        )
+    }
 }
 
 /**

@@ -7,6 +7,7 @@ import { AiPromoted } from './models/AiPromoted'
 import { CrownAccount } from './models/CrownAccount'
 import { CrownMainOdd } from './models/CrownMainOdd'
 import { CrownOdd } from './models/CrownOdd'
+import { CrownOddRecord } from './models/CrownOddRecord'
 import { LabelPromoted } from './models/LabelPromoted'
 import { LuffaUser } from './models/LuffaUser'
 import { Match } from './models/Match'
@@ -65,6 +66,7 @@ export const db = new Sequelize(
                 MatchTeamInfo,
                 AiPromoted,
                 Ai2MissMatch,
+                CrownOddRecord,
             ],
         },
     ),
@@ -76,6 +78,7 @@ export { AiPromoted } from './models/AiPromoted'
 export { CrownAccount } from './models/CrownAccount'
 export { CrownMainOdd } from './models/CrownMainOdd'
 export { CrownOdd } from './models/CrownOdd'
+export { CrownOddRecord } from './models/CrownOddRecord'
 export { LabelPromoted } from './models/LabelPromoted'
 export { LuffaUser } from './models/LuffaUser'
 export { Match } from './models/Match'

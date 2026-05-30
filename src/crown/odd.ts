@@ -1,8 +1,6 @@
-import { isDecimal, isEmpty, prepareDir } from '@/common/helpers'
-import dayjs from 'dayjs'
+import { isDecimal, isEmpty } from '@/common/helpers'
+import { CrownOddRecord } from '@/db'
 import Decimal from 'decimal.js'
-import { writeFile } from 'node:fs/promises'
-import { join, resolve } from 'node:path'
 import { crownQueue, ready, xmlParser } from './base'
 import { parseFullMatchTime } from './match'
 
@@ -67,17 +65,17 @@ export async function getCrownData(
         try {
             const result = formatOddData(data, show_type === 'live')
 
-            try {
-                const now = dayjs()
-                const dirPath = resolve(__dirname, `../../runtime/crown/${now.format('YYYYMMDD')}`)
-                await prepareDir(dirPath)
-                const logFile = join(
-                    dirPath,
-                    `${crown_match_id}_${show_type}_${now.format('HHmmss')}.log`,
-                )
-                await writeFile(logFile, JSON.stringify(result), 'utf-8')
-            } catch (err) {
-                console.error(err)
+            if (result && result.odds && result.odds.length > 0) {
+                //写入记录
+                try {
+                    await CrownOddRecord.insert({
+                        crown_match_id,
+                        show_type,
+                        odd_data: result.odds,
+                    })
+                } catch (err) {
+                    console.error('盘口插入失败', err)
+                }
             }
 
             return result
