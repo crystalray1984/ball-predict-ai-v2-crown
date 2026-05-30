@@ -33,5 +33,6 @@ module.exports = {
     fotmob: createConfig('fotmob'),
     'ai-check': createConfig('ai-check'),
     'ai2-check': createConfig('ai2-check'),
+    'hot-odd': createConfig('hot-odd'),
     createConfig,
 }
