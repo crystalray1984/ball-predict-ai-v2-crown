@@ -93,8 +93,8 @@ async function updateMatchOdd(all: CrownRobot.Output<number>) {
         //判断让球盘是否需要更新
         if (ah) {
             const ah_condition = Decimal(ah.condition).toFixed(2)
-            const ah1_value = Decimal(ah.value_h).mul('0.95').toFixed(2)
-            const ah2_value = Decimal(ah.value_c).mul('0.95').toFixed(2)
+            const ah1_value = Decimal(ah.value_h).toFixed(2)
+            const ah2_value = Decimal(ah.value_c).toFixed(2)
             const ah_hash = md5(`${ah_condition}:${ah1_value}:${ah2_value}`)
             if (ah_hash !== target.ah_hash) {
                 fields.ah_hash = ah_hash
@@ -105,9 +105,9 @@ async function updateMatchOdd(all: CrownRobot.Output<number>) {
         }
         //判断胜平负是否需要更新
         if (win && target.win_open) {
-            const win1_value = Decimal(win.value_h).mul('0.95').toFixed(2)
-            const win2_value = Decimal(win.value_c).mul('0.95').toFixed(2)
-            const draw_value = Decimal(win.value_n!).mul('0.95').toFixed(2)
+            const win1_value = Decimal(win.value_h).toFixed(2)
+            const win2_value = Decimal(win.value_c).toFixed(2)
+            const draw_value = Decimal(win.value_n!).toFixed(2)
             const win_hash = md5(`${win1_value}:${win2_value}:${draw_value}`)
             if (win_hash !== target.win_hash) {
                 fields.win_hash = win_hash
@@ -139,8 +139,8 @@ async function updateMatchOdd(all: CrownRobot.Output<number>) {
         }
 
         const ah_condition = Decimal(ah.condition).toFixed(2)
-        const ah1_value = Decimal(ah.value_h).mul('0.95').toFixed(2)
-        const ah2_value = Decimal(ah.value_c).mul('0.95').toFixed(2)
+        const ah1_value = Decimal(ah.value_h).toFixed(2)
+        const ah2_value = Decimal(ah.value_c).toFixed(2)
         const ah_hash = md5(`${ah_condition}:${ah1_value}:${ah2_value}`)
 
         const fields: CreationAttributes<FMatch> = {
@@ -153,9 +153,9 @@ async function updateMatchOdd(all: CrownRobot.Output<number>) {
         }
 
         if (win_open && win) {
-            const win1_value = Decimal(win.value_h).mul('0.95').toFixed(2)
-            const win2_value = Decimal(win.value_c).mul('0.95').toFixed(2)
-            const draw_value = Decimal(win.value_n!).mul('0.95').toFixed(2)
+            const win1_value = Decimal(win.value_h).toFixed(2)
+            const win2_value = Decimal(win.value_c).toFixed(2)
+            const draw_value = Decimal(win.value_n!).toFixed(2)
             const win_hash = md5(`${win1_value}:${win2_value}:${draw_value}`)
             fields.win_hash = win_hash
             fields.win1_value = win1_value
