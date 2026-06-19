@@ -7,6 +7,7 @@ import { stat } from 'node:fs'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { RateLimiter } from './rate-limiter'
+import { createHash } from 'node:crypto'
 
 /**
  * 返回一个等待指定时间的Promise
@@ -513,4 +514,8 @@ export function getMachineId() {
 export async function clearChannelCache(...channels: string[]) {
     if (channels.length === 0) return
     await redis.del(...channels.map((channel) => `summary:${channel}`))
+}
+
+export function md5(input: string) {
+    return createHash('md5').update(input, 'utf-8').digest('hex').toLowerCase()
 }

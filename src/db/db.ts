@@ -8,6 +8,8 @@ import { CrownAccount } from './models/CrownAccount'
 import { CrownMainOdd } from './models/CrownMainOdd'
 import { CrownOdd } from './models/CrownOdd'
 import { CrownOddRecord } from './models/CrownOddRecord'
+import { FBet } from './models/FBet'
+import { FMatch } from './models/FMatch'
 import { LabelPromoted } from './models/LabelPromoted'
 import { LuffaUser } from './models/LuffaUser'
 import { Match } from './models/Match'
@@ -67,6 +69,8 @@ export const db = new Sequelize(
                 AiPromoted,
                 Ai2MissMatch,
                 CrownOddRecord,
+                FBet,
+                FMatch,
             ],
         },
     ),
@@ -79,6 +83,8 @@ export { CrownAccount } from './models/CrownAccount'
 export { CrownMainOdd } from './models/CrownMainOdd'
 export { CrownOdd } from './models/CrownOdd'
 export { CrownOddRecord } from './models/CrownOddRecord'
+export { FBet } from './models/FBet'
+export { FMatch } from './models/FMatch'
 export { LabelPromoted } from './models/LabelPromoted'
 export { LuffaUser } from './models/LuffaUser'
 export { Match } from './models/Match'
