@@ -131,9 +131,9 @@ async function updateMatchOdd(all: CrownRobot.Output<number>) {
             order: ['id'],
         })
         if (firstOdd) {
-            //如果让球数在1球以内就开胜平负
+            //如果让球数在0.5球以内就开胜平负
             const exists = firstOdd.odd_data.find((t) => t.type === 'r' && t.variety === 'goal')
-            if (exists && Decimal(exists.condition).abs().lt(1)) {
+            if (exists && Decimal(exists.condition).abs().lte('0.5')) {
                 win_open = 1
             }
         }
