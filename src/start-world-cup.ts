@@ -76,6 +76,7 @@ async function updateMatchOdd(all: CrownRobot.Output<number>) {
 
     const ah = odds.find((t) => t.type === 'r' && t.variety === 'goal')
     const win = odds.find((t) => t.type === 'm' && t.variety === 'goal')
+    const ou = odds.find((t) => t.type === 'ou' && t.variety === 'goal')
 
     //再检查比赛是否已经添加到可投注比赛中
     const target = await FMatch.findOne({
@@ -117,6 +118,21 @@ async function updateMatchOdd(all: CrownRobot.Output<number>) {
             }
         }
 
+        //大小球
+        if (ou) {
+            const ou_condition = Decimal(ou.condition).toFixed(2)
+            const under_value = Decimal(ou.value_h).toFixed(2)
+            const over_value = Decimal(ou.value_c).toFixed(2)
+            const ou_hash = md5(`${ou_condition}:${under_value}:${over_value}`)
+            if (ou_hash !== target.ou_hash) {
+                fields.ou_condition = ou_condition
+                fields.ou_hash = ou_hash
+                fields.under_value = under_value
+                fields.over_value = over_value
+                fields.ou_open = 1
+            }
+        }
+
         await FMatch.update(fields, { where: { match_id } })
     } else {
         //没有数据
@@ -150,6 +166,7 @@ async function updateMatchOdd(all: CrownRobot.Output<number>) {
             ah2_value,
             ah_hash,
             win_open,
+            ou_open: 0,
         }
 
         if (win_open && win) {
@@ -163,6 +180,18 @@ async function updateMatchOdd(all: CrownRobot.Output<number>) {
             fields.draw_value = draw_value
         } else {
             fields.win_open = 0
+        }
+
+        if (ou) {
+            const ou_condition = Decimal(ou.condition).toFixed(2)
+            const under_value = Decimal(ou.value_h).toFixed(2)
+            const over_value = Decimal(ou.value_c).toFixed(2)
+            const ou_hash = md5(`${ou_condition}:${under_value}:${over_value}`)
+            fields.ou_condition = ou_condition
+            fields.ou_hash = ou_hash
+            fields.under_value = under_value
+            fields.over_value = over_value
+            fields.ou_open = 1
         }
 
         await FMatch.create(fields)

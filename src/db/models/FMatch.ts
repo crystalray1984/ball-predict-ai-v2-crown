@@ -57,6 +57,21 @@ export class FMatch extends Model<InferAttributes<FMatch>, InferCreationAttribut
     @Column(DataType.DECIMAL)
     declare draw_value: CreationOptional<string>
 
+    @Column(DataType.TINYINT)
+    declare ou_open: number
+
+    @Column(DataType.DECIMAL)
+    declare ou_condition: CreationOptional<string>
+
+    @Column(DataType.STRING)
+    declare ou_hash: CreationOptional<string>
+
+    @Column(DataType.DECIMAL)
+    declare under_value: CreationOptional<string>
+
+    @Column(DataType.DECIMAL)
+    declare over_value: CreationOptional<string>
+
     @CreatedAt
     @Column(DataType.DATE)
     declare created_at: CreationOptional<Date>
